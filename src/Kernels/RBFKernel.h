@@ -20,6 +20,7 @@ class RBFKernel:public Kernel {
     
 public:
     RBFKernel(float gamma_){ this->gamma=gamma_;};
+    void preprocess(std::vector<supportData*>& S, int K){};
     float calculateKernelValue(float* x1, float* x2, int size);
     double calculate(arma::mat& x1,int row1,arma::mat& x2, int row2);
 };

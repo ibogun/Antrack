@@ -27,3 +27,8 @@ xcode/*
 *.exe
 *.out
 *.app
+
+
+# images, documents
+*.pdf
+*.jpg

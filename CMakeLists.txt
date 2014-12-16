@@ -62,6 +62,8 @@ set(SOURCE_FILES
     src/Tracker/Struck.h
     src/Tracker/SupportVector.cpp
     src/Tracker/SupportVector.h
+	src/Kernels/IntersectionKernel_fast.cpp
+	src/Kernels/IntersectionKernel_fast.h
     Makefile)
 
 target_link_libraries(Testing project1_lib)

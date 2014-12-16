@@ -15,6 +15,7 @@
 
 #include "../Kernels/Kernel.h"
 #include <unordered_map>
+#include "supportData.h"
 struct params {
 
 	double C; // C parameter in SVM notation
@@ -54,65 +55,7 @@ struct KeyEqual {
 
 
 
-class supportData {
-    
-public:
-    
-    mat* x;
-    mat* y;
-    
-    mat* beta;
-    int label;
-    mat* grad;
-    int frameNumber;
-    
-    
-    
-    supportData();
-    
-    //	supportData(const mat& x_,const mat& y_, const int& label_, const int& m, const int& K,int frameNumber_) {
-    //		index++;
-    //
-    //		x = x_;
-    //		y=y_;
-    //		label = label_;
-    //		beta = mat(1, K, fill::zeros);
-    //		grad = mat(1, K, fill::zeros);
-    //        frameNumber=frameNumber_;
-    //
-    //
-    //	}
-    
-    //    supportData(const mat& x_,const mat& y_,const int& label_, const int&m, const int& K, int frameNumber_): x(x_),y(y_),label(label_),beta(1,K,fill::zeros),grad(1,K,fill::zeros),frameNumber(frameNumber_){
-    //
-    //    }
-    
-    
-    
-    supportData(const mat& x_,const mat& y_,const int& label_, const int&m, const int& K, int frameNumber_){
-        
-        x=new mat(x_);
-        y=new mat(y_);
-        beta=new mat(1,K,fill::zeros);
-        grad=new mat(1,K,fill::zeros);
-        label=label_;
-        frameNumber=frameNumber_;
-        
-    }
-    
-    
-    ~supportData(){
-        delete x;
-        delete y;
-        delete beta;
-        delete grad;
-        //        delete &label;
-        //        delete &frameNumber;
-        
-        
-    }
-    
-};
+
 
 class OLaRank_old {
     

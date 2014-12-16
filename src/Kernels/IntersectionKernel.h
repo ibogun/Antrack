@@ -18,6 +18,7 @@ class IntersectionKernel:public Kernel {
 public:
     
     IntersectionKernel(){};
+    void preprocess(std::vector<supportData*>& S,int K){};
     float calculateKernelValue(float* x1, float* x2, int size);
     double calculate(arma::mat& x,int r1,arma::mat& x2,int r2);
 };

@@ -54,42 +54,45 @@ void OLaRank_old::setParameters(params& learningParams, int& balance, int& m_, i
 
 rowvec OLaRank_old::predictAll(mat& newX){
     
-
-
-    int n=newX.n_rows;
     
-    mat y_hat(1,1,fill::zeros);
-    mat y(1,1,fill::zeros);
-    
-    rowvec scores(n,fill::ones);
-    
-    for (int k = 0; k < newX.n_rows; ++k) {
-        
-        y(0)=k;
-        double current=0;
-        for (int yhat = 0; yhat < this->K; ++yhat) {
-            
-            y_hat(0)=yhat;
-            
-            for (int i = 0; i < this->S.size(); ++i) {
-                
-                if ((*this->S[i]->beta)(yhat)!=0){
-                    
-                    // the below has to be multiplied by the velocities kernel
-                    current+= (*this->S[i]->beta)(yhat)
-                    * this->calculate_kernel(newX, y(0), *this->S[i]->x, y_hat(0));
-                    
-                }
-            }
-            
-        }
-        
-        scores(k)=current;
-        
-        
-    }
-    
-    return scores;
+    return this->svm_kernel->predictAll(newX, this->S, this->K);
+//    this->svm_kernel->preprocess(this->S, this->K);
+//
+//
+//    int n=newX.n_rows;
+//    
+//    mat y_hat(1,1,fill::zeros);
+//    mat y(1,1,fill::zeros);
+//    
+//    rowvec scores(n,fill::ones);
+//    
+//    for (int k = 0; k < newX.n_rows; ++k) {
+//        
+//        y(0)=k;
+//        double current=0;
+//        for (int yhat = 0; yhat < this->K; ++yhat) {
+//            
+//            y_hat(0)=yhat;
+//            
+//            for (int i = 0; i < this->S.size(); ++i) {
+//                
+//                if ((*this->S[i]->beta)(yhat)!=0){
+//                    
+//                    // the below has to be multiplied by the velocities kernel
+//                    current+= (*this->S[i]->beta)(yhat)
+//                    * this->calculate_kernel(newX, y(0), *this->S[i]->x, y_hat(0));
+//                    
+//                }
+//            }
+//            
+//        }
+//        
+//        scores(k)=current;
+//        
+//        
+//    }
+//    
+//    return scores;
 }
 
 

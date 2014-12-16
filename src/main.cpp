@@ -9,6 +9,7 @@
 #include <iostream>
 #include "Kernels/RBFKernel.h"
 #include "Kernels/IntersectionKernel.h"
+#include "Kernels/IntersectionKernel_fast.h"
 #include <opencv2/opencv.hpp>
 #include "Tracker/OLaRank_old.h"
 #include "Features/RawFeatures.h"
@@ -36,7 +37,8 @@ int main(int argc, const char * argv[]) {
     
     //RawFeatures* features=new RawFeatures(16);
     //HistogramFeatures* features=new HistogramFeatures(4,16);
-    RBFKernel* kernel=new RBFKernel(0.2);
+    // RBFKe
+    IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
     //IntersectionKernel* kernel=new IntersectionKernel;
     Haar* features=new Haar(2);
 
@@ -65,8 +67,8 @@ int main(int argc, const char * argv[]) {
 
     //tracker.applyTrackerOnDataset(datasetWu2013, rootFolder,6);
     
-    //tracker.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 24, 0, 250);
-    tracker.videoCapture();
+    tracker.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 24, 0, 250);
+    //tracker.videoCapture();
     
     return 0;
 }
