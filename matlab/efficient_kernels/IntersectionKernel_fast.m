@@ -62,8 +62,7 @@ classdef IntersectionKernel_fast < handle
         end
         
         
-        function k=calculate(obj,x1)
-            
+        function k=calculateOneDim(obj,x1)
             [m,n]=size(obj.X);
             k=0;
             
@@ -95,6 +94,22 @@ classdef IntersectionKernel_fast < handle
                 
                 
             end
+            
+        end
+        
+        function r=calculate(obj,x1)
+            
+                        % find min accross one dimension multiply with dot product with
+            % beta
+            
+            n=size(x1,1);
+            
+            r=zeros(n,1);
+            
+            for i=1:n
+                r(i)=calculateOneDim(obj,x1(i,:));
+            end
+            
         end
     end
     

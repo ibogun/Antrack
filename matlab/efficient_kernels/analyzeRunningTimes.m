@@ -24,7 +24,7 @@ for i=1:4
     subplot(2,2,i);
     plot(numLocations,fast(i,:),numLocations,regular(i,:),'LineWidth',lineWidth);
     hold on;
-    linear(numLocations,linear(i,:),'--');
+    %linear(numLocations,linear(i,:),'--');
     t=['Number of support vectors ',num2str(numSupportVectors(i))];
     title(t);
     xlabel('# of locations');
