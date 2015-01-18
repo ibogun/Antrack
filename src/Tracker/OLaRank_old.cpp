@@ -55,44 +55,8 @@ void OLaRank_old::setParameters(params& learningParams, int& balance, int& m_, i
 rowvec OLaRank_old::predictAll(mat& newX){
     
     
-    return this->svm_kernel->predictAll(newX, this->S, this->K);
-//    this->svm_kernel->preprocess(this->S, this->K);
-//
-//
-//    int n=newX.n_rows;
-//    
-//    mat y_hat(1,1,fill::zeros);
-//    mat y(1,1,fill::zeros);
-//    
-//    rowvec scores(n,fill::ones);
-//    
-//    for (int k = 0; k < newX.n_rows; ++k) {
-//        
-//        y(0)=k;
-//        double current=0;
-//        for (int yhat = 0; yhat < this->K; ++yhat) {
-//            
-//            y_hat(0)=yhat;
-//            
-//            for (int i = 0; i < this->S.size(); ++i) {
-//                
-//                if ((*this->S[i]->beta)(yhat)!=0){
-//                    
-//                    // the below has to be multiplied by the velocities kernel
-//                    current+= (*this->S[i]->beta)(yhat)
-//                    * this->calculate_kernel(newX, y(0), *this->S[i]->x, y_hat(0));
-//                    
-//                }
-//            }
-//            
-//        }
-//        
-//        scores(k)=current;
-//        
-//        
-//    }
-//    
-//    return scores;
+    return this->svm_kernel->predictAll(newX, this->S, this->B);
+
 }
 
 
@@ -800,37 +764,7 @@ double OLaRank_old::kernel_fast(mat& x,mat& y_loc, int y,int frameNumber_1, mat&
 }
 
 double OLaRank_old::calculate_kernel(mat& x, int y, mat& xp, int yp){
-    
-    //    double result=0;
-    //
-    //    double* x_ptr=&x(y,0);
-    //    double* xp_ptr=&xp(yp,0);
-    
-    //for (int i=0; i<this->m; ++i) {
-    //result+=pow(*(x_ptr+i*this->K)-*(xp_ptr+i*this->K), 2);
-    //result+=pow(*(x_ptr+i*x.n_rows)-*(xp_ptr+i*xp.n_rows), 2);
-    
-    //result+=min(*(x_ptr+i*x.n_rows),(*(xp_ptr+i*xp.n_rows)));
-    //}
-    //result=result/this->m;
-    //result=sqrt(result);
-    //cout<<result<<endl;
-    //result=exp(-1*(result));
-    //
-    //    std::cout<<*t<<" "<<x_i[0]<<std::endl;
-    //    std::cout<<*(t+1)<<" "<<x_i[1]<<std::endl;
-    
-    //cout<<result<<endl;
-    //std::cout<<"n= "<<x.n_rows<<"  m="<<this->m<<std::endl;
-    
-    //    double a=this->svm_kernel.calculateKernel(x,y,xp,yp);
-    //    if (result!=a) {
-    //
-    //        cout<<"Got= "<<result<<" expected="<<a<<endl;
-    //        cout<<"Kernels are Not EQUAL!!!"<<endl;
-    //    }
-    //
-    //    return result;
+ 
     return this->svm_kernel->calculate(x,y,xp,yp);
 }
 

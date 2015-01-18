@@ -12,11 +12,15 @@
 #include <stdio.h>
 #include "../Kernels/IntersectionKernel.h"
 #include "../Kernels/IntersectionKernel_fast.h"
+#include "../Kernels/ApproximateKernel.h"
+#include "../Kernels/IntersectionKernel_additive.h"
 
 class ExperimentEfficientIntersectionKernel {
     
     IntersectionKernel kernel_simple;
     IntersectionKernel_fast kernel_fast;
+    
+    ApproximateKernel* kernel_approx;
     
     arma::mat X;
     arma::colvec beta;
@@ -25,11 +29,11 @@ class ExperimentEfficientIntersectionKernel {
 public:
     
     
-    ExperimentEfficientIntersectionKernel(int n,int m, int nTestCases);
+    ExperimentEfficientIntersectionKernel(int n,int m, int nTestCases, int approxPts);
     
     float calculateTimeRegularKernel();
-    float calculateTimeLinearKernel();
     std::pair<float, float> calculateTimeFastKernel();
+    std::pair<float, float>calculateTimeApproxKernel();
     
     static void performExperiment(std::string outputDir);
 };

@@ -47,10 +47,14 @@ class Struck {
     bool useFilter;
     bool updateTracker;
     
+    int seed=1;
+    
     void copyFromRectangleToImage(cv::Mat& canvas,cv::Mat& image,cv::Rect rect,int step,cv::Vec3b color);
 
     
 public:
+    
+    Struck();
     
     Struck(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useFilter_,int display_){
         olarank = olarank_;
@@ -59,6 +63,21 @@ public:
         samplerForUpdate = samplerUpdate_;
         useFilter=useFilter_;
         display = display_;};
+    
+    void setParameters(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useFilter_,int display_){
+      
+        this->olarank=olarank_;
+        this->feature=feature_;
+        this->samplerForSearch=samplerSearch_;
+        this->samplerForUpdate=samplerUpdate_;
+        this->useFilter=useFilter_;
+        this->display=display_;
+    };
+    
+    
+    std::vector<cv::Rect> getBoundingBoxes(){
+        return this->boundingBoxes;
+    };
     
     void videoCapture();
     

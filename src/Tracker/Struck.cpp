@@ -11,7 +11,7 @@
 
 void Struck::initialize(cv::Mat &image, cv::Rect &location){
     
-    
+    srand(this->seed);
     // set dimensions of the sampler
     int n=image.rows;
     int m=image.cols;
@@ -176,6 +176,7 @@ void Struck::track(cv::Mat &image){
             cv::rectangle(plotImg, bestLocationFilter,cv::Scalar(0,255,100),0);
         }
         
+        
         cv::imshow("Tracking window", plotImg);
         cv::waitKey(1);
         
@@ -338,6 +339,7 @@ void Struck::applyTrackerOnDataset(Dataset *dataset,std::string rootFolder,int v
     vector<pair<string, vector<string>>> video_gt_images=dataset->prepareDataset(rootFolder);
     
     if (videoNumber<0) {
+        //TODO: add code to save results of the tracking to some folder
         
         // code to apply tracker on the whole dataset
         
@@ -389,6 +391,7 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
     for (int i=1; i<gt_images.second.size(); i++) {
         cv::Mat image=cv::imread(gt_images.second[i]);
         
+        cout<<"Frame # "<<i<<endl;
         this->track(image);
     }
     std::time_t t2 = std::time(0);

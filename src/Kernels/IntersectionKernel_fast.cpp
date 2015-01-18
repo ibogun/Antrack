@@ -196,7 +196,12 @@ double IntersectionKernel_fast::predictOne(arma::rowvec &x){
 }
 
 double IntersectionKernel_fast::calculate(arma::mat &x, int r1, arma::mat &x2, int r2){
-    return 0;
+    arma::mat combinedX=arma::join_vert(x.row(r1), x2.row(r2));
+    
+    arma::mat t=arma::min(combinedX);
+    double r=arma::sum(arma::sum(t));
+
+    return r;
 }
 
 float IntersectionKernel_fast::calculateKernelValue(float *x1, float *x2, int size){

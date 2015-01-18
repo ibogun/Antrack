@@ -7,7 +7,7 @@ preprocessing_fast=load('data/preprocessing_fast.mat','-ascii');
 numLocations=load('data/numLocations.mat','-ascii');
 numSupportVectors=load('data/numSupportVectors.mat','-ascii');
 
-linear=load('data/linear.mat','-ascii');
+approx=load('data/approx_kernel.mat','-ascii');
 
 % for each set of support vectors plot
 % time vs numLocationsProcessed
@@ -22,7 +22,7 @@ figure;
 
 for i=1:4
     subplot(2,2,i);
-    plot(numLocations,fast(i,:),numLocations,regular(i,:),'LineWidth',lineWidth);
+    plot(numLocations,fast(i,:),numLocations,regular(i,:),numLocations,approx(i,:),'LineWidth',lineWidth);
     hold on;
     %linear(numLocations,linear(i,:),'--');
     t=['Number of support vectors ',num2str(numSupportVectors(i))];
@@ -30,7 +30,7 @@ for i=1:4
     xlabel('# of locations');
     ylabel('Time (seconds)');
     
-    legend('fast','regular','Location','NorthWest');
+    legend('fast','regular','approx/50','Location','NorthWest');
 end
 
 set(findall(gcf,'type','text'),'FontSize',13,'fontWeight','bold')

@@ -19,7 +19,6 @@ public:
 
     ~Kernel(){};
     virtual void preprocess(std::vector<supportData*>& S, int K)=0;
-    virtual float calculateKernelValue(float* x1, float* x2, int size)=0;
     virtual double calculate(arma::mat& x,int r1,arma::mat& x2,int r2)=0;
     
     virtual arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S, int K);

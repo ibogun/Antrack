@@ -11,8 +11,13 @@
 #include <time.h>
 
 
-ExperimentEfficientIntersectionKernel::ExperimentEfficientIntersectionKernel(int n, int m, int nTestCases){
+ExperimentEfficientIntersectionKernel::ExperimentEfficientIntersectionKernel(int n, int m, int nTestCases, int approxPts){
     
+    IntersectionKernel_additive int_add_kernel;
+    
+    
+    this->kernel_approx=new ApproximateKernel(&int_add_kernel, approxPts);
+
     using namespace arma;
     arma::mat X=arma::randu<arma::mat>(m,n);
 
@@ -56,9 +61,10 @@ std::pair<float, float> ExperimentEfficientIntersectionKernel::calculateTimeFast
     result.first=((float)t2-(float)t1)/CLOCKS_PER_SEC;
     
     t1=clock();
+    kernelFast=0;
     for (int i=0; i<nTestCases; i++) {
      
-        kernelFast=0;
+        
      
         
         rowvec x_=this->x_test.row(i);
@@ -67,16 +73,57 @@ std::pair<float, float> ExperimentEfficientIntersectionKernel::calculateTimeFast
     }
     
     t2=clock();
-    
+    cout<<"fast "<<kernelFast<<endl;
     result.second=((float)t2-(float)t1)/CLOCKS_PER_SEC;
     
     return result;
 }
 
+
+
 /**
  *  Calculates time to compute all kernel values for intersection kernel.
  *
  *  @return Time for kernel calculation
+ */
+std::pair<float, float>  ExperimentEfficientIntersectionKernel::calculateTimeApproxKernel(){
+    
+    using namespace arma;
+    using namespace std;
+    double kernelFast=0;
+    
+    clock_t t1,t2;
+    std::pair<float, float> result;
+    int nTestCases=this->x_test.n_rows;
+    
+    t1=clock();
+    this->kernel_approx->preprocessMatrices(this->X, this->beta);
+    t2=clock();
+    
+    result.first=((float)t2-(float)t1)/CLOCKS_PER_SEC;
+    
+    t1=clock();
+     kernelFast=0;
+    for (int i=0; i<nTestCases; i++) {
+
+        rowvec x_=this->x_test.row(i);
+        kernelFast+=this->kernel_approx->predictOne(x_);
+        
+    }
+    
+    
+    t2=clock();
+    cout<<"approx "<<kernelFast<<endl;
+    result.second=((float)t2-(float)t1)/CLOCKS_PER_SEC;
+    
+    return result;
+}
+
+
+/**
+ *  This function is not producing correct result. Used only for reference
+ *
+ *  @return Time to compute linear kernel
  */
 float ExperimentEfficientIntersectionKernel::calculateTimeRegularKernel(){
     double loopKernelValue=0;
@@ -88,45 +135,18 @@ float ExperimentEfficientIntersectionKernel::calculateTimeRegularKernel(){
     int nTestCases=this->x_test.n_rows;
     
     t1=clock();
+    loopKernelValue=0;
     for (int i=0; i<nTestCases; i++) {
-        loopKernelValue=0;
-
+        
         
         for (int j=0; j<m; j++) {
             loopKernelValue+=this->beta(j)*this->kernel_simple.calculate(this->x_test, i, this->X, j);
         }
-  
-    }
-    t2=clock();
-    
-    float result=((float)t2-(float)t1)/CLOCKS_PER_SEC;
-    return result;
-}
-
-
-/**
- *  This function is not producing correct result. Used only for reference
- *
- *  @return Time to compute linear kernel
- */
-float ExperimentEfficientIntersectionKernel::calculateTimeLinearKernel(){
-    double loopKernelValue=0;
-    using namespace std;
-    
-    int m=this->X.n_rows;
-    clock_t t1,t2;
-    
-    int nTestCases=this->x_test.n_rows;
-    
-    t1=clock();
-    for (int i=0; i<nTestCases; i++) {
-        loopKernelValue=0;
- 
-        loopKernelValue=arma::dot(this->x_test.row(i), this->X.row(0));
+        
         
     }
     t2=clock();
-    
+    cout<<"real "<<loopKernelValue<<endl;
     float result=((float)t2-(float)t1)/CLOCKS_PER_SEC;
     return result;
 }
@@ -148,23 +168,32 @@ void ExperimentEfficientIntersectionKernel::performExperiment(std::string output
     numSupportVectors<<100<<200<<500<<1000<<endr;
     numLocationsToEvaluate<<1<<200<<500<<1000<<2000<<3000<<5000<<6500<<endr;
     
+    
+    int nSupportVectorsApproximate=50;
+    
     mat results_regular(numSupportVectors.size(),numLocationsToEvaluate.size(),fill::zeros);
     mat results_fast(numSupportVectors.size(),numLocationsToEvaluate.size(),fill::zeros);
     mat results_fastPreprocessing(numSupportVectors.size(),numLocationsToEvaluate.size(),fill::zeros);
     
-    mat results_linearKernel(numSupportVectors.size(),numLocationsToEvaluate.size(),fill::zeros);
-    
+    mat results_approxKernel(numSupportVectors.size(),numLocationsToEvaluate.size(),fill::zeros);
+    std::pair<double, double> times;
     for (int i=0; i<numSupportVectors.size(); i++) {
+        
+        std::cout<<"Current support vector size: "<<numSupportVectors(i)<<std::endl;
         for (int j=0; j<numLocationsToEvaluate.size(); j++) {
             
+            std::cout<<"Number of locations to evaluate: "<<numLocationsToEvaluate(j)<<std::endl;
             
-            
-            ExperimentEfficientIntersectionKernel k(featureDimension,numSupportVectors(i),numLocationsToEvaluate(j));
+            ExperimentEfficientIntersectionKernel k(featureDimension,numSupportVectors(i),numLocationsToEvaluate(j),nSupportVectorsApproximate);
             
             results_regular(i,j)=k.calculateTimeRegularKernel();
-            results_linearKernel(i,j)=k.calculateTimeLinearKernel();
             
-            std::pair<double, double> times=k.calculateTimeFastKernel();
+            
+            times=k.calculateTimeApproxKernel();
+            
+            results_approxKernel(i,j)=times.first+times.second;
+            
+            times=k.calculateTimeFastKernel();
             results_fast(i,j)=times.second;
             results_fastPreprocessing(i,j)=times.first;
 
@@ -177,7 +206,7 @@ void ExperimentEfficientIntersectionKernel::performExperiment(std::string output
     results_fast.save(outputDir+"/fast.mat",arma::raw_ascii);
     results_fastPreprocessing.save(outputDir+"/preprocessing_fast.mat",arma::raw_ascii);
     
-    results_linearKernel.save(outputDir+"/linear.mat",arma::raw_ascii);
+    results_approxKernel.save(outputDir+"/approx_kernel.mat",arma::raw_ascii);
     
     numSupportVectors.save(outputDir+"/numSupportVectors.mat",arma::raw_ascii);
     numLocationsToEvaluate.save(outputDir+"/numLocations.mat",arma::raw_ascii);
