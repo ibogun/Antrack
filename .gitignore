@@ -38,3 +38,8 @@ xcode/*
 *.m~
 *.mat
 *.dat
+
+
+# ignore IDE's files
+.idea/
+.release_time

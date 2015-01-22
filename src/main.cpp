@@ -70,8 +70,8 @@ int main(int argc, const char * argv[]) {
 
     //tracker.applyTrackerOnDataset(datasetWu2013, rootFolder,6);
 
-    tracker.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 0, 0, 250);
-    //tracker.videoCapture();
+    //tracker.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 0, 0, 250);
+    tracker.videoCapture();
     
     return 0;
 }

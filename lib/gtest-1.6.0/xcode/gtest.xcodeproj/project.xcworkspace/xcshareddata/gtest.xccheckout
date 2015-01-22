@@ -10,36 +10,31 @@
 	<string>gtest</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>861a406c-534a-0410-8894-cb66d6ee9925++505</key>
-		<string>http://googletest.googlecode.com/svn/trunk</string>
+		<key>AC8D658FD8A9A461DE14118C2AB947FBBC58021A</key>
+		<string>github.com:ibogun/Antrack.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>xcode/gtest.xcodeproj</string>
+	<string>lib/gtest-1.6.0/xcode/gtest.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>861a406c-534a-0410-8894-cb66d6ee9925++505</key>
-		<string>../../..</string>
-	</dict>
-	<key>IDESourceControlProjectRepositoryRootDictionary</key>
-	<dict>
-		<key>861a406c-534a-0410-8894-cb66d6ee9925++505</key>
-		<string>http://googletest.googlecode.com/svn</string>
+		<key>AC8D658FD8A9A461DE14118C2AB947FBBC58021A</key>
+		<string>../../../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>http://googletest.googlecode.com/svn/trunk/xcode/gtest.xcodeproj</string>
+	<string>github.com:ibogun/Antrack.git</string>
 	<key>IDESourceControlProjectVersion</key>
 	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>861a406c-534a-0410-8894-cb66d6ee9925++505</string>
+	<string>AC8D658FD8A9A461DE14118C2AB947FBBC58021A</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
-			<string>public.vcs.subversion</string>
+			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>861a406c-534a-0410-8894-cb66d6ee9925++505</string>
+			<string>AC8D658FD8A9A461DE14118C2AB947FBBC58021A</string>
 			<key>IDESourceControlWCCName</key>
-			<string>googletest-read-only</string>
+			<string>Antrack</string>
 		</dict>
 	</array>
 </dict>

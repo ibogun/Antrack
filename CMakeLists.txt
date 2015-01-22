@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.4)
 
 # Options. Turn on with 'cmake -Dmyvarname=ON'.
-option(test "Build all tests." OFF) # Makes boolean 'test' available.
+option(test "Build all tests." ON) # Makes boolean 'test' available.
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
 
@@ -20,12 +20,21 @@ find_package(Armadillo REQUIRED)
 ################################
 # Normal Libraries & Executables
 ################################
-add_library(project1_lib src/Tests/project1.cpp)
-add_executable(Testing src/Tests/main.cpp)
+#add_library(project1_lib src/Tests/project1.cpp)
+#add_executable(Testing src/Tests/test_project1.cpp)
 # Key idea: SEPARATE OUT your main() function into its own file so it can be its
 # own executable. Separating out main() means you can add this library to be
 # used elsewhere.
 
+
+set(TEST_FILES
+	src/Tests/IntersectionKernelTest.cpp
+	src/Tests/IntersectionKernelTest.h
+	src/Tests/main.cpp
+	)
+
+	set(PROJECT_MAIN
+	src/main.cpp)
 
 set(SOURCE_FILES
     src/Datasets/Dataset.cpp
@@ -51,7 +60,7 @@ set(SOURCE_FILES
     src/Kernels/Kernel.h
     src/Tracker/LocationSampler.cpp
     src/Tracker/LocationSampler.h
-    src/main.cpp
+    #src/main.cpp
     src/Tracker/OLaRank_old.cpp
     src/Tracker/OLaRank_old.h
     src/Features/RawFeatures.cpp
@@ -64,9 +73,13 @@ set(SOURCE_FILES
     src/Tracker/SupportVector.h
 	src/Kernels/IntersectionKernel_fast.cpp
 	src/Kernels/IntersectionKernel_fast.h
+	src/Kernels/ApproximateKernel.h
+	src/Kernels/ApproximateKernel.cpp
+	src/Kernels/Spline.h
+	src/Kernels/Spline.cpp
     Makefile)
 
-target_link_libraries(Testing project1_lib)
+#target_link_libraries(Testing project1_lib)
 
 ################################
 # Testing
@@ -84,10 +97,10 @@ if (test)
   ##############
   # Unit Tests
   ##############
-  add_executable(RunUnitTests src/Tests/test_project1.cpp)
-
+  add_executable(RunUnitTests ${SOURCE_FILES} ${TEST_FILES})
+  #add_executable(RunUnitTests ${SOURCE_FILES})
   # Standard linking to gtest stuff.
-  target_link_libraries(RunUnitTests gtest gtest_main)
+  target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})
 
   # Extra linking for the project.
   #target_link_libraries(runUnitTests project1_lib)
@@ -102,8 +115,8 @@ if (test)
 endif()
 
 
-add_executable(robust_struck_tracker_v1.0 ${SOURCE_FILES})
-include_directories( ${OpenCV_INCLUDE_DIRS} )
+add_executable(robust_struck_tracker_v1.0 ${SOURCE_FILES} ${PROJECT_MAIN})
+include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 TARGET_LINK_LIBRARIES(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})
