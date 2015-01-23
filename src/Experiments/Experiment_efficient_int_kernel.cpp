@@ -13,10 +13,8 @@
 
 ExperimentEfficientIntersectionKernel::ExperimentEfficientIntersectionKernel(int n, int m, int nTestCases, int approxPts){
     
-    IntersectionKernel_additive int_add_kernel;
-    
-    
-    this->kernel_approx=new ApproximateKernel(&int_add_kernel, approxPts);
+
+    this->kernel_approx=new ApproximateKernel(approxPts);
 
     using namespace arma;
     arma::mat X=arma::randu<arma::mat>(m,n);
@@ -200,6 +198,7 @@ void ExperimentEfficientIntersectionKernel::performExperiment(std::string output
         }
 
     }
+    
     
     
     results_regular.save(outputDir+"/regular.mat",arma::raw_ascii);

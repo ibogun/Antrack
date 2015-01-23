@@ -13,7 +13,12 @@ cv::Mat HistogramFeatures::prepareImage(cv::Mat *imageIn){
     
     cv::Mat image=*imageIn;
     cv::Mat gray(image.rows,image.cols,CV_16S);
+    
+    if (image.channels()!=1){
     cv::cvtColor(image, gray, CV_BGR2GRAY);
+    }else{
+        gray=image;
+    }
     return gray;
 }
 

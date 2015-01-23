@@ -10,13 +10,17 @@
 #define __Robust_Struck__Struck__
 
 #include <stdio.h>
-#include "OLaRank_old.h"
-#include "../Features/Feature.h"
-#include "LocationSampler.h"
-#include <vector>
-#include "../Datasets/DataSetWu2013.h"
-#include "../Datasets/Dataset.h"
 #include <unordered_map>
+#include <vector>
+
+#include "OLaRank_old.h"
+#include "LocationSampler.h"
+
+#include "../Features/Feature.h"
+
+
+#include "../Datasets/Dataset.h"
+
 #include "../Filter/KalmanFilterGenerator.h"
 
 

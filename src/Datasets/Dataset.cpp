@@ -8,43 +8,47 @@
 
 #include "Dataset.h"
 #include <regex>
-#include<dirent.h>
+#include <dirent.h>
 
+
+/**
+ *  List only subfolders in a given folder
+ *
+ *  @param folder where to look for subfolders
+ *
+ *  @return vector of subfolders (relative paths)
+ */
 std::vector<std::string> Dataset::listSubFolders(std::string folder){
     using namespace std;
-    vector<std::string> subFolderList;
+    const char *PATH=folder.c_str();
     regex e ("[^\\.].*");
     
-    DIR *dir;
-    struct dirent *ent;
-    
+    DIR *dir = opendir(PATH);
     smatch match;
+
+    struct dirent *entry = readdir(dir);
     
-    vector<std::string> imageFilenames;
     
-    if ((dir = opendir (folder.c_str())) != NULL) {
-        /* print all the files and directories within directory */
-        while ((ent = readdir (dir)) != NULL) {
-            
-            
-            std::string fileName=std::string(ent->d_name);
+    vector<string> r;
+    while (entry != NULL)
+    {
+        if (entry->d_type == DT_DIR){
+            std::string fileName=std::string(entry->d_name);
             
             regex_match(fileName,match,e);
             
             if (!match.empty()) {
-                subFolderList.push_back(fileName);
-                //std::cout<<imgLocation+fileName<<endl;
+                //printf("%s\n", entry->d_name);
+                r.push_back(fileName);
             }
-            
         }
-        closedir (dir);
-    } else {
-        /* could not open directory */
-        perror ("Couldnt open directory");
-        //return nullptr;
+        
+        
+        entry = readdir(dir);
     }
     
-    return subFolderList;
+    return r;
+    
 }
 
 /**

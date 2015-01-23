@@ -22,6 +22,8 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
     this->boundingBoxes.push_back(location);
     lastLocation=location;
     // sample in polar coordinates first
+    
+    //TODO: replace cv::Rect -> cv::RotatedRect here
     std::vector<cv::Rect> locations;
     
     // add ground truth
@@ -117,6 +119,7 @@ void Struck::track(cv::Mat &image){
         
         bestLocationFilter=filter.getBoundingBox(this->lastLocation.width, this->lastLocation.height, x_k);
         
+        //TODO: This formula will be different with rotatedRect
         double overlap=(bestLocationFilter&bestLocationDetector).area()/(double((bestLocationDetector |bestLocationFilter).area()));
         
         if (overlap>0.5) {

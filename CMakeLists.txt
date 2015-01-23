@@ -33,53 +33,31 @@ set(TEST_FILES
 	src/Tests/main.cpp
 	)
 
-	set(PROJECT_MAIN
-	src/main.cpp)
+set(PROJECT_MAIN
+	src/main.cpp
+)
 
-set(SOURCE_FILES
-    src/Datasets/Dataset.cpp
-    src/Datasets/Dataset.h
-    src/Datasets/DataSetWu2013.cpp
-    src/Datasets/DataSetWu2013.h
-    src/Features/Feature.h
-    src/Features/Haar.cpp
-    src/Features/Haar.h
-    src/Features/HaarFeature.cpp
-    src/Features/HaarFeature.h
-    src/Features/HaarFeatureSet.cpp
-    src/Features/HaarFeatureSet.h
-    src/Features/Histogram.cpp
-    src/Features/Histogram.h
-    src/Kernels/IntersectionKernel.cpp
-    src/Kernels/IntersectionKernel.h
-    src/Filter/KalmanFilter.cpp
-    src/Filter/KalmanFilter.h
-    src/Filter/KalmanFilterGenerator.cpp
-    src/Filter/KalmanFilterGenerator.h
-    src/Kernels/Kernel.cpp
-    src/Kernels/Kernel.h
-    src/Tracker/LocationSampler.cpp
-    src/Tracker/LocationSampler.h
-    #src/main.cpp
-    src/Tracker/OLaRank_old.cpp
-    src/Tracker/OLaRank_old.h
-    src/Features/RawFeatures.cpp
-    src/Features/RawFeatures.h
-    src/Kernels/RBFKernel.cpp
-    src/Kernels/RBFKernel.h
-    src/Tracker/Struck.cpp
-    src/Tracker/Struck.h
-    src/Tracker/SupportVector.cpp
-    src/Tracker/SupportVector.h
-	src/Kernels/IntersectionKernel_fast.cpp
-	src/Kernels/IntersectionKernel_fast.h
-	src/Kernels/ApproximateKernel.h
-	src/Kernels/ApproximateKernel.cpp
-	src/Kernels/Spline.h
-	src/Kernels/Spline.cpp
-    Makefile)
+set(Experiment_01 
+	src/Experiments/Experiment_efficient_int_kernel.cpp  
+	src/Experiments/Experiment_efficient_int_kernel.h
+)
+	
 
-#target_link_libraries(Testing project1_lib)
+
+FILE(GLOB SOURCE_FILES 
+	src/Datasets/*.cpp
+	src/Datasets/*.h
+	src/Features/*.cpp
+	src/Features/*.h
+	src/Kernels/*.cpp
+	src/Kernels/*.h
+	src/Filter/*.cpp
+	src/Filter/*.h
+	src/Tracker/*.cpp
+	src/Tracker/*.h
+)	
+
+
 
 ################################
 # Testing
@@ -107,11 +85,11 @@ if (test)
 
   # This is so you can do 'make test' to see all your tests run, instead of
   # manually running the executable runUnitTests to see those specific tests.
-  add_test(NAME that-test-I-made COMMAND RunUnitTests)
+  #add_test(NAME that-test-I-made COMMAND RunUnitTests)
 
   # You can also omit NAME and COMMAND. The second argument could be some other
   # test executable.
-  add_test(that-other-test-I-made RunUnitTests)
+  #add_test(that-other-test-I-made RunUnitTests)
 endif()
 
 
@@ -120,3 +98,6 @@ include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 TARGET_LINK_LIBRARIES(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})
+
+add_executable(experiment_01_fast_intersection_kernels ${SOURCE_FILES} ${Experiment_01})
+target_link_libraries(experiment_01_fast_intersection_kernels ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})

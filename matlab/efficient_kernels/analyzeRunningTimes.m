@@ -34,5 +34,9 @@ for i=1:4
 end
 
 set(findall(gcf,'type','text'),'FontSize',13,'fontWeight','bold')
-%set(gcf,'Position',[200 5 900 924]);
-%save2pdf('time_efficiency_experiment1.0.pdf',gcf,600);
+set(gcf,'Position',[200 5 900 924]);
+
+saveToFolder='/Users/Ivan/Documents/Papers/Reports/Antrack/images/';
+filename=strcat(saveToFolder,'time_efficiency_experiment1.0.pdf');
+display(strcat('Results will be saved to ',filename));
+save2pdf(filename,gcf,600);

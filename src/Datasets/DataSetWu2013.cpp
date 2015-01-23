@@ -10,6 +10,14 @@
 #include <fstream>
 #include <regex>
 
+
+/**
+ *  Read ground truth files for Wu2013 dataset
+ *
+ *  @param fileName folder with ground truth files
+ *
+ *  @return array of ground truth bounding boxes
+ */
 std::vector<cv::Rect> DataSetWu2013::readGroundTruth(std::string fileName){
     
     using namespace std;
@@ -27,7 +35,6 @@ std::vector<cv::Rect> DataSetWu2013::readGroundTruth(std::string fileName){
     while (std::getline(infile, str))
     {
         
-        //cout<<str<<endl;
         
         std::regex_iterator<std::string::iterator> rit ( str.begin(), str.end(), e );
         std::regex_iterator<std::string::iterator> rend;
@@ -67,10 +74,7 @@ std::vector<cv::Rect> DataSetWu2013::readGroundTruth(std::string fileName){
             
         }
         gtRects.push_back(varRect);
-        
-        //cout<<varRect<<endl;
-        //cout<<gtRects[idx]<<endl;
-        // process pair (a,b)
+
         ++idx;
     }
     
@@ -78,7 +82,13 @@ std::vector<cv::Rect> DataSetWu2013::readGroundTruth(std::string fileName){
     return gtRects;
 }
 
-
+/**
+ *  Return array of videos each of which is represented by array of images
+ *
+ *  @param rootFolder root folder of videos
+ *
+ *  @return array <array<images>> where array<images> is a video
+ */
 std::vector<std::pair<std::string, std::vector<std::string>>> DataSetWu2013::prepareDataset(std::string rootFolder){
     
     using namespace std;
