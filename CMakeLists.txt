@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 2.8.4)
 
 # Options. Turn on with 'cmake -Dmyvarname=ON'.
-option(test "Build all tests." ON) # Makes boolean 'test' available.
+option(test "Build all tests." OFF) # Makes boolean 'test' available.
+option(experiments "Build all experiments." OFF) # Makes boolean 'test' available.
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
 
@@ -93,11 +94,15 @@ if (test)
 endif()
 
 
+if (experiments)
+	add_executable(experiment_01_fast_intersection_kernels ${SOURCE_FILES} ${Experiment_01})
+	target_link_libraries(experiment_01_fast_intersection_kernels ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})
+endif()
+
+
 add_executable(robust_struck_tracker_v1.0 ${SOURCE_FILES} ${PROJECT_MAIN})
 include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 TARGET_LINK_LIBRARIES(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})
 
-add_executable(experiment_01_fast_intersection_kernels ${SOURCE_FILES} ${Experiment_01})
-target_link_libraries(experiment_01_fast_intersection_kernels ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})

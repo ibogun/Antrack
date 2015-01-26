@@ -14,6 +14,12 @@
 #include "../Features/Histogram.h"
 #include "../Tracker/Struck.h"
 #include "../Tracker/LocationSampler.h"
+
+#include "../Datasets/DataSetWu2013.h"
+#include "../Datasets/DatasetVOT2014.h"
+#include "../Datasets/DatasetALOV300.h"
+
+
 #include <stdio.h>
 class IntersectionKernel_tracking_test : public ::testing::Test {
     
