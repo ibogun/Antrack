@@ -27,13 +27,47 @@
 #include "Datasets/DatasetALOV300.h"
 #include "Datasets/DatasetVOT2014.h"
 
-using namespace std;
-using namespace cv;
+#include <pthread.h>
+#include <thread>
 
 
-int main(int argc, const char * argv[]) {
-    
-    
+#ifdef _WIN32
+//define something for Windows (32-bit and 64-bit, this part is common)
+#ifdef _WIN64
+//define something for Windows (64-bit only)
+#endif
+#elif __APPLE__
+#include "TargetConditionals.h"
+
+#define NUM_THREADS         10
+
+#define wu2013RootFolder    "/Users/Ivan/Files/Data/Tracking_benchmark/"
+#define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
+#define vot2014RootFolder   "/Users/Ivan/Files/Data/vot2014/"
+
+#define wu2013SaveFolder    "/Users/Ivan/Files/Results/Tracking/wu2013"
+#define alovSaveFolder      "/Users/Ivan/Files/Results/Tracking/alov300"
+#define vot2014SaveFolder    "/Users/Ivan/Files/Results/Tracking/vot2014"
+
+#if TARGET_IPHONE_SIMULATOR
+// iOS Simulator
+#elif TARGET_OS_IPHONE
+// iOS device
+#elif TARGET_OS_MAC
+// Other kinds of Mac OS
+#else
+// Unsupported platform
+#endif
+#elif __linux
+// linux
+#elif __unix // all unices not caught above
+// Unix
+#elif __posix
+// POSIX
+#endif
+
+
+Struck getTracker(){
     // Parameters
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     params p;
@@ -45,15 +79,15 @@ int main(int argc, const char * argv[]) {
     int B        = 100;
     
     //RawFeatures* features=new RawFeatures(16);
-    HistogramFeatures* features=new HistogramFeatures(3,16);
+    HistogramFeatures* features=new HistogramFeatures(4,16);
     // RBFKe
     //IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
-    ApproximateKernel* kernel= new ApproximateKernel(30);
-    //IntersectionKernel* kernel=new IntersectionKernel;
+    //ApproximateKernel* kernel= new ApproximateKernel(30);
+    IntersectionKernel* kernel=new IntersectionKernel;
     //Haar* features=new Haar(2);
-
+    
     int verbose = 0;
-    int display = 1;
+    int display = 0;
     int m       = features->calculateFeatureDimension();
     int K       = nRadial*nAngular+1;
     
@@ -65,34 +99,108 @@ int main(int argc, const char * argv[]) {
     
     bool useFilter=true;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+    
     LocationSampler* samplerForUpdate = new LocationSampler(r_update,nRadial,nAngular);
     LocationSampler* samplerForSearch = new LocationSampler(r_search,nRadial,nAngular);
     
     Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useFilter, display);
     
-    std::string rootFolder="/Users/Ivan/Files/Data/Tracking_benchmark/";
-    std::string alovRootFolder="/Users/Ivan/Files/Data/Tracking_alov300/";
-    
-    std::string vot2014RootFolder="/Users/Ivan/Files/Data/vot2014/";
-    DataSetWu2013* datasetWu2013=new DataSetWu2013;
+    return tracker;
+}
 
-    DatasetALOV300* datasetAlov=new DatasetALOV300;
+
+
+
+
+
+void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_images,Dataset* dataset,
+                             int from, int to,std::string saveFolder, bool saveResults){
+    
+    Struck tracker=getTracker();
+     std::time_t t1 = std::time(0);
+    
+    int frameNumber = 0;
+    // paralelize this loop
+    for (int videoNumber=from; videoNumber<to; videoNumber++) {
+        pair<string, vector<string>> gt_images=video_gt_images[videoNumber];
+        
+        vector<cv::Rect> groundTruth=dataset->readGroundTruth(gt_images.first);
+        
+        frameNumber+=gt_images.second.size();
+        cv::Mat image=cv::imread(gt_images.second[0]);
+        
+        
+        tracker.initialize(image, groundTruth[0]);
+        
+        
+        for (int i=1; i<5; i++) {
+            //for (int i=1; i<gt_images.second.size(); i++) {
+            
+            cv::Mat image=cv::imread(gt_images.second[i]);
+            
+            tracker.track(image);
+        }
+        
+        if (saveResults) {
+            std::string saveFileName=saveFolder+"/"+dataset->videos[videoNumber]+".dat";
+            
+            tracker.saveResults(saveFileName);
+        }
+        
+        tracker.reset();
+        
+        
+    }
+    
+    std::time_t t2 = std::time(0);
+    std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
+    //std::cout<<"No threads: "<<(t2-t1)<<std::endl;
+}
+
+void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string saveFolder, bool saveResults){
+    
+    using namespace std;
+    
+    vector<pair<string, vector<string>>> video_gt_images=dataset->prepareDataset(rootFolder);
+    
+    std::time_t t1 = std::time(0);
+
+    
+    std::vector<std::thread> th;
+    
+    arma::rowvec bounds=arma::linspace<rowvec>(0, video_gt_images.size(),NUM_THREADS);
+    
+    bounds=arma::round(bounds);
+    
+    for (int i=0; i<NUM_THREADS-1; i++) {
+        th.push_back(std::thread(runTrackerOnDatasetPart,std::ref(video_gt_images),std::ref(dataset),std::ref(bounds[i]),std::ref(bounds[i+1]),std::ref(saveFolder),std::ref(saveResults)));
+    }
+    
+    for(auto &t : th){
+        t.join();
+    }
+    
+   
+    std::time_t t2 = std::time(0);
+    //std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
+    std::cout<<"Time with threads: "<<(t2-t1)<<std::endl;
+    
+}
+
+
+int main(int argc, const char * argv[]) {
+
+    DataSetWu2013* wu2013=new DataSetWu2013;
+    
+    //DatasetALOV300* alov300=new DatasetALOV300;
     
     DatasetVOT2014* vot2014=new DatasetVOT2014;
-  
-    std::vector<std::pair<std::string,std::vector<std::string>>> set=vot2014->prepareDataset(vot2014RootFolder);
-    using namespace std;
-    using namespace cv;
     
+    //vot2014->showVideo(vot2014RootFolder,0);
     
-    vot2014->showVideo(vot2014RootFolder,17);
-
+    //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true);
+    applyTrackerOnDataset(vot2014, vot2014RootFolder, vot2014SaveFolder, true);
     
-
-    //tracker.applyTrackerOnDataset(datasetWu2013, rootFolder,6);
-    //tracker.applyTrackerOnDataset(datasetAlov, alovRootFolder,6);
-
     //tracker.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 0, 0, 250);
     //tracker.videoCapture();
     

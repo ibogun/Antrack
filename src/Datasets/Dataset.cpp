@@ -63,7 +63,7 @@ std::vector<std::string> Dataset::listImages(std::string imgLocation, std::strin
     
     using namespace std;
     vector<std::string> imgList;
-    std::regex e ("[[:digit:]]+."+format);
+    std::regex e ("(.*)\\."+format);
     
     DIR *dir;
     struct dirent *ent;

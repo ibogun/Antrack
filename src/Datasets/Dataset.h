@@ -16,8 +16,11 @@
 
 class Dataset {
     
+    
 
 public:
+    
+    std::vector<std::string> videos;
     
     static std::vector<std::string> listSubFolders(std::string folder);
     //static std::vector<std::string> listOnlySubfolders(std::string folder);
@@ -26,7 +29,7 @@ public:
     
     virtual std::vector<std::pair<std::string, std::vector<std::string>>> prepareDataset(std::string rootFolder)=0;
     
-    //TODO: replace cv::Rect -> cv::RotatedRect
+    
     virtual std::vector<cv::Rect> readGroundTruth(std::string)=0;
 };
 

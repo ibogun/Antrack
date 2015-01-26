@@ -114,6 +114,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>> DataSetWu2013::pre
         
         video_gt_images.push_back(groundTruth_images);
         
+        this->videos.push_back(videos[i]);
+        
     }
     
     

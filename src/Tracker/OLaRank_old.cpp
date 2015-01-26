@@ -55,7 +55,7 @@ void OLaRank_old::setParameters(params& learningParams, int& balance, int& m_, i
 rowvec OLaRank_old::predictAll(mat& newX){
     
     
-    return this->svm_kernel->predictAll(newX, this->S, this->B);
+    return this->svm_kernel->predictAll(newX, this->S, this->K);
 
 }
 

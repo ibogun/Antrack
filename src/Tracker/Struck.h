@@ -93,11 +93,21 @@ public:
     
     void updateDebugImage(cv::Mat* canvas,cv::Mat& img, cv::Rect &bestLocation,cv::Scalar colorOfBox);
     
-    void applyTrackerOnDataset(Dataset* dataset,std::string rootFolder, int videoNumber=-1);
+    void applyTrackerOnDataset(Dataset* dataset,std::string rootFolder,std::string saveFolder, bool saveResults);
+    
+    void applyTrackerOnVideo(Dataset* dataset, std::string rootFolder, int videoNumber);
     
     void applyTrackerOnVideoWithinRange(Dataset* dataset,std::string rootFolder,int videoNumber, int frameFrom, int frameTo);
     
     void saveResults(string fileName);
+    
+    void reset(){
+        
+        this->olarank->clear();
+        this->boundingBoxes.clear();
+        this->frames.clear();
+        this->framesTracked=0;
+    };
 };
 
 #endif /* defined(__Robust_Struck__Struck__) */

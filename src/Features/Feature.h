@@ -24,7 +24,7 @@ public:
     
     //virtual int calculateDimension()=0;
     
-    //TODO: replace cv::Rect -> cv::RotatedRect
+   
     virtual arma::mat calculateFeature(cv::Mat& processedImage,std::vector<cv::Rect>& rects)=0;
     virtual int calculateFeatureDimension()=0;
     

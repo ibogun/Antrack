@@ -75,7 +75,7 @@ std::vector<std::pair<std::string,std::vector<std::string>>> DatasetALOV300::pre
      */
     
     // step #1: list all types of videos
-    vector<string> videos           = listSubFolders(rootFolder);
+    //vector<string> videos           = listSubFolders(rootFolder);
 
     string datasetFolder            = rootFolder+"/imagedata++/";
     string datasetGroundTruthFolder = rootFolder+"/alov300++_rectangleAnnotation_full/";
@@ -88,13 +88,13 @@ std::vector<std::pair<std::string,std::vector<std::string>>> DatasetALOV300::pre
         string videosSpecificType = datasetFolder+videoTypes[i]+"/";
         string videosType_GT      = datasetGroundTruthFolder+videoTypes[i]+"/";
         
-        vector<string>videos     = listSubFolders(videosSpecificType);
-        vector<string> videos_gt = listSubFolders(videosType_GT);
+        vector<string> videos     = listSubFolders(videosSpecificType);
+        vector<string> videos_gt = listImages(videosType_GT, "ann");
         
         for (int j=0; j<(int)videos.size(); j++) {
             
             string fullVideoPath=videosSpecificType+videos[j]+"/";
-            string fullGroundTruthPath=videosType_GT+videos_gt[j];
+            string fullGroundTruthPath=videos_gt[j];
             
             vector<string> images=listImages(fullVideoPath, "jpg");
             
@@ -102,6 +102,8 @@ std::vector<std::pair<std::string,std::vector<std::string>>> DatasetALOV300::pre
             groundTruth_images=std::make_pair(fullGroundTruthPath, images);
             
             video_gt_images.push_back(groundTruth_images);
+            
+            this->videos.push_back(videos[j]);
             
         }
         

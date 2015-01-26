@@ -35,8 +35,10 @@ cv::Rect KalmanFilter_my::getBoundingBox(int bb_width, int bb_height,arma::colve
     
     arma::colvec x_k=x;
     
+
     int n=this->im_width;
     int m=this->im_height;
+
     
     for (int jj=0; jj<x_k.size(); jj++) {
         x_k(jj)=cvRound(x_k(jj));

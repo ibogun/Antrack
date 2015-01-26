@@ -93,6 +93,15 @@ public:
     // frameNumber - location unordered map
     unordered_map<int,std::pair<double, double>> locations;
     
+    void clear(){
+        
+        this->kern->clear();
+        this->S.clear();
+        this->velocity.clear();
+        this->locations.clear();
+    };
+    
+    
     //std::vector<std::pair<double,double>> locations;
     
     OLaRank_old(Kernel*,int seed=1);

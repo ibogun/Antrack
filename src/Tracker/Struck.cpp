@@ -13,8 +13,14 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
     
     srand(this->seed);
     // set dimensions of the sampler
-    int n=image.rows;
-    int m=image.cols;
+    
+    //WAS
+    //int n=image.rows;
+    //int m=image.cols;
+    
+    // NOW
+    int m=image.rows;
+    int n=image.cols;
     
     this->samplerForSearch->setDimensions(n, m,location.height,location.width);
     this->samplerForUpdate->setDimensions(n, m,location.height,location.width);
@@ -23,7 +29,6 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
     lastLocation=location;
     // sample in polar coordinates first
     
-    //TODO: replace cv::Rect -> cv::RotatedRect here
     std::vector<cv::Rect> locations;
     
     // add ground truth
@@ -119,7 +124,7 @@ void Struck::track(cv::Mat &image){
         
         bestLocationFilter=filter.getBoundingBox(this->lastLocation.width, this->lastLocation.height, x_k);
         
-        //TODO: This formula will be different with rotatedRect
+       
         double overlap=(bestLocationFilter&bestLocationDetector).area()/(double((bestLocationDetector |bestLocationFilter).area()));
         
         if (overlap>0.5) {
@@ -335,35 +340,91 @@ void Struck::updateDebugImage(cv::Mat* canvas,cv::Mat& img, cv::Rect &bestLocati
  *  @param rootFolder  root folder for the dataset
  *  @param videoNumber which video to use, -1 means use all, default=-1
  */
-void Struck::applyTrackerOnDataset(Dataset *dataset,std::string rootFolder,int videoNumber){
+void Struck::applyTrackerOnVideo(Dataset *dataset,std::string rootFolder,int videoNumber){
+    
+    using namespace std;
+
+    vector<pair<string, vector<string>>> video_gt_images=dataset->prepareDataset(rootFolder);
+    
+    if(videoNumber<0 || videoNumber>=video_gt_images.size()){
+        
+        std::cout<<"Video number is incorrect"<<std::endl;
+        return;
+    }
+    
+    
+    pair<string, vector<string>> gt_images=video_gt_images[videoNumber];
+    
+    vector<cv::Rect> groundTruth=dataset->readGroundTruth(gt_images.first);
+
+    
+    cv::Mat image=cv::imread(gt_images.second[0]);
+    
+    
+    this->initialize(image, groundTruth[0]);
+    
+    std::time_t t1 = std::time(0);
+    for (int i=1; i<gt_images.second.size(); i++) {
+        cv::Mat image=cv::imread(gt_images.second[i]);
+
+        this->track(image);
+    }
+    std::time_t t2 = std::time(0);
+    
+    std::cout<<"Frames per second: "<<gt_images.second.size()/(1.0*(t2-t1))<<std::endl;
+    
+    
+}
+
+
+void Struck::applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string saveFolder, bool saveResults){
     
     using namespace std;
     
     vector<pair<string, vector<string>>> video_gt_images=dataset->prepareDataset(rootFolder);
     
-    if (videoNumber<0) {
-        //TODO: add code to save results of the tracking to some folder
-        
-        // code to apply tracker on the whole dataset
-        
-    } else if(videoNumber<video_gt_images.size()){
+    std::time_t t1 = std::time(0);
+    
+    string deleteFolderCommand="rm -r "+saveFolder;
+    string createFolderCommand="mkdir "+saveFolder;
+    
+    int frameNumber=0;
+    for (int videoNumber=0; videoNumber<video_gt_images.size(); videoNumber++) {
         pair<string, vector<string>> gt_images=video_gt_images[videoNumber];
         
         vector<cv::Rect> groundTruth=dataset->readGroundTruth(gt_images.first);
+        
         
         cv::Mat image=cv::imread(gt_images.second[0]);
         
         
         this->initialize(image, groundTruth[0]);
         
-        for (int i=1; i<gt_images.second.size(); i++) {
+       
+        for (int i=1; i<5; i++) {
+            //for (int i=1; i<gt_images.second.size(); i++) {
+
             cv::Mat image=cv::imread(gt_images.second[i]);
             
             this->track(image);
         }
+       
+        frameNumber+=gt_images.second.size();
+        
+        //TODO: Save results after each run
+        if (saveResults) {
+            std::string saveFileName=saveFolder+"/"+dataset->videos[videoNumber]+".dat";
+            
+            this->saveResults(saveFileName);
+        }
+        
+        this->reset();
+     
+        
     }
-    
-    
+    std::time_t t2 = std::time(0);
+    std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
+    //std::cout<<"No threads: "<<(t2-t1)<<std::endl;
 }
 
 
@@ -399,7 +460,8 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
     }
     std::time_t t2 = std::time(0);
     
-    std::cout<<"Frames per second: "<<gt_images.second.size()/(1.0*(t2-t1))<<std::endl;
+    //std::cout<<"Frames per second: "<<gt_images.second.size()/(1.0*(t2-t1))<<std::endl;
+    std::cout<<"No threads: "<<(t2-t1)<<std::endl;
 }
 
 

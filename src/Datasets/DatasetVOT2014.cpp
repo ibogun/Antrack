@@ -11,7 +11,7 @@
 #include <regex>
 #include <math.h>
 
-//TODO: Implement dataset functions for VOT2014 dataset
+
 
 std::vector<std::pair<std::string,std::vector<std::string>>> DatasetVOT2014::prepareDataset(std::string rootFolder){
     
@@ -31,7 +31,7 @@ std::vector<std::pair<std::string,std::vector<std::string>>> DatasetVOT2014::pre
         // create a string which represents ground truth and image location
         string imgLocation=rootFolder+videos[i]+"/";
         
-        //TODO: This is not correct
+        
         string gt=rootFolder+videos[i]+"/groundtruth.txt";
         
         // list all images
@@ -43,6 +43,8 @@ std::vector<std::pair<std::string,std::vector<std::string>>> DatasetVOT2014::pre
         
         video_gt_images.push_back(groundTruth_images);
         
+        this->videos.push_back(videos[i]);
+        
     }
     
     
@@ -51,6 +53,15 @@ std::vector<std::pair<std::string,std::vector<std::string>>> DatasetVOT2014::pre
 
 std::vector<cv::Rect> DatasetVOT2014::readGroundTruth(std::string fileName){
     std::vector<cv::Rect> gtRect;
+    
+    std::vector<cv::RotatedRect> rotatedRects=readComplete(fileName);
+    
+    for (int i=0; i<rotatedRects.size(); i++) {
+        
+        cv::Rect r=rotatedRects[i].boundingRect();
+        gtRect.push_back(r);
+        
+    }
     
     return gtRect;
 }
@@ -186,6 +197,9 @@ void DatasetVOT2014::showVideo(std::string rootFolder, int vidNumber){
             
         }
         
+        cv::Rect regular=rect.boundingRect();
+        
+        rectangle(im, regular, cv::Scalar(150));
         cv::imshow("cropped", cropped);
         cv::waitKey(2);
         

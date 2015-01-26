@@ -8,7 +8,7 @@
 
 #include "LocationSampler.h"
 
-//TODO: In this whole file replace cv::Rect -> cv::RotatedRect
+
 
 /**
  *  Samples rectangles in polar coordinates

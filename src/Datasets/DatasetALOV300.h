@@ -16,7 +16,7 @@ class DatasetALOV300:public Dataset{
     
     
 public:
-    
+    //static std::vector<std::string> listSubFolders(std::string folder);
     std::vector<std::pair<std::string, std::vector<std::string>>> prepareDataset(std::string rootFolder);
     std::vector<cv::Rect> readGroundTruth(std::string);
     
