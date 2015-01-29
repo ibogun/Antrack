@@ -38,6 +38,8 @@ class KalmanFilter_my {
     // constant used for robustness of the filter, if infinity -> classical filter ( by default it is)
     double b;
     
+    friend std::ostream& operator<<(std::ostream &strm, const KalmanFilter_my &f);
+    
 public:
     
     arma::colvec x_kk;                  // current value of the variables

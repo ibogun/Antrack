@@ -56,8 +56,13 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
         int R_cov=5;
         int Q_cov=5;
         int P=3;
+        
+        
         filter=KalmanFilterGenerator::generateConstantVelocityFilter(x_k,n,m,R_cov,Q_cov,P,robustConstant_b);
         lastRectFilterAndDetectorAgreedOn=lastLocation;
+        
+        //filter.x_kk=x_k;
+        
         updateTracker=true;
     }
     
@@ -425,6 +430,10 @@ void Struck::applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std
     std::time_t t2 = std::time(0);
     std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
     //std::cout<<"No threads: "<<(t2-t1)<<std::endl;
+    
+    std::ofstream out(saveFolder+"/"+"tracker_info.txt");
+    out << this;
+    out.close();
 }
 
 
@@ -576,6 +585,39 @@ void Struck::videoCapture(){
         cv::resize(cameraFrame, cameraFrame, size);
         this->track(cameraFrame);
     }
+}
+
+
+std::ostream& operator<<(std::ostream &strm,const  Struck &s) {
+
+    using namespace std;
+    
+
+    //TODO: << for Kernel
+    //TODO: << for features
+    
+    string spacing="\n\n";
+    string line="--------------------------------------------------------\n";
+    
+    strm<<"Structured tracker. \n"<<"========================================================\n";
+    
+    if (s.useFilter) {
+        strm<<line<<"Robust Kalman filter parameters: \n"<<line<<s.filter;
+    }
+
+    
+    
+    strm<<line<<"Learning parameters: \n"+line<<*s.olarank;
+    
+    strm<<line<<"Sampling parameters: \n"+line<<"For search: \n"<<*s.samplerForSearch<<line<<"For update \n"<<*s.samplerForUpdate;
+    
+    
+    strm<<line<<"Feature representation: \n"<<line<<s.feature->getInfo();
+    
+    strm<<"========================================================\n";
+    return strm;
+    
+    
 }
 
 void Struck::saveResults(string filename){

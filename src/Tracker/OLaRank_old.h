@@ -80,6 +80,8 @@ private:
     double decayFactor=0.5;
     bool useVelocity=false;
     
+    friend std::ostream& operator<<(std::ostream&, const OLaRank_old&);
+    
 public:
     // size of the pattern
     int m;

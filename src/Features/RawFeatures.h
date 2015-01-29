@@ -22,6 +22,11 @@ public:
     arma::mat calculateFeature(cv::Mat& processedImage, std::vector<cv::Rect>& rects);
     int calculateFeatureDimension(){return size*size;};
     
+    std::string getInfo(){
+        std::string r="Raw features with size: "+std::to_string(size);
+        return r;
+    };
+    
 };
 
 #endif /* defined(__Robust_Struck__RawFeatures__) */

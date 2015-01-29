@@ -14,12 +14,18 @@
 
 class Kernel {
 
+
+
     
 public:
 
     ~Kernel(){};
+    
+    
+    
     virtual void preprocess(std::vector<supportData*>& S, int K)=0;
     virtual double calculate(arma::mat& x,int r1,arma::mat& x2,int r2)=0;
+    virtual std::string getInfo()=0;
     
     virtual arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S, int K);
     

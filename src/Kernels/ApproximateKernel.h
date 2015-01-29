@@ -33,6 +33,11 @@ public:
         return intKernelFast->calculate(x, r1, x2, r2);
     };
     
+    std::string getInfo(){
+        std::string r="Approximate Intersection kernel with "+std::to_string(nPts)+" points";
+        return r;
+    };
+    
     
     
     

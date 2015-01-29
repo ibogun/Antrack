@@ -14,10 +14,12 @@
 #include "Kernels/IntersectionKernel.h"
 #include "Kernels/IntersectionKernel_fast.h"
 #include "Kernels/ApproximateKernel.h"
+#include "Kernels/LinearKernel.h"
 
 #include "Features/RawFeatures.h"
 #include "Features/Haar.h"
 #include "Features/Histogram.h"
+#include "Features/HoG.h"
 
 #include "Tracker/LocationSampler.h"
 #include "Tracker/OLaRank_old.h"
@@ -39,7 +41,7 @@
 #elif __APPLE__
 #include "TargetConditionals.h"
 
-#define NUM_THREADS         10
+#define NUM_THREADS         8
 
 #define wu2013RootFolder    "/Users/Ivan/Files/Data/Tracking_benchmark/"
 #define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
@@ -60,6 +62,15 @@
 #endif
 #elif __linux
 // linux
+#define NUM_THREADS         8
+
+#define wu2013RootFolder    "/Users/Ivan/Files/Data/Tracking_benchmark/"
+#define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
+#define vot2014RootFolder   "/media/drive/UbuntuFiles/Datasets/Tracking/vot2014"
+
+#define wu2013SaveFolder    "/media/drive/UbuntuFiles/Results/wu2013"
+#define alovSaveFolder      "/media/drive/UbuntuFiles/Results/alov300"
+#define vot2014SaveFolder    "/media/drive/UbuntuFiles/Results/vot2014"
 #elif __unix // all unices not caught above
 // Unix
 #elif __posix
@@ -79,15 +90,29 @@ Struck getTracker(){
     int B        = 100;
     
     //RawFeatures* features=new RawFeatures(16);
-    HistogramFeatures* features=new HistogramFeatures(4,16);
+    cv::Size size(64,64);
+    
+    HoG* features=new HoG(size);
+    
+
+    
+    //HistogramFeatures* features=new HistogramFeatures(4,16);
     // RBFKe
     //IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
     //ApproximateKernel* kernel= new ApproximateKernel(30);
-    IntersectionKernel* kernel=new IntersectionKernel;
+    //IntersectionKernel* kernel=new IntersectionKernel;
+    
+    //RBFKernel* kernel=new RBFKernel(0.2);
+    
+    LinearKernel* kernel=new LinearKernel;
+    
+    
+    
+    
     //Haar* features=new Haar(2);
     
     int verbose = 0;
-    int display = 0;
+    int display = 1;
     int m       = features->calculateFeatureDimension();
     int K       = nRadial*nAngular+1;
     
@@ -105,6 +130,25 @@ Struck getTracker(){
     
     Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useFilter, display);
     
+    
+    int measurementSize=6;
+    arma::colvec x_k(measurementSize,fill::zeros);
+    x_k(0)=0;
+    x_k(1)=0;
+    x_k(2)=0;
+    x_k(3)=0;
+    
+    int robustConstant_b=10;
+    
+    int R_cov=5;
+    int Q_cov=5;
+    int P=3;
+    
+    
+    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
+
+    tracker.setFilter(filter);
+    
     return tracker;
 }
 
@@ -114,9 +158,12 @@ Struck getTracker(){
 
 
 void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_images,Dataset* dataset,
-                             int from, int to,std::string saveFolder, bool saveResults){
+                             int from, int to,std::string saveFolder, bool saveResults, bool fullDataset){
     
     Struck tracker=getTracker();
+    
+    tracker.display=0;
+    
      std::time_t t1 = std::time(0);
     
     int frameNumber = 0;
@@ -133,8 +180,13 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
         tracker.initialize(image, groundTruth[0]);
         
         
-        for (int i=1; i<5; i++) {
-            //for (int i=1; i<gt_images.second.size(); i++) {
+        int nFrames=5;
+        if (fullDataset) {
+            nFrames=gt_images.second.size();
+            
+        }
+        
+          for (int i=1; i<nFrames; i++) {
             
             cv::Mat image=cv::imread(gt_images.second[i]);
             
@@ -157,7 +209,7 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
     //std::cout<<"No threads: "<<(t2-t1)<<std::endl;
 }
 
-void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string saveFolder, bool saveResults){
+void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string saveFolder, bool saveResults,bool fullDataset){
     
     using namespace std;
     
@@ -173,7 +225,7 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string
     bounds=arma::round(bounds);
     
     for (int i=0; i<NUM_THREADS-1; i++) {
-        th.push_back(std::thread(runTrackerOnDatasetPart,std::ref(video_gt_images),std::ref(dataset),std::ref(bounds[i]),std::ref(bounds[i+1]),std::ref(saveFolder),std::ref(saveResults)));
+        th.push_back(std::thread(runTrackerOnDatasetPart,std::ref(video_gt_images),std::ref(dataset),std::ref(bounds[i]),std::ref(bounds[i+1]),std::ref(saveFolder),std::ref(saveResults),std::ref(fullDataset)));
     }
     
     for(auto &t : th){
@@ -185,7 +237,13 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string
     //std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
     std::cout<<"Time with threads: "<<(t2-t1)<<std::endl;
     
+    std::ofstream out(saveFolder+"/"+"tracker_info.txt");
+    out << getTracker();
+    out.close();
+    
 }
+
+
 
 
 int main(int argc, const char * argv[]) {
@@ -195,13 +253,19 @@ int main(int argc, const char * argv[]) {
     //DatasetALOV300* alov300=new DatasetALOV300;
     
     DatasetVOT2014* vot2014=new DatasetVOT2014;
+
+
+    
     
     //vot2014->showVideo(vot2014RootFolder,0);
     
-    //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true);
-    applyTrackerOnDataset(vot2014, vot2014RootFolder, vot2014SaveFolder, true);
+    applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,true);
+    //applyTrackerOnDataset(vot2014, vot2014RootFolder, vot2014SaveFolder, true,false);
     
-    //tracker.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 0, 0, 250);
+    //Struck tracker=getTracker();
+    
+    //cout<<tracker<<endl;
+    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 0, 0, 250);
     //tracker.videoCapture();
     
     return 0;

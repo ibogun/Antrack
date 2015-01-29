@@ -26,6 +26,8 @@ class LocationSampler {
     
     cv::Rect fromCenterToBoundingBox(const double&,const double&,const double&, const double&);
     
+    friend std::ostream& operator<<(std::ostream&,const  LocationSampler&);
+    
 public:
     
     int nRadial;

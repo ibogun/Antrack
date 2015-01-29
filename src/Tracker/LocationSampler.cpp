@@ -151,3 +151,12 @@ inline cv::Rect LocationSampler::fromCenterToBoundingBox(const double& x,const d
     
     return result;
 }
+
+
+std::ostream& operator<<(std::ostream& strm, const LocationSampler& s){
+    
+    strm<<"R                 : "<<s.radius<<"\n";
+    strm<<"nRadial           : "<<s.nRadial<<"\n";
+    strm<<"nAngular          : "<<s.nAngular<<"\n";
+    return strm;
+}

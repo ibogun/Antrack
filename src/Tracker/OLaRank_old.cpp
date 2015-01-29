@@ -1125,6 +1125,19 @@ void OLaRank_old::deleteKernelValues(int frameNumber){
     
 }
 
+
+std::ostream& operator<<(std::ostream &strm,const  OLaRank_old &s) {
+
+    strm<<"OLaRank parameters: \n";
+    strm<<"C                 : "<<s.parameters.C<<"\n";
+    strm<<"n_R               : "<<s.parameters.n_R<<"\n";
+    strm<<"n_O               : "<<s.parameters.n_O<<"\n";
+    strm<<"B                 : "<<s.B<<"\n";
+    strm<<"Kernel: \n"<<s.svm_kernel->getInfo()<<"\n";
+    
+    return strm;
+    
+}
 OLaRank_old::~OLaRank_old(){
     
     {

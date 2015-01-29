@@ -14,6 +14,7 @@ project(${PROJECT_NAME})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 find_package(OpenCV REQUIRED )
 find_package(Armadillo REQUIRED)
+find_package (Threads REQUIRED)
 # If you want your own include/ directory, set this, and then you can do
 # include_directories(${COMMON_INCLUDES}) in other CMakeLists.txt files.
 # set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include)
@@ -79,7 +80,7 @@ if (test)
   add_executable(RunUnitTests ${SOURCE_FILES} ${TEST_FILES})
   #add_executable(RunUnitTests ${SOURCE_FILES})
   # Standard linking to gtest stuff.
-  target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})
+  target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
   # Extra linking for the project.
   #target_link_libraries(runUnitTests project1_lib)
@@ -96,7 +97,7 @@ endif()
 
 if (experiments)
 	add_executable(experiment_01_fast_intersection_kernels ${SOURCE_FILES} ${Experiment_01})
-	target_link_libraries(experiment_01_fast_intersection_kernels ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})
+	target_link_libraries(experiment_01_fast_intersection_kernels ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 
@@ -104,5 +105,5 @@ add_executable(robust_struck_tracker_v1.0 ${SOURCE_FILES} ${PROJECT_MAIN})
 include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
-TARGET_LINK_LIBRARIES(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES})
+TARGET_LINK_LIBRARIES(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 

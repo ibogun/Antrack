@@ -36,5 +36,11 @@ public:
     arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S, int K);
     
     double predictOne(arma::rowvec& x);
+    
+    
+    std::string getInfo(){
+        std::string r="Fast exact Intersection kernel";
+        return r;
+    };
 };
 #endif /* defined(__Robust_tracking_by_detection__IntersectionKernel_fast__) */

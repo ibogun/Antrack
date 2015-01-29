@@ -28,6 +28,8 @@ public:
     virtual arma::mat calculateFeature(cv::Mat& processedImage,std::vector<cv::Rect>& rects)=0;
     virtual int calculateFeatureDimension()=0;
     
+    virtual std::string getInfo()=0;
+    
     arma::mat reshapeYs(std::vector<cv::Rect>& locations){
         
         arma::mat y((int)locations.size(),5,arma::fill::zeros);

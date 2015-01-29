@@ -31,6 +31,14 @@ public:
         return S*NUMBER_OF_BINS_PER_HISTOGRAM;
     };
     
+    std::string getInfo(){
+        std::string r="Histogram features with \n";
+        r+="L                 : "+std::to_string(L)+"\n";
+        r+="BINS/Histogram    : "+std::to_string(NUMBER_OF_BINS_PER_HISTOGRAM)+"\n";
+        
+        return r;
+    };
+    
 };
 
 #endif /* defined(__Robust_Struck__Histogram__) */

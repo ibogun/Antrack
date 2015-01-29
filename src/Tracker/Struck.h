@@ -37,7 +37,7 @@ class Struck {
     cv::Rect lastLocation;
     cv::Rect lastRectFilterAndDetectorAgreedOn;
     
-    int display;
+    
     
     std::unordered_map<int,cv::Mat> frames;
     
@@ -55,8 +55,10 @@ class Struck {
     
     void copyFromRectangleToImage(cv::Mat& canvas,cv::Mat& image,cv::Rect rect,int step,cv::Vec3b color);
 
+    friend std::ostream& operator<<(std::ostream&, const Struck&);
     
 public:
+    int display;
     
     Struck();
     
@@ -100,6 +102,8 @@ public:
     void applyTrackerOnVideoWithinRange(Dataset* dataset,std::string rootFolder,int videoNumber, int frameFrom, int frameTo);
     
     void saveResults(string fileName);
+    
+    void setFilter(const KalmanFilter_my& var){filter=var;};
     
     void reset(){
         

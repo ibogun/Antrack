@@ -126,7 +126,17 @@ arma::colvec KalmanFilter_my::predictAndCorrect(arma::colvec& z_k){
 
 
 
-
+std::ostream& operator<<(std::ostream &strm, const KalmanFilter_my &f){
+    std::string line="--------------------------------------------------------\n";
+    strm<<"F: \n"<<f.F<<line;
+    strm<<"H: \n"<<f.H<<line;
+    strm<<"Q: \n"<<f.Q<<line;
+    strm<<"R: \n"<<f.R<<line;
+    strm<<"input vector dim  : "<<f.n<<"\n";
+    strm<<"robust constant, b: "<<f.b<<"\n";
+    
+    return strm;
+}
 
 
 

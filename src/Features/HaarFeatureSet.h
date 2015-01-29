@@ -31,7 +31,10 @@ public:
     
     void calculateFeatures(std::vector<cv::Rect>&,std::vector<cv::Rect>&,arma::mat&,arma::mat&);
    
-    
+    std::string getInfo(){
+        std::string r="Haar of size "+std::to_string(featureSize);
+        return r;
+    };
     
 };
 
