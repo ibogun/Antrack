@@ -32,6 +32,8 @@
 #include <pthread.h>
 #include <thread>
 
+#include <fstream>
+
 
 #ifdef _WIN32
 //define something for Windows (32-bit and 64-bit, this part is common)
@@ -105,14 +107,12 @@ Struck getTracker(){
     //RBFKernel* kernel=new RBFKernel(0.2);
     
     LinearKernel* kernel=new LinearKernel;
-    
-    
-    
+
     
     //Haar* features=new Haar(2);
     
     int verbose = 0;
-    int display = 1;
+    int display = 0;
     int m       = features->calculateFeatureDimension();
     int K       = nRadial*nAngular+1;
     
@@ -240,8 +240,12 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string
     std::ofstream out(saveFolder+"/"+"tracker_info.txt");
     out << getTracker();
     out.close();
+
     
 }
+
+
+
 
 
 
@@ -252,14 +256,15 @@ int main(int argc, const char * argv[]) {
     
     //DatasetALOV300* alov300=new DatasetALOV300;
     
-    DatasetVOT2014* vot2014=new DatasetVOT2014;
+    //DatasetVOT2014* vot2014=new DatasetVOT2014;
 
-
+    Struck tracker=getTracker();
+  
     
     
     //vot2014->showVideo(vot2014RootFolder,0);
     
-    applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,true);
+    applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,false);
     //applyTrackerOnDataset(vot2014, vot2014RootFolder, vot2014SaveFolder, true,false);
     
     //Struck tracker=getTracker();

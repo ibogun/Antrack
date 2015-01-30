@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.4)
 
 # Options. Turn on with 'cmake -Dmyvarname=ON'.
 option(test "Build all tests." OFF) # Makes boolean 'test' available.
+option(VOT2014 "Build VOT2014-friendly" OFF)
 option(experiments "Build all experiments." OFF) # Makes boolean 'test' available.
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
@@ -42,6 +43,13 @@ set(PROJECT_MAIN
 set(Experiment_01 
 	src/Experiments/Experiment_efficient_int_kernel.cpp  
 	src/Experiments/Experiment_efficient_int_kernel.h
+)
+
+
+FILE(GLOB TRAX_FILES
+	src/Datasets/vot2014_trax/*.h
+	src/Datasets/vot2014_trax/*.c
+	src/Datasets/vot2014_trax/main.cpp
 )
 	
 
@@ -98,6 +106,11 @@ endif()
 if (experiments)
 	add_executable(experiment_01_fast_intersection_kernels ${SOURCE_FILES} ${Experiment_01})
 	target_link_libraries(experiment_01_fast_intersection_kernels ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+endif()
+
+if(VOT2014)
+	add_executable(struck_vot2014 ${SOURCE_FILES} ${TRAX_FILES})
+	target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 

@@ -88,7 +88,7 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
 
 
 
-void Struck::track(cv::Mat &image){
+cv::Rect Struck::track(cv::Mat &image){
 
     std::vector<cv::Rect> locationsOnaGrid;
     locationsOnaGrid.push_back(lastLocation);
@@ -200,6 +200,8 @@ void Struck::track(cv::Mat &image){
     }
     
     framesTracked++;
+    
+    return lastLocation;
     
 }
 
@@ -639,7 +641,16 @@ void Struck::saveResults(string filename){
             boxes(i,3)=b.height;
         }
         
-        boxes.save(filename,arma::raw_ascii);
+        ofstream myfile;
+        
+        myfile.open(filename);
+        
+        for (int i=0; i<boundingBoxes.size(); i++) {
+            myfile<<boundingBoxes[i].x<<","<<boundingBoxes[i].y<<","
+            <<boundingBoxes[i].width<<","<<boundingBoxes[i].height<<"\n";
+        }
+        myfile.close();
+        //boxes.save(filename,arma::csv_ascii);
     }
     
 }

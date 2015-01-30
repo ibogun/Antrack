@@ -91,7 +91,7 @@ public:
     
     void allocateCanvas(cv::Mat&);
     
-    void track(cv::Mat& image);
+    cv::Rect track(cv::Mat& image);
     
     void updateDebugImage(cv::Mat* canvas,cv::Mat& img, cv::Rect &bestLocation,cv::Scalar colorOfBox);
     
