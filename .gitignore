@@ -4,6 +4,7 @@
 build/*
 bin/*
 xcode/*
+*.p
 
 
 # Compiled Object files

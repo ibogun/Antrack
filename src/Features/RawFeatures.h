@@ -23,7 +23,7 @@ public:
     int calculateFeatureDimension(){return size*size;};
     
     std::string getInfo(){
-        std::string r="Raw features with size: "+std::to_string(size);
+        std::string r="Raw features with size: "+std::to_string(size)+" \n";
         return r;
     };
     

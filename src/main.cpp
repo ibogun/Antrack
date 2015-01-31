@@ -91,10 +91,10 @@ Struck getTracker(){
     int nAngular = 16;
     int B        = 100;
     
-    //RawFeatures* features=new RawFeatures(16);
+    RawFeatures* features=new RawFeatures(16);
     cv::Size size(64,64);
     
-    HoG* features=new HoG(size);
+    //HoG* features=new HoG(size);
     
 
     
