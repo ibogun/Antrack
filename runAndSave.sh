@@ -1,3 +1,13 @@
+
+
+currentDir=$(pwd)
+
+
+cd build/
+make
+
+cd $currentDir
+
 if [ "$(uname)" == "Darwin" ]; then
     # Do something under Mac OS X platform    
 	savePath="/Users/Ivan/Files/Results/Tracking/wu2013"  
@@ -13,7 +23,7 @@ datasetType='wu2013'
 echo "Please enter run identifier..."
 read runIdentifier
 
-currentDir=$(pwd)
+./build/bin/robust_struck_tracker_v1.0
 
 cd python/Evaluation/
 

@@ -66,7 +66,7 @@
 // linux
 #define NUM_THREADS         8
 
-#define wu2013RootFolder    "/media/drive/UbuntuFiles/Datasets/Tracking/wu2013/"
+#define wu2013RootFolder    "/Users/Ivan/Files/Data/Tracking_benchmark/"
 #define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
 #define vot2014RootFolder   "/media/drive/UbuntuFiles/Datasets/Tracking/vot2014"
 
