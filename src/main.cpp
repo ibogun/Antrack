@@ -91,28 +91,28 @@ Struck getTracker(){
     int nAngular = 16;
     int B        = 100;
     
-    RawFeatures* features=new RawFeatures(16);
+    //RawFeatures* features=new RawFeatures(16);
     cv::Size size(64,64);
     
     //HoG* features=new HoG(size);
     
 
     
-    //HistogramFeatures* features=new HistogramFeatures(4,16);
+    HistogramFeatures* features=new HistogramFeatures(4,16);
     // RBFKe
-    //IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
+    IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
     //ApproximateKernel* kernel= new ApproximateKernel(30);
     //IntersectionKernel* kernel=new IntersectionKernel;
     
     //RBFKernel* kernel=new RBFKernel(0.2);
     
-    LinearKernel* kernel=new LinearKernel;
+    //LinearKernel* kernel=new LinearKernel;
 
     
     //Haar* features=new Haar(2);
     
     int verbose = 0;
-    int display = 0;
+    int display = 1;
     int m       = features->calculateFeatureDimension();
     int K       = nRadial*nAngular+1;
     
@@ -180,7 +180,7 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
         tracker.initialize(image, groundTruth[0]);
         
         
-        int nFrames=5;
+        int nFrames=10;
         if (fullDataset) {
             nFrames=gt_images.second.size();
             
@@ -264,13 +264,13 @@ int main(int argc, const char * argv[]) {
     
     //vot2014->showVideo(vot2014RootFolder,0);
     
-    applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,false);
+    applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,true);
     //applyTrackerOnDataset(vot2014, vot2014RootFolder, vot2014SaveFolder, true,false);
     
     //Struck tracker=getTracker();
     
     //cout<<tracker<<endl;
-    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 0, 0, 250);
+    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 3, 0, 250);
     //tracker.videoCapture();
     
     return 0;
