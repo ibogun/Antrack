@@ -418,7 +418,7 @@ void Struck::applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std
        
         frameNumber+=gt_images.second.size();
         
-        //TODO: Save results after each run
+       
         if (saveResults) {
             std::string saveFileName=saveFolder+"/"+dataset->videos[videoNumber]+".dat";
             
@@ -595,8 +595,6 @@ std::ostream& operator<<(std::ostream &strm,const  Struck &s) {
     using namespace std;
     
 
-    //TODO: << for Kernel
-    //TODO: << for features
     
     string spacing="\n\n";
     string line="--------------------------------------------------------\n";

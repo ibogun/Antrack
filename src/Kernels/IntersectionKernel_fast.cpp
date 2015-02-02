@@ -9,16 +9,17 @@
 #include "IntersectionKernel_fast.h"
 
 
-void IntersectionKernel_fast::preprocess(std::vector<supportData *> &S,int m){
+void IntersectionKernel_fast::preprocess(std::vector<supportData *> &S,int B,int K){
     
     using namespace arma;
     
-    colvec beta(m,arma::fill::zeros);
+    // BALANCE should be here
+    colvec beta(B,arma::fill::zeros);
     
     // get size
     uword n=S[0]->x->n_cols;
     
-    mat X(m,n,arma::fill::zeros);
+    mat X(B,n,arma::fill::zeros);
     
     // iterate over all non-zero betas and add them into beta column vector
     // Also, populate non-sorted matrix X
@@ -123,9 +124,9 @@ void IntersectionKernel_fast::preprocessMatrices(arma::mat &X, arma::colvec &bet
     this->x_s=x_s;
 }
 
-arma::rowvec IntersectionKernel_fast::predictAll(arma::mat &newX, std::vector<supportData *> &S, int K){
+arma::rowvec IntersectionKernel_fast::predictAll(arma::mat &newX, std::vector<supportData *> &S,int B, int K){
     
-    this->preprocess(S, K);
+    this->preprocess(S,B, K);
     
     int nRows=newX.n_rows;
     arma::rowvec c(nRows,arma::fill::zeros);

@@ -17,13 +17,13 @@
  *  @param locations       vector of sampled bounding boxes
  */
 void LocationSampler::sampleEquiDistant(cv::Rect& currentLocation,
-                                    std::vector<cv::Rect> &locations){
+                                        std::vector<cv::Rect> &locations){
     
     double centerX=currentLocation.x+currentLocation.width/2;
     double centerY=currentLocation.y+currentLocation.height/2;
     
-//    std::vector<double> radialValues=linspace(0, radius, nRadial+1);
-//    std::vector<double> angularValues=linspace(0, 2*M_PI, nAngular+1);
+    //    std::vector<double> radialValues=linspace(0, radius, nRadial+1);
+    //    std::vector<double> angularValues=linspace(0, 2*M_PI, nAngular+1);
     
     arma::vec radialValues=arma::linspace<arma::vec>(0,radius,nRadial+1);
     arma::vec angularValues=arma::linspace<arma::vec>(0,2*M_PI, nAngular+1);
@@ -83,6 +83,53 @@ void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation, std::vector<cv::R
                 locations.push_back(rect);
             }
             
+        }
+    }
+
+    int scaleR=R/6;
+    
+    double downsample=1.05;
+    
+    for (int scale_w=-2; scale_w<=2; scale_w++) {
+        
+        for (int scale_h=-2; scale_h<=2; scale_h++) {
+            
+            
+            if (scale_w==0 && scale_h==0) {
+                continue;
+            }
+            
+            int halfWidth_scale=halfWidth*pow(downsample, scale_w);
+            int halfHeight_scale=halfHeight*pow(downsample,scale_h);
+            
+            int width_scale=halfWidth_scale*2;
+            int height_scale=halfHeight_scale*2;
+            
+            for (int x=-scaleR; x<=scaleR; x=x+step) {
+                for (int y=-scaleR; y<=scaleR; y=y+step) {
+                    
+                    
+                    // make sure everything is within the radius
+                    if (sqrt(pow(x, 2)+pow(y, 2))>scaleR) {
+                        continue;
+                    }
+                    
+                    // get the top left corner
+                    int bb_x=centerX+x-halfWidth_scale;
+                    int bb_y=centerY+y-halfHeight_scale;
+                    
+                    
+                    cv::Point topLeft(bb_x, bb_y);
+                    cv::Point bottomRight(bb_x+width_scale, bb_y+height_scale);
+                    
+                    if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
+                        
+                        cv::Rect rect(bb_x,bb_y,width_scale,height_scale);
+                        locations.push_back(rect);
+                    }
+                    
+                }
+            }
         }
     }
 }

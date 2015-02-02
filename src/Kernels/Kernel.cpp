@@ -9,11 +9,11 @@
 #include "Kernel.h"
 
 
-arma::rowvec Kernel::predictAll(arma::mat &newX,std::vector<supportData*>& S, int K){
+arma::rowvec Kernel::predictAll(arma::mat &newX,std::vector<supportData*>& S,int B, int K){
     using namespace arma;
     
     // preprocess first
-    preprocess(S, K);
+    preprocess(S,B, K);
     
     int n=newX.n_rows;
     

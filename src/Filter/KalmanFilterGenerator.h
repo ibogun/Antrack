@@ -21,6 +21,8 @@ public:
     
     static KalmanFilter_my generateConstantAccelerationFilter(arma::colvec x_0,int im_w,int im_h,double q, double r, double p, double b=std::numeric_limits<double>::infinity());
     
+    static KalmanFilter_my generateConstantVelocityWithScaleFilter(arma::colvec x_0,int im_w,int im_h,double q, double r, double p, double b=std::numeric_limits<double>::infinity());
+    
 };
 
 #endif /* defined(__Structured_BING__KalmanFilterGenerator__) */

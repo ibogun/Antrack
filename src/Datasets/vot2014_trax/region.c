@@ -86,7 +86,7 @@ int region_parse(char* buffer, Region** region) {
 	(*region) = NULL;
 
 	if (buffer[0] == '<') {
-		/* TODO: mask */
+		
 		return 0;
 	}
 

@@ -8,7 +8,7 @@ import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import datetime
-
+import os
 class Dataset(object):
 
     def __init__(self,path_groundTruth,datasetType):
@@ -146,6 +146,9 @@ class Evaluator(object):
         self.listOfExperiments=listOfExperiments
 
 
+
+
+
     def createPlotData(self,centerDistance,maxValue=50,n=100):
 
 
@@ -162,25 +165,65 @@ class Evaluator(object):
         return (x,y)
 
 
+    def createHistogramPlot(self,x_pr,y_pr,x_s,y_s):
+
+        precision=list()
+        success  =list()
+
+        n_groups=len(x_pr)
+        names=list()
+        for i in range(0,n_groups):
+
+            p=np.trapz(y_pr[i],x=x_pr[i])
+            s=np.trapz(y_s[i],x=x_s[i])
+
+            precision.append(p)
+            success.append(s)
+
+            names.append(self.listOfExperiments[i].trackerLabel)
+
+        plt.subplot(1,2,1)
+
+        index = np.arange(n_groups)
+        plt.bar(index,precision)
+        plt.show()
+
+
+
     def createPlot(self,x_pr,y_pr,x_s,y_s,type='success'):
 
-        with plt.style.context('fivethirtyeight'):
+
+        cm = plt.get_cmap('gist_rainbow')
+        NUM_COLORS=len(x_pr)
+
+        with plt.style.context('dark_background'):
 
             plt.subplot(1, 2, 1)
-            plt.plot(x_pr,y_pr)
+
+            for i in range(0,len(x_pr)):
+                plt.plot(x_pr[i],y_pr[i],color=cm(1.*i/NUM_COLORS))
             plt.ylim([0,1.1])
             plt.xlim([-0.5,51])
             plt.title("precision")
 
             plt.subplot(1,2,2)
-            plt.plot(x_s,y_s)
+
+            for i in range(0,len(x_s)):
+                plt.plot(x_s[i],y_s[i],color=cm(1.*i/NUM_COLORS))
             plt.title('success')
 
             plt.ylim([0,1.1])
             plt.xlim([-0.02,1.1])
 
-            red_patch = mpatches.Patch(label=self.listOfExperiments[0].trackerLabel)
-            plt.legend(handles=[red_patch])
+            handlesLegend=list()
+            for i in range(0,len(x_s)):
+
+                color = cm(1.*i/NUM_COLORS)
+                red_patch = mpatches.Patch(label=self.listOfExperiments[i].trackerLabel,color=color)
+
+                handlesLegend.append(red_patch)
+                print self.listOfExperiments[i].trackerLabel
+            plt.legend(handles=handlesLegend)
 
 
 
@@ -216,6 +259,12 @@ class Evaluator(object):
         #double intersection=std::max(std::min(a2,c2)-std::max(a1,c1),double(0))*(std::max(std::min(b2,d2)-std::max(b1,d1),double(0)));
          #double loss=1-intersection/(y(3)*y(4)+y_hat(3)*y_hat(4)-intersection);
 
+
+        pr_x_list=list()
+        pr_y_list=list()
+
+        sc_x_list=list()
+        sc_y_list=list();
 
         for listRun in self.listOfExperiments:
 
@@ -266,7 +315,17 @@ class Evaluator(object):
             success_x=success_x/len(runs)
             success_y=success_y/len(runs)
 
-            self.createPlot(precision_x,precision_y,success_y,success_x)
+            pr_x_list.append(precision_x)
+            pr_y_list.append(precision_y)
+
+            sc_x_list.append(success_x)
+            sc_y_list.append(success_y)
+
+        self.createPlot(pr_x_list,pr_y_list,sc_x_list,sc_y_list)
+
+        # get some real data and finish this plot
+        #self.createHistogramPlot(pr_x_list,pr_y_list,sc_x_list,sc_y_list)
+
 
 
 
@@ -280,25 +339,40 @@ if __name__ == "__main__":
     vot2014Results="/Users/Ivan/Files/Results/Tracking/vot2014"
     vot2014GrounTruth="/Users/Ivan/Files/Data/vot2014"
 
+    datasetType='wu2013'
     # Note: in wu2013 i
 
-    trackerLabel="STR+f_hog"
-    datasetType='wu2013'
+    # trackerLabel="STR+f_hog"
 
-    run=Experiment(wu2013results,datasetType,trackerLabel)
-    run.loadResults()
-
-
-    picklePath='./Runs/'+trackerLabel+'.p'
     #
-    # savePickle(a,picklePath)
+    # run=Experiment(wu2013results,datasetType,trackerLabel)
+    # run.loadResults()
+
+
+    # picklePath='./Runs/'+trackerLabel+'.p'
+    # #
+    # # savePickle(a,picklePath)
+    # #
+    # run=loadPickle(picklePath)
     #
-    run=loadPickle(picklePath)
-
-
+    #
     dataset=Dataset(wu2013GroundTruth,datasetType)
 
-    #print run
-    ev=Evaluator(dataset,[run])
 
-    ev.evaluate()
+    runsNames=glob.glob('./Runs/*.p')
+
+    runs=list()
+
+    for runName in runsNames:
+        run=loadPickle(runName)
+
+        runs.append(run)
+
+    evaluator=Evaluator(dataset,runs)
+
+    evaluator.evaluate()
+    #
+    # #print run
+    # ev=Evaluator(dataset,[run])
+    #
+    # ev.evaluate()

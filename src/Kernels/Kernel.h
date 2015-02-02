@@ -23,11 +23,11 @@ public:
     
     
     
-    virtual void preprocess(std::vector<supportData*>& S, int K)=0;
+    virtual void preprocess(std::vector<supportData*>& S,int B, int K)=0;
     virtual double calculate(arma::mat& x,int r1,arma::mat& x2,int r2)=0;
     virtual std::string getInfo()=0;
     
-    virtual arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S, int K);
+    virtual arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S, int B,int K);
     
     
 };

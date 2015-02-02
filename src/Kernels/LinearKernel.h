@@ -17,14 +17,14 @@ class LinearKernel:public Kernel {
     
 public:
     
-    void preprocess(std::vector<supportData*>& S, int K){};
+    void preprocess(std::vector<supportData*>& S,int B, int K){};
     
      double calculate(arma::mat& x1, int r1, arma::mat& x2, int r2){
         
-        arma::mat row1=x1.row(r1);
-        arma::mat row2=x2.row(r2);
+        //arma::mat row1=x1.row(r1);
+        //arma::mat row2=x2.row(r2);
         
-        return arma::dot(row1,row2);
+        return arma::dot(x1.row(r1),x2.row(r2));
     };
     
     

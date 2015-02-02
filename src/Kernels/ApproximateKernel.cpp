@@ -11,20 +11,24 @@
 
 
 
-void ApproximateKernel::preprocess(std::vector<supportData *> &S, int m){
+void ApproximateKernel::preprocess(std::vector<supportData *> &S,int B, int K){
     using namespace arma;
     
-    colvec beta(m,arma::fill::zeros);
+    colvec beta(B,arma::fill::zeros);
     
     // get size
     uword n=S[0]->x->n_cols;
     
-    mat X(m,n,arma::fill::zeros);
+    mat X(B,n,arma::fill::zeros);
     
     // iterate over all non-zero betas and add them into beta column vector
     // Also, populate non-sorted matrix X
     int idx=0;
     for (int i=0; i<S.size(); i++) {
+        if (idx>=B) {
+            break;
+        }
+        
         mat* b=S[i]->beta;
         for (int j=0; j<b->n_cols; j++) {
             if (b->at(0, j)!=0) {
@@ -33,6 +37,12 @@ void ApproximateKernel::preprocess(std::vector<supportData *> &S, int m){
                 idx++;
             }
         }
+    }
+    //FIXME: approximate kernel not working. Needs rework.
+    //TODO: Needs testing. Behavior of the approximate kernel is not satisfactory. There are bugs
+    this->threshold=idx;
+    if (idx<=B/2) {
+        return;
     }
     
     preprocessMatrices(X, beta);
@@ -72,21 +82,27 @@ void ApproximateKernel::preprocessMatrices(arma::mat &X, arma::colvec &beta){
         s.fitSpline(sample, y);
         this->splines.push_back(s);
         
-        
-        
     }
     
     
 }
 
 
-arma::rowvec ApproximateKernel::predictAll(arma::mat &newX, std::vector<supportData *> &S, int K){
-    this->preprocess(S, K);
+arma::rowvec ApproximateKernel::predictAll(arma::mat &newX, std::vector<supportData *> &S,int B, int K){
+    
+  
+    this->preprocess(S,B, K);
+    
+    if (this->threshold<=B/2) {
+        return this->intKernelFast->predictAll(newX, S, B, K);
+    }
     
     int nRows=newX.n_rows;
     arma::rowvec c(nRows,arma::fill::zeros);
     for (int i=0; i<nRows; i++) {
         arma::rowvec x=newX.row(i);
+        
+      
         
         c(i)=predictOne(x);
     }

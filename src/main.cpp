@@ -64,7 +64,7 @@
 #endif
 #elif __linux
 // linux
-#define NUM_THREADS         8
+#define NUM_THREADS         16
 
 #define wu2013RootFolder    "/media/drive/UbuntuFiles/Datasets/Tracking/wu2013/"
 #define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
@@ -94,19 +94,19 @@ Struck getTracker(){
     //RawFeatures* features=new RawFeatures(16);
     cv::Size size(64,64);
     
-    //HoG* features=new HoG(size);
+    HoG* features=new HoG(size);
     
 
     
-    HistogramFeatures* features=new HistogramFeatures(4,16);
+    //HistogramFeatures* features=new HistogramFeatures(4,16);
     // RBFKe
-    IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
+    //IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
     //ApproximateKernel* kernel= new ApproximateKernel(30);
     //IntersectionKernel* kernel=new IntersectionKernel;
     
     //RBFKernel* kernel=new RBFKernel(0.2);
     
-    //LinearKernel* kernel=new LinearKernel;
+    LinearKernel* kernel=new LinearKernel;
 
     
     //Haar* features=new Haar(2);
@@ -145,7 +145,7 @@ Struck getTracker(){
     int P=3;
     
     
-    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
+    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
 
     tracker.setFilter(filter);
     
@@ -264,13 +264,14 @@ int main(int argc, const char * argv[]) {
     
     //vot2014->showVideo(vot2014RootFolder,0);
     
-    applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,true);
+    //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,false);
     //applyTrackerOnDataset(vot2014, vot2014RootFolder, vot2014SaveFolder, true,false);
     
     //Struck tracker=getTracker();
     
+
     //cout<<tracker<<endl;
-    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 3, 0, 250);
+    tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 5, 0, 250);
     //tracker.videoCapture();
     
     return 0;

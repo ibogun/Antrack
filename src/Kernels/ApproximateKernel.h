@@ -22,11 +22,12 @@ class ApproximateKernel: public Kernel{
     int nPts;
     
     std::vector<Spline> splines;
+    int threshold;
     
 public:
     ApproximateKernel(int nPts_){ nPts=nPts_;};
     
-    void preprocess(std::vector<supportData*>& S, int K);
+    void preprocess(std::vector<supportData*>& S,int B, int K);
     void preprocessMatrices(arma::mat& X, arma::colvec& beta);
 
     double calculate(arma::mat& x,int r1,arma::mat& x2,int r2){
@@ -42,7 +43,7 @@ public:
     
     
     double predictOne(arma::rowvec& x);
-    arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S, int K);
+    arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S,int B, int K);
     
 };
 

@@ -72,7 +72,7 @@ trax_handle* trax_client_setup(FILE* input, FILE* output, FILE* log) {
         client->config.format_region = TRAX_REGION_POLYGON;
     free(tmp);
 
-    // TODO: parse format info, tracker name, identifier
+  
         
     client->config.format_image = TRAX_IMAGE_PATH;
     client->version = trax_properties_get_int(tmp_properties, "trax.version", 1);
