@@ -49,7 +49,7 @@ class Struck {
     int framesTracked=0;
     
     bool useFilter;
-    bool updateTracker;
+    bool updateTracker=true;
     
     int seed=1;
     

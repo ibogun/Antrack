@@ -89,7 +89,7 @@ Struck getTracker(){
     p.n_R               = 10;
     int nRadial         = 5;
     int nAngular        = 16;
-    int B               = 50;
+    int B               = 33;
 
     int nRadial_search  = 12;
     int nAngular_search = 30;

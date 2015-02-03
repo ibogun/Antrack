@@ -44,7 +44,7 @@ void OLaRank_old::setParameters(params& learningParams, int& balance, int& m_,in
     
     
     parameters = learningParams;
-   
+    
     m = m_;
     B = balance;
     verbose = verbose_;
@@ -108,10 +108,10 @@ tuple<mat, mat, mat> OLaRank_old::processNew(mat& newX, mat& y_hat,const int lab
         
         grad(y) -= this->loss(y_hat.row(label), y_hat.row(y));
         
-        for (int y_bar = 0; y_bar < K; ++y_bar) {
-            
-            for (int i = 0; i < this->S.size(); ++i) {
-                
+        
+        
+        for (int i = 0; i < this->S.size(); ++i) {
+            for (int y_bar = 0; y_bar < this->S[i]->x->n_rows; ++y_bar) {
                 supportData* S_i=this->S[i];
                 if ((*S_i->beta)(y_bar)!=0){
                     
@@ -788,7 +788,7 @@ OLaRank_old::OLaRank_old(Kernel* svm_kernel_,params& learningParams, int& balanc
     
     svm_kernel=svm_kernel_;
     parameters = learningParams;
-
+    
     m = m_;
     B = balance;
     verbose = verbose_;

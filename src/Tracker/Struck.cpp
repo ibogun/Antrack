@@ -42,7 +42,7 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
     
     
     // create filter, if chosen
-    
+    updateTracker=true;
     if (this->useFilter) {
         int measurementSize=6;
         colvec x_k(measurementSize,fill::zeros);
@@ -63,7 +63,7 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
         
         //filter.x_kk=x_k;
         
-        updateTracker=true;
+       
     }
     
     // add images, in case we want to show support vectors
@@ -94,9 +94,10 @@ cv::Rect Struck::track(cv::Mat &image){
     locationsOnaGrid.push_back(lastLocation);
     
     // to reproduce results in the paper
-    this->samplerForSearch->sampleOnAGrid(lastLocation, locationsOnaGrid, this->R,2);
+//    this->samplerForSearch->sampleOnAGrid(lastLocation, locationsOnaGrid, this->R,2);
+    
+    this->samplerForSearch->sampleEquiDistantMultiScale(lastLocation, locationsOnaGrid);
     //this->samplerForSearch->sampleEquiDistant(lastLocation, locationsOnaGrid);
-    //this->samplerForSearch->sampleEquiDistantMultiScale(lastLocation, locationsOnaGrid);
     if (useFilter && !updateTracker) {
         this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn, locationsOnaGrid, this->R,2);
     }
@@ -459,8 +460,8 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
     groundTruth.erase(groundTruth.begin(), groundTruth.begin()+frameFrom);
     
     cv::Mat image=cv::imread(gt_images.second[0]);
-    
-    
+
+
     this->initialize(image, groundTruth[0]);
     
     std::time_t t1 = std::time(0);

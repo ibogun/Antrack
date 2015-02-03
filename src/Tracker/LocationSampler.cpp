@@ -99,7 +99,7 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
         }
     }
     
-    
+
     int scaleR=this->radius/2;
     
     double downsample=1.05;
@@ -118,6 +118,10 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
             int halfWidth_scale=halfWidth*pow(downsample, scale_w);
             int halfHeight_scale=halfHeight*pow(downsample,scale_h);
             
+            if (halfWidth_scale<=0 || halfHeight_scale<=0) {
+                continue;
+            }
+            
             int width_scale=halfWidth_scale*2;
             int height_scale=halfHeight_scale*2;
             
@@ -131,7 +135,7 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
                     bb_y=centerY+(radialValues(i)*sin(angularValues(j)))-halfHeight_scale;
                     
                     cv::Point topLeft(bb_x, bb_y);
-                    cv::Point bottomRight(bb_x+currentLocation.width, bb_y+currentLocation.height);
+                    cv::Point bottomRight(bb_x+width_scale, bb_y+height_scale);
                     
                     if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
                         
