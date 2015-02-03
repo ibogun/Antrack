@@ -101,7 +101,7 @@ Struck getTracker(){
     p.n_R        = 10;
     int nRadial  = 5;
     int nAngular = 16;
-    int B        = 100;
+    int B        = 10;
     
     RawFeatures* features=new RawFeatures(16);
     cv::Size size(64,64);

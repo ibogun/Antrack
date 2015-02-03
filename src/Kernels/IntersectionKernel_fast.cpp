@@ -9,7 +9,7 @@
 #include "IntersectionKernel_fast.h"
 
 
-void IntersectionKernel_fast::preprocess(std::vector<supportData *> &S,int B,int K){
+void IntersectionKernel_fast::preprocess(std::vector<supportData *> &S,int B){
     
     using namespace arma;
     
@@ -124,9 +124,9 @@ void IntersectionKernel_fast::preprocessMatrices(arma::mat &X, arma::colvec &bet
     this->x_s=x_s;
 }
 
-arma::rowvec IntersectionKernel_fast::predictAll(arma::mat &newX, std::vector<supportData *> &S,int B, int K){
+arma::rowvec IntersectionKernel_fast::predictAll(arma::mat &newX, std::vector<supportData *> &S,int B){
     
-    this->preprocess(S,B, K);
+    this->preprocess(S,B);
     
     int nRows=newX.n_rows;
     arma::rowvec c(nRows,arma::fill::zeros);

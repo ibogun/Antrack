@@ -15,8 +15,8 @@
 #include "../Features/Haar.h"
 
 class LocationSampler {
-     int radius;
-
+    int radius;
+    
     
     int objectHeight;
     int objectWidth;
@@ -40,7 +40,9 @@ public:
     
     void sampleEquiDistant(cv::Rect& currentRect,std::vector<cv::Rect>& rects);
     
-     std::vector<double> linspace(double a,double b, double n);
+    void sampleEquiDistantMultiScale(cv::Rect& currentRect,std::vector<cv::Rect>& rects);
+    
+    std::vector<double> linspace(double a,double b, double n);
     
     void setDimensions(int imN,int imM, int objH, int objW){
         n=imN;

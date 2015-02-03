@@ -95,7 +95,8 @@ cv::Rect Struck::track(cv::Mat &image){
     
     // to reproduce results in the paper
     this->samplerForSearch->sampleOnAGrid(lastLocation, locationsOnaGrid, this->R,2);
-    
+    //this->samplerForSearch->sampleEquiDistant(lastLocation, locationsOnaGrid);
+    //this->samplerForSearch->sampleEquiDistantMultiScale(lastLocation, locationsOnaGrid);
     if (useFilter && !updateTracker) {
         this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn, locationsOnaGrid, this->R,2);
     }
@@ -472,7 +473,7 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
     std::time_t t2 = std::time(0);
     
     //std::cout<<"Frames per second: "<<gt_images.second.size()/(1.0*(t2-t1))<<std::endl;
-    std::cout<<"No threads: "<<(t2-t1)<<std::endl;
+    std::cout<<"No threads: "<<gt_images.second.size()/((t2-t1)*1.0)<<std::endl;
 }
 
 

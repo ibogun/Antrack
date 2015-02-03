@@ -85,7 +85,6 @@ private:
 public:
     // size of the pattern
     int m;
-    int K;
     vector<supportData*> S;
     
     std::vector<std::pair<double, double>> velocity;
@@ -107,9 +106,9 @@ public:
     //std::vector<std::pair<double,double>> locations;
     
     OLaRank_old(Kernel*,int seed=1);
-    OLaRank_old(Kernel*,params&, int&, int&, int&, int&);
+    OLaRank_old(Kernel*,params&, int&, int&,int&);
     
-    void setParameters(params&, int&, int&, int&, int&);
+    void setParameters(params&, int&, int&, int&);
     
     void initialize(mat&, mat&,const int,int);
     int processAndPredict(mat&,mat&,int);

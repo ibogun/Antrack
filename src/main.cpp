@@ -84,12 +84,15 @@ Struck getTracker(){
     // Parameters
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     params p;
-    p.C          = 100;
-    p.n_O        = 10;
-    p.n_R        = 10;
-    int nRadial  = 5;
-    int nAngular = 16;
-    int B        = 100;
+    p.C                 = 100;
+    p.n_O               = 10;
+    p.n_R               = 10;
+    int nRadial         = 5;
+    int nAngular        = 16;
+    int B               = 50;
+
+    int nRadial_search  = 12;
+    int nAngular_search = 30;
     
     //RawFeatures* features=new RawFeatures(16);
     cv::Size size(64,64);
@@ -114,19 +117,18 @@ Struck getTracker(){
     int verbose = 0;
     int display = 1;
     int m       = features->calculateFeatureDimension();
-    int K       = nRadial*nAngular+1;
     
     OLaRank_old* olarank=new OLaRank_old(kernel);
-    olarank->setParameters(p, B,m,K,verbose);
+    olarank->setParameters(p, B,m,verbose);
     
     int r_search = 30;
     int r_update = 60;
     
-    bool useFilter=true;
+    bool useFilter=false;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     LocationSampler* samplerForUpdate = new LocationSampler(r_update,nRadial,nAngular);
-    LocationSampler* samplerForSearch = new LocationSampler(r_search,nRadial,nAngular);
+    LocationSampler* samplerForSearch = new LocationSampler(r_search,nRadial_search,nAngular_search);
     
     Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useFilter, display);
     
@@ -145,7 +147,8 @@ Struck getTracker(){
     int P=3;
     
     
-    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
+    //KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
+    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
 
     tracker.setFilter(filter);
     

@@ -15,7 +15,7 @@ HoG::HoG(cv::Size size_){
     cv::Size blockSize(32,32);
     cv::Size cellSize(8,8);
     cv::Size blockStride(16,16);
-    int nBins=9;
+    int nBins=6;
     
     cv::HOGDescriptor* d_=new cv::HOGDescriptor(winSize, blockSize, blockStride, cellSize, nBins);
     

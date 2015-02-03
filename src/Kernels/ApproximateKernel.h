@@ -27,7 +27,7 @@ class ApproximateKernel: public Kernel{
 public:
     ApproximateKernel(int nPts_){ nPts=nPts_;};
     
-    void preprocess(std::vector<supportData*>& S,int B, int K);
+    void preprocess(std::vector<supportData*>& S,int B);
     void preprocessMatrices(arma::mat& X, arma::colvec& beta);
 
     double calculate(arma::mat& x,int r1,arma::mat& x2,int r2){
@@ -43,7 +43,7 @@ public:
     
     
     double predictOne(arma::rowvec& x);
-    arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S,int B, int K);
+    arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S,int B);
     
 };
 

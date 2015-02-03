@@ -27,16 +27,122 @@ void LocationSampler::sampleEquiDistant(cv::Rect& currentLocation,
     
     arma::vec radialValues=arma::linspace<arma::vec>(0,radius,nRadial+1);
     arma::vec angularValues=arma::linspace<arma::vec>(0,2*M_PI, nAngular+1);
-    double deltaX,deltaY=0;
+    int bb_x,bb_y=0;
+    
+    cv::Rect imageBox(0,0,this->n,this->m);
+    
+    int halfWidth=cvRound(currentLocation.width/2.0);
+    int halfHeight=cvRound(currentLocation.height/2.0);
     
     for (int i=1; i<radialValues.size(); ++i) {
         for (int j=1; j<angularValues.size(); ++j) {
             
-            deltaX=centerX+(radialValues(i)*cos(angularValues(j)));
+            // get the top left corner
+            bb_x=centerX+(radialValues(i)*cos(angularValues(j)))-halfWidth;
+            bb_y=centerY+(radialValues(i)*sin(angularValues(j)))-halfHeight;
             
-            deltaY=centerY+(radialValues(i)*sin(angularValues(j)));
             
-            locations.push_back(fromCenterToBoundingBox(deltaX,deltaY,currentLocation.width,currentLocation.height));
+            cv::Point topLeft(bb_x, bb_y);
+            cv::Point bottomRight(bb_x+currentLocation.width, bb_y+currentLocation.height);
+            
+            if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
+                
+                cv::Rect rect(bb_x,bb_y,currentLocation.width,currentLocation.height);
+                locations.push_back(rect);
+            }
+            
+        }
+    }
+}
+
+/**
+ *  Samples rectangles in polar coordinates
+ *
+ *  @param currentLocation current bounding box
+ *  @param locations       vector of sampled bounding boxes
+ */
+void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
+                                                  std::vector<cv::Rect> &locations){
+    
+    double centerX=currentLocation.x+currentLocation.width/2;
+    double centerY=currentLocation.y+currentLocation.height/2;
+    
+    //    std::vector<double> radialValues=linspace(0, radius, nRadial+1);
+    //    std::vector<double> angularValues=linspace(0, 2*M_PI, nAngular+1);
+    
+    arma::vec radialValues=arma::linspace<arma::vec>(0,radius,nRadial+1);
+    arma::vec angularValues=arma::linspace<arma::vec>(0,2*M_PI, nAngular+1);
+    int bb_x,bb_y=0;
+    
+    cv::Rect imageBox(0,0,this->n,this->m);
+    
+    int halfWidth=cvRound(currentLocation.width/2.0);
+    int halfHeight=cvRound(currentLocation.height/2.0);
+    
+    for (int i=1; i<radialValues.size(); ++i) {
+        for (int j=1; j<angularValues.size(); ++j) {
+            
+            // get the top left corner
+            bb_x=centerX+(radialValues(i)*cos(angularValues(j)))-halfWidth;
+            bb_y=centerY+(radialValues(i)*sin(angularValues(j)))-halfHeight;
+            
+            
+            cv::Point topLeft(bb_x, bb_y);
+            cv::Point bottomRight(bb_x+currentLocation.width, bb_y+currentLocation.height);
+            
+            if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
+                
+                cv::Rect rect(bb_x,bb_y,currentLocation.width,currentLocation.height);
+                locations.push_back(rect);
+            }
+            
+        }
+    }
+    
+    
+    int scaleR=this->radius/2;
+    
+    double downsample=1.05;
+    radialValues=arma::linspace<arma::vec>(0,scaleR,nRadial/4+1);
+    angularValues=arma::linspace<arma::vec>(0,2*M_PI, nAngular/5+1);
+    
+    for (int scale_w=-2; scale_w<=2; scale_w++) {
+        
+        for (int scale_h=-2; scale_h<=2; scale_h++) {
+            
+            
+            if (scale_w==0 && scale_h==0) {
+                continue;
+            }
+            
+            int halfWidth_scale=halfWidth*pow(downsample, scale_w);
+            int halfHeight_scale=halfHeight*pow(downsample,scale_h);
+            
+            int width_scale=halfWidth_scale*2;
+            int height_scale=halfHeight_scale*2;
+            
+            
+            
+            for (int i=0; i<radialValues.size(); ++i) {
+                for (int j=0; j<angularValues.size(); ++j) {
+                    
+                    // get the top left corner
+                    bb_x=centerX+(radialValues(i)*cos(angularValues(j)))-halfWidth_scale;
+                    bb_y=centerY+(radialValues(i)*sin(angularValues(j)))-halfHeight_scale;
+                    
+                    cv::Point topLeft(bb_x, bb_y);
+                    cv::Point bottomRight(bb_x+currentLocation.width, bb_y+currentLocation.height);
+                    
+                    if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
+                        
+                        cv::Rect rect(bb_x,bb_y,width_scale,height_scale);
+                        locations.push_back(rect);
+                    }
+                    
+                }
+            }
+            
+            
             
         }
     }
@@ -85,7 +191,7 @@ void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation, std::vector<cv::R
             
         }
     }
-
+    
     int scaleR=R/6;
     
     double downsample=1.05;

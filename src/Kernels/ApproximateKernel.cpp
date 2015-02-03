@@ -11,7 +11,7 @@
 
 
 
-void ApproximateKernel::preprocess(std::vector<supportData *> &S,int B, int K){
+void ApproximateKernel::preprocess(std::vector<supportData *> &S,int B){
     using namespace arma;
     
     colvec beta(B,arma::fill::zeros);
@@ -88,13 +88,13 @@ void ApproximateKernel::preprocessMatrices(arma::mat &X, arma::colvec &beta){
 }
 
 
-arma::rowvec ApproximateKernel::predictAll(arma::mat &newX, std::vector<supportData *> &S,int B, int K){
+arma::rowvec ApproximateKernel::predictAll(arma::mat &newX, std::vector<supportData *> &S,int B){
     
   
-    this->preprocess(S,B, K);
+    this->preprocess(S,B);
     
     if (this->threshold<=B/2) {
-        return this->intKernelFast->predictAll(newX, S, B, K);
+        return this->intKernelFast->predictAll(newX, S, B);
     }
     
     int nRows=newX.n_rows;

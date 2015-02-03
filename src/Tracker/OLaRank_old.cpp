@@ -40,12 +40,11 @@ OLaRank_old::OLaRank_old(Kernel* svm_kernel_,int seed){
  * @param K_
  * @param verbose_
  */
-void OLaRank_old::setParameters(params& learningParams, int& balance, int& m_, int& K_,
-                                int& verbose_) {
+void OLaRank_old::setParameters(params& learningParams, int& balance, int& m_,int& verbose_) {
     
     
     parameters = learningParams;
-    K = K_;
+   
     m = m_;
     B = balance;
     verbose = verbose_;
@@ -55,8 +54,8 @@ void OLaRank_old::setParameters(params& learningParams, int& balance, int& m_, i
 rowvec OLaRank_old::predictAll(mat& newX){
     
     
-    return this->svm_kernel->predictAll(newX, this->S,this->B, this->K);
-
+    return this->svm_kernel->predictAll(newX, this->S,this->B);
+    
 }
 
 
@@ -69,7 +68,7 @@ void OLaRank_old::checkIfConstraintsSatisfied(){
         
         sum=0;
         
-        for (int y = 0; y < this->K; ++y) {
+        for (int y = 0; y < this->S[i]->x->n_rows; ++y) {
             
             assert((*this->S[i]->beta)(y)<=this->parameters.C*(this->S[i]->label==y));
             sum+=(*this->S[i]->beta)(y);
@@ -101,13 +100,15 @@ tuple<mat, mat, mat> OLaRank_old::processNew(mat& newX, mat& y_hat,const int lab
     
     mat y_bar_mat;
     
-    mat grad(1, this->K, fill::zeros);
+    int K=newX.n_rows;
     
-    for (int y = 0; y < this->K; ++y) {
+    mat grad(1, K, fill::zeros);
+    
+    for (int y = 0; y < K; ++y) {
         
         grad(y) -= this->loss(y_hat.row(label), y_hat.row(y));
         
-        for (int y_bar = 0; y_bar < this->K; ++y_bar) {
+        for (int y_bar = 0; y_bar < K; ++y_bar) {
             
             for (int i = 0; i < this->S.size(); ++i) {
                 
@@ -161,7 +162,7 @@ int OLaRank_old::budgetMaintance() {
         
         int sum=0;
         
-        for (int j=0; j< this->K; ++j) {
+        for (int j=0; j< this->S[i]->x->n_rows; ++j) {
             //if (abs((*this->S[i]->beta)(j))>=1.0e-7) {
             
             if(abs((*this->S[i]->beta)(j))!=0){
@@ -174,7 +175,7 @@ int OLaRank_old::budgetMaintance() {
         
         //cout<<"Idx: "<<i<<" zeros: "<<sum<<endl;
         
-        if (sum==this->K) {
+        if (sum==this->S[i]->x->n_rows) {
             
             //std::cout<<"Something will be deleted"<<endl;
             idxToBeDeleted.push_back(i);
@@ -226,12 +227,20 @@ int OLaRank_old::budgetMaintance() {
         return -1;
     }
     
-    mat scores((int)this->S.size(),this->K,fill::ones);
+    int maxNRows=0;
+    
+    for (int i=0; i<this->S.size(); i++) {
+        if (this->S[i]->x->n_rows>=maxNRows) {
+            maxNRows=this->S[i]->x->n_rows;
+        }
+    }
+    
+    mat scores((int)this->S.size(),maxNRows,fill::ones);
     mat y_r,x_r;
     scores=scores*INFINITY;
     
     for (int i = 0; i < this->S.size(); ++i) {
-        for (int k = 0; k < this->K; ++k) {
+        for (int k = 0; k < this->S[i]->x->n_rows; ++k) {
             if ((*this->S[i]->beta)(k)<0){
                 
                 x_r=*this->S[i]->x;
@@ -260,7 +269,7 @@ int OLaRank_old::budgetMaintance() {
     vector<int> negativeSP;
     vector<int> positiveSP;
     
-    for (int i = 0; i < this->K; ++i) {
+    for (int i = 0; i < this->S[I]->x->n_rows; ++i) {
         if ((*this->S[I]->beta)(i)<0){
             numberOfNegativeSP++;
             negativeSP.push_back(i);
@@ -301,7 +310,7 @@ int OLaRank_old::budgetMaintance() {
             // delete beta(I,z)
             int idx=allSPtobeDeleted[z];
             for (int ii=0; ii<this->S.size(); ++ii) {
-                for (int yy=0; yy<this->K; ++yy) {
+                for (int yy=0; yy<this->S[ii]->x->n_rows; ++yy) {
                     (*this->S[ii]->grad)(yy)+=(*this->S[I]->beta)(idx)*kernel_fast(*this->S[ii]->x,*this->S[ii]->y, (*this->S[ii]->y).row(yy)(0),(*this->S[ii]).frameNumber,*this->S[I]->x,*this->S[I]->y, (*this->S[I]->y).row(idx)(0),(*this->S[I]).frameNumber);
                 }
             }
@@ -353,14 +362,14 @@ int OLaRank_old::budgetMaintance() {
         // delete beta(I,z)
         int idx=J;
         for (int ii=0; ii<this->S.size(); ++ii) {
-            for (int yy=0; yy<this->K; ++yy) {
+            for (int yy=0; yy<this->S[ii]->x->n_rows; ++yy) {
                 (*this->S[ii]->grad)(yy)+=(*this->S[I]->beta)(idx)*kernel_fast(*this->S[ii]->x,*this->S[ii]->y, (*this->S[ii]->y).row(yy)(0),(*this->S[ii]).frameNumber,*this->S[I]->x,*this->S[I]->y, (*this->S[I]->y).row(idx)(0),(*this->S[I]).frameNumber);
             }
         }
         
         idx=this->S[I]->label;
         for (int ii=0; ii<this->S.size(); ++ii) {
-            for (int yy=0; yy<this->K; ++yy) {
+            for (int yy=0; yy<this->S[ii]->x->n_rows; ++yy) {
                 (*this->S[ii]->grad)(yy)-=(*this->S[I]->beta)(J)*kernel_fast(*this->S[ii]->x,(*this->S[ii]->y), (*this->S[ii]->y).row(yy)(0),(*this->S[ii]).frameNumber,*this->S[I]->x,*this->S[I]->y, (*this->S[I]->y).row(idx)(0),(*this->S[I]).frameNumber);
             }
         }
@@ -432,7 +441,8 @@ void OLaRank_old::smoStep(const int i, mat& y_plus, mat& y_neg) {
     
     if (lambda!=0){
         for (int j = 0; j < this->S.size(); ++j) {
-            for (int y = 0; y < this->K; ++y) {
+            //for (int y = 0; y < this->K; ++y) {
+            for (int y = 0; y < this->S[j]->x->n_rows; ++y) {
 				            
                 k_0=this->kernel_fast(*this->S[j]->x,*this->S[j]->y, (*this->S[j]->y).row(y)(0),(*this->S[j]).frameNumber, *this->S[i]->x, *this->S[i]->x,y_plus(0),(*this->S[i]).frameNumber);
                 k_1=this->kernel_fast(*this->S[j]->x,*this->S[j]->y,  (*this->S[j]->y).row(y)(0),(*this->S[j]).frameNumber, *this->S[i]->x, *this->S[i]->y,y_neg(0),(*this->S[i]).frameNumber);
@@ -469,7 +479,7 @@ tuple<int, mat, mat> OLaRank_old::processOld() {
     //cout<<"MAX VALUE: "<<grad_max;
     uword y_neg_idx;
     
-    for (int y = 0; y < this->K; ++y) {
+    for (int y = 0; y < this->S[i]->x->n_rows; ++y) {
         
         if ((*this->S[i]->beta)(y) < (y == this->S[i]->label) * this->parameters.C) {
             
@@ -514,7 +524,7 @@ tuple<int, mat, mat> OLaRank_old::optimize() {
     double grad_min= INFINITY;
     //cout<<"MAX VALUE: "<<grad_max;
     //cout<<this->S[i].beta;
-    for (int y = 0; y < this->K; ++y) {
+    for (int y = 0; y < this->S[i]->x->n_rows; ++y) {
         //
         //		if (this->S[i].beta(y) != 0
         //            && this->S[i].beta(y)
@@ -592,11 +602,12 @@ int OLaRank_old::predict(mat& newX) {
         
         y(0)=k;
         current=0;
-        for (int yhat = 0; yhat < this->K; ++yhat) {
-            
-            y_hat(0)=yhat;
-            
-            for (int i = 0; i < this->S.size(); ++i) {
+        
+        
+        for (int i = 0; i < this->S.size(); ++i) {
+            for (int yhat = 0; yhat < this->S[i]->x->n_rows; ++yhat) {
+                
+                y_hat(0)=yhat;
                 
                 if ((*this->S[i]->beta)(yhat)!=0){
                     
@@ -665,14 +676,14 @@ double OLaRank_old::calculateObjective() {
     double objective = 0;
     double s = 0;
     for (int i = 0; i < this->S.size(); ++i) {
-        for (int k = 0; k < this->K; ++k) {
+        for (int k = 0; k < this->S[i]->x->n_rows; ++k) {
             objective += loss((*this->S[i]->y).row(this->S[i]->label), (*this->S[i]->y).row(k)) * (*this->S[i]->beta)(k);
         }
         
         for (int j = i; j < this->S.size(); ++j) {
             
-            for (int y = 0; y < this->K; ++y) {
-                for (int yhat = 0; yhat < K; ++yhat) {
+            for (int y = 0; y <  this->S[i]->x->n_rows; ++y) {
+                for (int yhat = 0; yhat <  this->S[j]->x->n_rows; ++yhat) {
                     
                     s = ((*S[i]->beta)(y) * (*S[j]->beta)(yhat)
                          * kernel(*S[i]->x, (*S[i]->y).row(y), *S[j]->x, (*S[i]->y).row(yhat)));
@@ -764,7 +775,7 @@ double OLaRank_old::kernel_fast(mat& x,mat& y_loc, int y,int frameNumber_1, mat&
 }
 
 double OLaRank_old::calculate_kernel(mat& x, int y, mat& xp, int yp){
- 
+    
     return this->svm_kernel->calculate(x,y,xp,yp);
 }
 
@@ -772,12 +783,12 @@ double OLaRank_old::calculate_kernel(mat& x, int y, mat& xp, int yp){
 /**
  *  Create an instance using given set of parameters
  */
-OLaRank_old::OLaRank_old(Kernel* svm_kernel_,params& learningParams, int& balance, int& m_, int& K_,
+OLaRank_old::OLaRank_old(Kernel* svm_kernel_,params& learningParams, int& balance, int& m_,
                          int& verbose_) {
     
     svm_kernel=svm_kernel_;
     parameters = learningParams;
-    K = K_;
+
     m = m_;
     B = balance;
     verbose = verbose_;
@@ -800,11 +811,11 @@ int OLaRank_old::processAndPredict(mat& newX, mat& newY,int frameNumber) {
     tuple<mat, mat, mat> p_new = this->processNew(newX, newY,y_hat_idx,frameNumber);
     
     mat y_plus, y_neg;
-    mat grad(1, this->K, fill::zeros);
+    mat grad(1, newX.n_rows, fill::zeros);
     tie(y_plus, y_neg, grad) = p_new;
     
     // add new element into set S
-    supportData* support=new supportData(newX, newY,y_hat_idx, newX.size(), this->K,frameNumber);
+    supportData* support=new supportData(newX, newY,y_hat_idx, newX.size(), newX.n_rows,frameNumber);
     (*support->grad)= grad;
     
     double i = this->S.size();
@@ -883,11 +894,11 @@ void OLaRank_old::process(mat& newX, mat& y_hat, int y_hat_label,int frameNumber
     tuple<mat, mat, mat> p_new = this->processNew(newX, y_hat,y_hat_label,frameNumber);
     
     mat y_plus, y_neg;
-    mat grad(1, this->K, fill::zeros);
+    mat grad(1, newX.n_rows, fill::zeros);
     tie(y_plus, y_neg, grad) = p_new;
     
     // add new element into set S
-    supportData* support=new supportData(newX, y_hat,y_hat_label, newX.size(), this->K,frameNumber);
+    supportData* support=new supportData(newX, y_hat,y_hat_label, newX.size(), newX.n_rows,frameNumber);
     (*support->grad) = grad;
     
     
@@ -956,7 +967,7 @@ void OLaRank_old::process(mat& newX, mat& y_hat, int y_hat_label,int frameNumber
             tie(i, y_plus, y_neg) = optimize;
             smoStep(i, y_plus, y_neg);
             
-            this->checkIfConstraintsSatisfied();
+            //this->checkIfConstraintsSatisfied();
         }
         
     }
@@ -1002,7 +1013,7 @@ void OLaRank_old::testIfObjectiveIncreases() {
  */
 void OLaRank_old::initialize(mat& x, mat& y,const int label,int frameNumber) {
     
-    supportData* s1=new supportData (x, y,label, m, K,frameNumber);
+    supportData* s1=new supportData (x, y,label, m, x.n_rows,frameNumber);
     S.push_back(s1);
     
     this->process(x, y, label, frameNumber);
@@ -1082,7 +1093,7 @@ double OLaRank_old::recomputeGradient(int i, int y){
     grad-=this->loss((*this->S[i]->y).row(y),(*this->S[i]->y).row(this->S[i]->label));
     
     for (int j=0; j<this->S.size(); ++j) {
-        for (int yhat=0; yhat<this->K; ++yhat) {
+        for (int yhat=0; yhat<this->S[i]->x->n_rows; ++yhat) {
             grad-=(*this->S[j]->beta)(yhat)*this->kernel_fast(*this->S[i]->x,*this->S[i]->y, (*this->S[i]->y).row(y)(0),(*this->S[i]).frameNumber, *this->S[j]->x, *this->S[j]->y,(*this->S[j]->y).row(yhat)(0),(*this->S[j]).frameNumber);
         }
     }
@@ -1127,7 +1138,7 @@ void OLaRank_old::deleteKernelValues(int frameNumber){
 
 
 std::ostream& operator<<(std::ostream &strm,const  OLaRank_old &s) {
-
+    
     strm<<"OLaRank parameters: \n";
     strm<<"C                 : "<<s.parameters.C<<"\n";
     strm<<"n_R               : "<<s.parameters.n_R<<"\n";

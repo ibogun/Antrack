@@ -17,7 +17,7 @@ class LinearKernel:public Kernel {
     
 public:
     
-    void preprocess(std::vector<supportData*>& S,int B, int K){};
+    void preprocess(std::vector<supportData*>& S,int B){};
     
      double calculate(arma::mat& x1, int r1, arma::mat& x2, int r2){
         
