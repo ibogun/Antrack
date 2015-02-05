@@ -21,6 +21,8 @@
 
 #include "../Datasets/Dataset.h"
 
+#include "../Superpixels/Objectness.h"
+
 #include "../Filter/KalmanFilterGenerator.h"
 
 
@@ -35,6 +37,7 @@ class Struck {
     
     std::vector<cv::Rect> boundingBoxes;
     cv::Rect lastLocation;
+
     cv::Rect lastRectFilterAndDetectorAgreedOn;
     
     
@@ -49,6 +52,7 @@ class Struck {
     int framesTracked=0;
     
     bool useFilter;
+    bool useObjectness;
     bool updateTracker=true;
     
     int seed=1;
@@ -62,11 +66,12 @@ public:
     
     Struck();
     
-    Struck(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useFilter_,int display_){
+    Struck(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useObjectness_,bool useFilter_,int display_){
         olarank = olarank_;
         feature = feature_;
         samplerForSearch=samplerSearch_;
         samplerForUpdate = samplerUpdate_;
+        useObjectness=useObjectness_;
         useFilter=useFilter_;
         display = display_;};
     
@@ -104,6 +109,8 @@ public:
     void saveResults(string fileName);
     
     void setFilter(const KalmanFilter_my& var){filter=var;};
+    
+    void weightWithStraddling(cv::Mat& image,arma::rowvec& predictions, std::vector<cv::Rect>& rects,const int nSuperpixels);
     
     void reset(){
         

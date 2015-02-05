@@ -13,10 +13,7 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
     
     srand(this->seed);
     // set dimensions of the sampler
-    
-    //WAS
-    //int n=image.rows;
-    //int m=image.cols;
+ 
     
     // NOW
     int m=image.rows;
@@ -24,6 +21,7 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
     
     this->samplerForSearch->setDimensions(n, m,location.height,location.width);
     this->samplerForUpdate->setDimensions(n, m,location.height,location.width);
+
     
     this->boundingBoxes.push_back(location);
     lastLocation=location;
@@ -44,7 +42,7 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
     // create filter, if chosen
     updateTracker=true;
     if (this->useFilter) {
-        int measurementSize=6;
+        int measurementSize=10;
         colvec x_k(measurementSize,fill::zeros);
         x_k(0)=lastLocation.x;
         x_k(1)=lastLocation.y;
@@ -58,7 +56,7 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location){
         int P=3;
         
         
-        filter=KalmanFilterGenerator::generateConstantVelocityFilter(x_k,n,m,R_cov,Q_cov,P,robustConstant_b);
+        filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,n,m,R_cov,Q_cov,P,robustConstant_b);
         lastRectFilterAndDetectorAgreedOn=lastLocation;
         
         //filter.x_kk=x_k;
@@ -105,11 +103,16 @@ cv::Rect Struck::track(cv::Mat &image){
     // to make it work faster
     //this->samplerForSearch->sampleEquiDistant(lastLocation, locationsOnaGrid);
     
-    cv::Mat processedImage=this->feature->prepareImage(&image);
+
     
+    cv::Mat processedImage=this->feature->prepareImage(&image);
+   
     arma::mat x=this->feature->calculateFeature(processedImage, locationsOnaGrid);
     
     arma::rowvec predictions=this->olarank->predictAll(x);
+    
+    //this->weightWithStraddling(image, predictions, locationsOnaGrid, 40);
+    //predictions=predictions % obj_measure;
     
     uword groundTruth;
     predictions.max(groundTruth);
@@ -342,6 +345,48 @@ void Struck::updateDebugImage(cv::Mat* canvas,cv::Mat& img, cv::Rect &bestLocati
 }
 
 
+void Struck::weightWithStraddling(cv::Mat &image, arma::rowvec &predictions,
+                                  std::vector<cv::Rect>&rects,const int nSuperpixels){
+    
+    Straddling straddle(nSuperpixels);
+    
+    // iterate over all rects and location minimum and maximu
+    
+    int max_x,max_y=0;
+    
+    int min_x=image.cols;
+    int min_y=image.rows;
+    
+    for (int i=0; i<rects.size(); i++) {
+        
+        min_x=MIN(min_x, rects[i].x);
+        min_y=MIN(min_y,rects[i].y);
+        max_x=MAX(max_x, rects[i].x+rects[i].width);
+        max_y=MAX(max_y,rects[i].y+rects[i].height);
+    }
+    
+    int delta=20;
+    min_x=MAX(0,min_x-delta);
+    min_y=MAX(0,min_y-delta);
+    
+    max_x=MIN(image.cols-1,max_x+delta);
+    max_y=MIN(image.rows-1,max_y+delta);
+    
+    cv::Rect roi(min_x,min_y,max_x-min_x,max_y-min_y);
+    
+    cv::Mat smallImage(image,roi);
+    
+//    cv::imshow("smallImage", smallImage);
+//    cv::waitKey();
+//    cv::destroyAllWindows();
+    
+    arma::mat labels=straddle.getLabels(smallImage);
+    arma::rowvec obj_measure=straddle.findStraddling(labels, rects,min_x,min_y);
+    
+    predictions=predictions % obj_measure;
+}
+
+
 /**
  *  Apply function on the dataset
  *
@@ -463,7 +508,7 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
 
 
     this->initialize(image, groundTruth[0]);
-    
+    std::cout<<this->filter<<std::endl;
     std::time_t t1 = std::time(0);
     for (int i=1; i<gt_images.second.size(); i++) {
         cv::Mat image=cv::imread(gt_images.second[i]);

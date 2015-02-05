@@ -33,7 +33,6 @@ std::vector<cv::Rect> DatasetALOV300::readGroundTruth(std::string fileName){
     
     int frameIdx=0;
     
-    bool first=true;
     
     while (std::getline(infile, str))
     {

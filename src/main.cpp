@@ -9,6 +9,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <ctime>
+#include <algorithm>
 
 #include "Kernels/RBFKernel.h"
 #include "Kernels/IntersectionKernel.h"
@@ -20,6 +21,7 @@
 #include "Features/Haar.h"
 #include "Features/Histogram.h"
 #include "Features/HoG.h"
+#include "Features/HoGandRawFeatures.h"
 
 #include "Tracker/LocationSampler.h"
 #include "Tracker/OLaRank_old.h"
@@ -29,10 +31,13 @@
 #include "Datasets/DatasetALOV300.h"
 #include "Datasets/DatasetVOT2014.h"
 
+#include "Superpixels/SuperPixels.h"
+
 #include <pthread.h>
 #include <thread>
 
 #include <fstream>
+
 
 
 #ifdef _WIN32
@@ -90,16 +95,16 @@ Struck getTracker(){
     int nRadial         = 5;
     int nAngular        = 16;
     int B               = 33;
-
+    
     int nRadial_search  = 12;
     int nAngular_search = 30;
     
-    //RawFeatures* features=new RawFeatures(16);
+    RawFeatures* features=new RawFeatures(16);
     cv::Size size(64,64);
     
-    HoG* features=new HoG(size);
+    //HoG* features=new HoG(size);
     
-
+    
     
     //HistogramFeatures* features=new HistogramFeatures(4,16);
     // RBFKe
@@ -109,13 +114,14 @@ Struck getTracker(){
     
     //RBFKernel* kernel=new RBFKernel(0.2);
     
+    //HoGandRawFeatures* features=new HoGandRawFeatures(size,16);
     LinearKernel* kernel=new LinearKernel;
-
+    
     
     //Haar* features=new Haar(2);
     
     int verbose = 0;
-    int display = 1;
+    int display = 0;
     int m       = features->calculateFeatureDimension();
     
     OLaRank_old* olarank=new OLaRank_old(kernel);
@@ -125,15 +131,16 @@ Struck getTracker(){
     int r_update = 60;
     
     bool useFilter=false;
+    bool useObjectness=false;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     LocationSampler* samplerForUpdate = new LocationSampler(r_update,nRadial,nAngular);
     LocationSampler* samplerForSearch = new LocationSampler(r_search,nRadial_search,nAngular_search);
     
-    Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useFilter, display);
+    Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useObjectness, useFilter, display);
     
     
-    int measurementSize=6;
+    int measurementSize=10;
     arma::colvec x_k(measurementSize,fill::zeros);
     x_k(0)=0;
     x_k(1)=0;
@@ -148,8 +155,8 @@ Struck getTracker(){
     
     
     //KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
-    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
-
+    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
+    
     tracker.setFilter(filter);
     
     return tracker;
@@ -167,7 +174,7 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
     
     tracker.display=0;
     
-     std::time_t t1 = std::time(0);
+    std::time_t t1 = std::time(0);
     
     int frameNumber = 0;
     // paralelize this loop
@@ -189,7 +196,7 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
             
         }
         
-          for (int i=1; i<nFrames; i++) {
+        for (int i=1; i<nFrames; i++) {
             
             cv::Mat image=cv::imread(gt_images.second[i]);
             
@@ -219,7 +226,7 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string
     vector<pair<string, vector<string>>> video_gt_images=dataset->prepareDataset(rootFolder);
     
     std::time_t t1 = std::time(0);
-
+    
     
     std::vector<std::thread> th;
     
@@ -235,7 +242,7 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string
         t.join();
     }
     
-   
+    
     std::time_t t2 = std::time(0);
     //std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
     std::cout<<"Time with threads: "<<(t2-t1)<<std::endl;
@@ -243,28 +250,21 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string
     std::ofstream out(saveFolder+"/"+"tracker_info.txt");
     out << getTracker();
     out.close();
-
+    
     
 }
 
 
-
-
-
-
-
 int main(int argc, const char * argv[]) {
-
+    
     DataSetWu2013* wu2013=new DataSetWu2013;
     
     //DatasetALOV300* alov300=new DatasetALOV300;
+    //
+    DatasetVOT2014* vot2014=new DatasetVOT2014;
     
-    //DatasetVOT2014* vot2014=new DatasetVOT2014;
 
     Struck tracker=getTracker();
-  
-    
-    
     //vot2014->showVideo(vot2014RootFolder,0);
     
     //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,false);
@@ -272,9 +272,10 @@ int main(int argc, const char * argv[]) {
     
     //Struck tracker=getTracker();
     
-
+    
     //cout<<tracker<<endl;
     tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 5, 0, 250);
+    //tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, 4, 0, 250);
     //tracker.videoCapture();
     
     return 0;

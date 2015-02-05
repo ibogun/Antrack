@@ -102,7 +102,7 @@ cv::Mat get_hogdescriptor_visual_image(cv::Mat& origImg,
     // prepare data structure: 9 orientation / gradient strenghts for each cell
     int cells_in_x_dir = winSize.width / cellSize.width;
     int cells_in_y_dir = winSize.height / cellSize.height;
-    int totalnrofcells = cells_in_x_dir * cells_in_y_dir;
+
     float*** gradientStrengths = new float**[cells_in_y_dir];
     int** cellUpdateCounter   = new int*[cells_in_y_dir];
     for (int y=0; y<cells_in_y_dir; y++)
@@ -126,8 +126,7 @@ cv::Mat get_hogdescriptor_visual_image(cv::Mat& origImg,
     
     // compute gradient strengths per cell
     int descriptorDataIdx = 0;
-    int cellx = 0;
-    int celly = 0;
+
     
     for (int blockx=0; blockx<blocks_in_x_dir; blockx++)
     {

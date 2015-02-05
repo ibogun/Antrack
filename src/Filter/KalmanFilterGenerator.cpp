@@ -33,9 +33,13 @@ KalmanFilter_my KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(a
     }
     
     Q(0,4)=1;
+    Q(0,6)=1;
     Q(1,5)=1;
+    Q(1,7)=1;
     Q(2,6)=1;
+    Q(2,4)=1;
     Q(3,7)=1;
+    Q(3,5)=1;
     
     Q(0,8)=1;
     Q(2,8)=1;

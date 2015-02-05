@@ -13,9 +13,10 @@
 #include "Feature.h"
 
 class RawFeatures:public Feature {
-    int size;
+    
     
 public:
+    int size;
     RawFeatures(int size_){this->size=size_;};
     
     cv::Mat prepareImage(cv::Mat* imageIn);

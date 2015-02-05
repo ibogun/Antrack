@@ -7,7 +7,7 @@
 //
 
 #include "LocationSampler.h"
-
+#include "algorithm"
 
 
 /**
@@ -99,6 +99,7 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
         }
     }
     
+    //auto div = [](double x, double y) {return x + y;};
 
     int scaleR=this->radius/2;
     
@@ -118,14 +119,16 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
             int halfWidth_scale=halfWidth*pow(downsample, scale_w);
             int halfHeight_scale=halfHeight*pow(downsample,scale_h);
             
-            if (halfWidth_scale<=0 || halfHeight_scale<=0) {
+            if (halfWidth_scale<=8 || halfHeight_scale<=8) {
                 continue;
             }
             
             int width_scale=halfWidth_scale*2;
             int height_scale=halfHeight_scale*2;
             
-            
+//            if (std::abs(div(width_scale,height_scale)-div(this->objectWidth,this->objectHeight))*(div(height_scale,width_scale)-div(this->objectHeight,this->objectWidth))>1) {
+//                continue;mat
+//            }
             
             for (int i=0; i<radialValues.size(); ++i) {
                 for (int j=0; j<angularValues.size(); ++j) {

@@ -92,6 +92,7 @@
 #endif
 
 
+
 Struck getTracker(){
     // Parameters
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -106,10 +107,10 @@ Struck getTracker(){
     int nRadial_search  = 12;
     int nAngular_search = 30;
     
-    //RawFeatures* features=new RawFeatures(16);
+    RawFeatures* features=new RawFeatures(16);
     cv::Size size(64,64);
     
-    HoG* features=new HoG(size);
+    //HoG* features=new HoG(size);
     
     
     
@@ -121,13 +122,14 @@ Struck getTracker(){
     
     //RBFKernel* kernel=new RBFKernel(0.2);
     
+    //HoGandRawFeatures* features=new HoGandRawFeatures(size,16);
     LinearKernel* kernel=new LinearKernel;
     
     
     //Haar* features=new Haar(2);
     
     int verbose = 0;
-    int display = 1;
+    int display = 0;
     int m       = features->calculateFeatureDimension();
     
     OLaRank_old* olarank=new OLaRank_old(kernel);
@@ -137,15 +139,16 @@ Struck getTracker(){
     int r_update = 60;
     
     bool useFilter=false;
+    bool useObjectness=false;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     LocationSampler* samplerForUpdate = new LocationSampler(r_update,nRadial,nAngular);
     LocationSampler* samplerForSearch = new LocationSampler(r_search,nRadial_search,nAngular_search);
     
-    Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useFilter, display);
+    Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useObjectness, useFilter, display);
     
     
-    int measurementSize=6;
+    int measurementSize=10;
     arma::colvec x_k(measurementSize,fill::zeros);
     x_k(0)=0;
     x_k(1)=0;
@@ -160,7 +163,7 @@ Struck getTracker(){
     
     
     //KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
-    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
+    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
     
     tracker.setFilter(filter);
     
@@ -233,55 +236,3 @@ int main( int argc, char** argv)
     return 0;
 
 }
-// #else
-// int main( int argc, char** argv)
-// {
-//
-//     Struck tracker=getTracker();
-//     cv::Mat img;
-//
-//     //load region, images and prepare for output
-//     VOT vot_io("region.txt", "images.txt", "output.txt");
-//
-//     //img = firts frame, initPos = initial position in the first frame
-//     VOTPolygon p = vot_io.getInitPolygon();
-//
-//     int top = round(MIN(p.y1, MIN(p.y2, MIN(p.y3, p.y4))));
-//     int left = round(MIN(p.x1, MIN(p.x2, MIN(p.x3, p.x4))));
-//     int bottom = round(MAX(p.y1, MAX(p.y2, MAX(p.y3, p.y4))));
-//     int right = round(MAX(p.x1, MAX(p.x2, MAX(p.x3, p.x4))));
-//
-// //printf("R:%d %d %d %d \n", left, top, right, bottom);
-//
-//     vot_io.getNextImage(img);
-//
-//     //output init also bbox
-//     vot_io.outputPolygon(p);
-//
-//     //tracker initialization
-//
-// 	cv::Rect initial(left, top, right - left, bottom - top);
-//     tracker.initialize(img, initial);
-//
-//     //track
-//     while (vot_io.getNextImage(img) == 1){
-//         cv::Rect rect = tracker.track(img);
-//
-//         VOTPolygon result;
-//
-//         result.x1 = rect.x;
-//         result.y1 = rect.y;
-//         result.x2 = rect.x + rect.width;
-//         result.y2 = rect.y;
-//         result.x3 = rect.x + rect.width;
-//         result.y3 = rect.y + rect.height;
-//         result.x4 = rect.x;
-//         result.y4 = rect.y + rect.height;
-//
-//         vot_io.outputPolygon(result);
-//     }
-//
-//     return 0;
-//
-// }
-// #endif

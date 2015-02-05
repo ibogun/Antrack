@@ -88,7 +88,7 @@ std::vector<cv::RotatedRect> DatasetVOT2014::readComplete(std::string fileName){
         std::regex_iterator<std::string::iterator> rit ( str.begin(), str.end(), e );
         std::regex_iterator<std::string::iterator> rend;
         
-        int idxValues=0;
+        
         
         std::vector<float> record;
         while (rit!=rend) {
@@ -130,7 +130,7 @@ std::vector<cv::RotatedRect> DatasetVOT2014::readComplete(std::string fileName){
         //3) find the angle
         
         float degrees_1=findAngle(record[0], record[1], record[2], record[3]);
-        float degrees_2=findAngle(record[0], record[1], record[2], record[3]);
+//        float degrees_2=findAngle(record[0], record[1], record[2], record[3]);
         
         float angle=degrees_1;
         

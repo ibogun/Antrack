@@ -45,6 +45,14 @@ set(Experiment_01
 	src/Experiments/Experiment_efficient_int_kernel.h
 )
 
+set(Superpixels
+   src/Superpixels/helper.h
+   src/Superpixels/seeds2.h
+   src/Superpixels/seeds2.cpp
+   src/Superpixels/SuperPixels.h
+   src/Superpixels/SuperPixels.cpp
+   )
+
 
 FILE(GLOB TRAX_FILES
 	src/Datasets/vot2014_trax/*.h
@@ -114,7 +122,10 @@ if(VOT2014)
 endif()
 
 
-add_executable(robust_struck_tracker_v1.0 ${SOURCE_FILES} ${PROJECT_MAIN})
+add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJECT_MAIN})
+
+
+
 include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
