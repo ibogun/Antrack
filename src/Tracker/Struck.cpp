@@ -110,9 +110,14 @@ cv::Rect Struck::track(cv::Mat &image){
     arma::mat x=this->feature->calculateFeature(processedImage, locationsOnaGrid);
     
     arma::rowvec predictions=this->olarank->predictAll(x);
-    
-    //this->weightWithStraddling(image, predictions, locationsOnaGrid, 40);
-    //predictions=predictions % obj_measure;
+    if (this->useObjectness) {
+        
+        //Objectne
+        //arma::rowvec obj_measure
+        this->weightWithStraddling(image, predictions, locationsOnaGrid, 40);
+        //predictions=predictions % obj_measure;
+    }
+   
     
     uword groundTruth;
     predictions.max(groundTruth);
@@ -380,10 +385,22 @@ void Struck::weightWithStraddling(cv::Mat &image, arma::rowvec &predictions,
 //    cv::waitKey();
 //    cv::destroyAllWindows();
     
-    arma::mat labels=straddle.getLabels(smallImage);
-    arma::rowvec obj_measure=straddle.findStraddling(labels, rects,min_x,min_y);
     
-    predictions=predictions % obj_measure;
+    arma::mat labels=straddle.getLabels(smallImage);
+    
+    
+    arma::rowvec obj_measure_fast=straddle.findStraddlng_fast(labels, rects,min_x,min_y);
+    
+    
+//    arma::rowvec obj_measure=straddle.findStraddling(labels, rects,min_x,min_y);
+//    if (arma::norm(obj_measure-obj_measure_fast)>0.00001) {
+//        
+//        std::cout<<obj_measure.subvec(0, 10)<<std::endl;
+//        std::cout<<obj_measure_fast.subvec(0, 10)<<std::endl;
+//        std::cout<<"Objectness is calculated incorrectly "+std::to_string(arma::norm(obj_measure-obj_measure_fast))<<std::endl;
+//    }
+    
+    predictions=predictions % obj_measure_fast;
 }
 
 

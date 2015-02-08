@@ -51,6 +51,8 @@ set(Superpixels
    src/Superpixels/seeds2.cpp
    src/Superpixels/SuperPixels.h
    src/Superpixels/SuperPixels.cpp
+   src/Superpixels/Objectness.h
+   src/Superpixels/Objectness.cpp
    )
 
 
@@ -117,7 +119,7 @@ if (experiments)
 endif()
 
 if(VOT2014)
-	add_executable(struck_vot2014 ${SOURCE_FILES} ${TRAX_FILES})
+	add_executable(struck_vot2014 ${Superpixels} ${SOURCE_FILES} ${TRAX_FILES})
 	target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 

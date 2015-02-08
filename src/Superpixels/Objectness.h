@@ -27,6 +27,8 @@ public:
     
     double findStraddlingMeasure(arma::mat& labels, cv::Rect& rectangle);
     
+    arma::rowvec findStraddlng_fast(arma::mat& labels,std::vector<cv::Rect>& rects, int translate_x,int translate_y);
+    
 };
 
 #endif /* defined(__Robust_tracking_by_detection__Objectness__) */

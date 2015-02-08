@@ -121,7 +121,7 @@ Struck getTracker(){
     //Haar* features=new Haar(2);
     
     int verbose = 0;
-    int display = 0;
+    int display = 1;
     int m       = features->calculateFeatureDimension();
     
     OLaRank_old* olarank=new OLaRank_old(kernel);
@@ -274,8 +274,8 @@ int main(int argc, const char * argv[]) {
     
     
     //cout<<tracker<<endl;
-    tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 5, 0, 250);
-    //tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, 4, 0, 250);
+    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 5, 0, 250);
+    tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, 0, 0, 250);
     //tracker.videoCapture();
     
     return 0;

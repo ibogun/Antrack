@@ -74,3 +74,82 @@ arma::rowvec Straddling::findStraddling(arma::mat &labels, std::vector<cv::Rect>
     
     return measures;
 }
+
+
+arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::Rect> &rects, int translate_x, int translate_y){
+    
+    // get unique labels
+    arma::mat uniqueLabels=arma::unique(labels);
+    
+    // allocate matrices for each superpixel
+    // assume labels are labelled from 0 to max(labels)
+    
+    int m=labels.n_cols;
+    int n=labels.n_rows;
+    
+    std::vector<arma::mat> integrals;
+    
+    for (int i=0; i<uniqueLabels.size(); i++) {
+        arma::mat integral(n+1,m+1,arma::fill::zeros);
+        int label=uniqueLabels(i);
+        
+        // calculate integral image here
+        for (int j=1; j<m+1; j++) {
+            for (int s=1; s<n+1; s++) {
+                if (labels(s-1,j-1)==label) {
+                    integral(s,j)++;
+                }
+                
+                if (j!=0) {
+                    integral(s,j)+=integral(s,j-1);
+                }
+                
+                if (s!=0) {
+                    integral(s,j)+=integral(s-1,j);
+                    
+                    if (j!=0) {
+                        integral(s,j)-=integral(s-1,j-1);
+                    }
+                }
+
+            }
+        }
+        
+        integrals.push_back(integral);
+    }
+    
+    // resulting scores
+    arma::rowvec measures(rects.size(),arma::fill::zeros);
+    
+    for (int i=0; i<rects.size(); i++) {
+        
+        double measure=0;
+        // for each superpixel
+        
+        for (int superpixel=0; superpixel<uniqueLabels.size(); superpixel++) {
+            
+            // find area of the overlap between superpixel and window
+            cv::Rect rect(rects[i].x-translate_x,rects[i].y-
+                          translate_y,rects[i].width,rects[i].height);
+            
+            int area_superpixel_window_overlap=integrals[superpixel](rect.x+rect.width+1,
+                                                                     rect.y+rect.height+1)+
+                                            integrals[superpixel](rect.x,rect.y)-
+                                            integrals[superpixel](rect.x+rect.width+1,rect.y)-
+                                            integrals[superpixel](rect.x,rect.y+rect.height+1);
+            
+            int area_superpixel_without_window=integrals[superpixel](n,m)-area_superpixel_window_overlap;
+            
+            measure+=MIN(area_superpixel_window_overlap,
+                         area_superpixel_without_window)/
+                        ((double)(rect.width*rect.height));
+            
+        }
+        
+        measures(i)=1-measure;
+    }
+    
+    return measures;
+    
+    
+}
