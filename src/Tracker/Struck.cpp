@@ -112,6 +112,8 @@ cv::Rect Struck::track(cv::Mat &image){
     arma::rowvec predictions=this->olarank->predictAll(x);
     if (this->useObjectness) {
         
+        
+        
         //Objectne
         //arma::rowvec obj_measure
         this->weightWithStraddling(image, predictions, locationsOnaGrid, 40);
@@ -355,6 +357,8 @@ void Struck::weightWithStraddling(cv::Mat &image, arma::rowvec &predictions,
     
     Straddling straddle(nSuperpixels);
     
+
+    
     // iterate over all rects and location minimum and maximu
     
     int max_x,max_y=0;
@@ -391,15 +395,11 @@ void Struck::weightWithStraddling(cv::Mat &image, arma::rowvec &predictions,
     
     arma::rowvec obj_measure_fast=straddle.findStraddlng_fast(labels, rects,min_x,min_y);
     
-    
-//    arma::rowvec obj_measure=straddle.findStraddling(labels, rects,min_x,min_y);
-//    if (arma::norm(obj_measure-obj_measure_fast)>0.00001) {
-//        
-//        std::cout<<obj_measure.subvec(0, 10)<<std::endl;
-//        std::cout<<obj_measure_fast.subvec(0, 10)<<std::endl;
-//        std::cout<<"Objectness is calculated incorrectly "+std::to_string(arma::norm(obj_measure-obj_measure_fast))<<std::endl;
-//    }
-    
+//  EdgeDensity edgeDensity(0.5, 0.5, 0.9);
+//    
+//  edgeDensity.getEdges(image);
+//  arma::rowvec edge_measure=edgeDensity.findEdgeObjectness(smallImage, rects, min_x, min_y);
+//  predictions=predictions % edge_measure;
     predictions=predictions % obj_measure_fast;
 }
 
@@ -513,6 +513,7 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
     
     vector<cv::Rect> groundTruth=dataset->readGroundTruth(gt_images.first);
     
+    frameTo=MIN(frameTo, gt_images.second.size());
     
     // delete everything which comes after frameTo
     gt_images.second.erase(gt_images.second.begin()+frameTo, gt_images.second.end());
@@ -523,6 +524,8 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
     
     cv::Mat image=cv::imread(gt_images.second[0]);
 
+    //groundTruth[0].x=image.cols-1-groundTruth[0].width;
+    //groundTruth[0].y=image.rows-1-groundTruth[0].height;
 
     this->initialize(image, groundTruth[0]);
     std::cout<<this->filter<<std::endl;

@@ -21,9 +21,9 @@ public:
     SuperPixels();
 
 
-    UINT* calculateSegmentation(cv::Mat& img_,int nSuperPixels);
+//    UINT* calculateSegmentation(cv::Mat& img_,int nSuperPixels);
     
-    arma::mat calculateSegmentation_armamat(cv::Mat& img_,int nSuperpixels);
+    arma::mat calculateSegmentation(cv::Mat& img_,int nSuperpixels);
     // cv::Mat getBoundary();
     // cv::Mat getLabels();
     // cv::Mat getSegmentation();

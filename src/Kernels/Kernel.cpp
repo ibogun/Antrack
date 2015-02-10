@@ -33,10 +33,10 @@ arma::rowvec Kernel::predictAll(arma::mat &newX,std::vector<supportData*>& S,int
                 
                 y_hat(0)=yhat;
                 
-                if ((*S[i]->beta)(yhat)!=0){
+                if ((*S[i]->beta)[yhat]!=0){
                     
                     // the below has to be multiplied by the velocities kernel
-                    current+= (*S[i]->beta)(yhat)*
+                    current+= (*S[i]->beta)[yhat]*
                     calculate(newX, y(0), *S[i]->x, y_hat(0));
                     
                 }
@@ -44,7 +44,7 @@ arma::rowvec Kernel::predictAll(arma::mat &newX,std::vector<supportData*>& S,int
             
         }
         
-        scores(k)=current;
+        scores[k]=current;
         
         
     }

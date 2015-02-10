@@ -31,4 +31,21 @@ public:
     
 };
 
+
+class EdgeDensity{
+    
+    double threshold_1;
+    double threshold_2;
+    
+    double inner_threshold;
+    
+public:
+    EdgeDensity(double t1,double t2, double inner){this->threshold_1=t1; this->threshold_2=t2;
+        this->inner_threshold=inner;};
+    
+    cv::Mat getEdges(cv::Mat&);
+    
+    arma::rowvec findEdgeObjectness(cv::Mat& labels, std::vector<cv::Rect>& rects, int translate_x, int translate_y);
+};
+
 #endif /* defined(__Robust_tracking_by_detection__Objectness__) */

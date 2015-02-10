@@ -169,13 +169,14 @@ TEST_F(IntersectionKernel_tracking_test, DISABLED_Tracking){
     
     OLaRank_old* olarank_fast=new OLaRank_old(kernel_fast);
     
-    olarank->setParameters(p, B,m,K,verbose);
-    olarank_fast->setParameters(p, B,m,K,verbose);
+    olarank->setParameters(p, B,m,verbose);
+    olarank_fast->setParameters(p, B,m,verbose);
     
     int r_search=30;
     int r_update=60;
     
     bool useFilter=true;
+    bool useObjectness=false;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     LocationSampler* samplerForUpdate=new LocationSampler(r_update,nRadial,nAngular);
@@ -183,7 +184,7 @@ TEST_F(IntersectionKernel_tracking_test, DISABLED_Tracking){
     
     
     //Struck t(olarank, features,samplerForSearch, samplerForUpdate,useFilter, display);
-    Struck t_fast(olarank_fast, features,samplerForSearch, samplerForUpdate,useFilter, display);
+    Struck t_fast(olarank_fast, features,samplerForSearch, samplerForUpdate,useObjectness,useFilter, display);
     
     
     
@@ -198,7 +199,7 @@ TEST_F(IntersectionKernel_tracking_test, DISABLED_Tracking){
     int nOfFrames=30;
     
     t_fast.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 0, 0, nOfFrames);
-    Struck t(olarank,features,samplerForSearch,samplerForUpdate,useFilter,display);
+    Struck t(olarank,features,samplerForSearch,samplerForUpdate,useObjectness,useFilter,display);
     t.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 0, 0, nOfFrames);
     std::vector<cv::Rect> boxes_fast=t_fast.getBoundingBoxes();
     std::vector<cv::Rect> boxes_slow=t.getBoundingBoxes();

@@ -9,7 +9,7 @@ SuperPixels::SuperPixels() {
 
 }
 
-UINT* SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
+arma::mat SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
    
 
     IplImage* img=new IplImage(img_);
@@ -129,14 +129,35 @@ UINT* SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
   
   //seeds.DrawContoursAroundSegments(ubuff, seeds.labels[nr_levels-1], width, height, 0xff0000, false);//0xff0000 draws red contours
 
-
+    //     delete[] ubuff;
+    //     delete[] output_buff;
  
   //std::string imageFileName = "./test_labels.png";
   //printf("Saving image %s\n",imageFileName.c_str());
   //seeds.SaveImage(ubuff, width, height,imageFileName.c_str());
 
   // DRAW SEEDS OUTPUT
-  return seeds.get_labels();
+    
+    delete img;
+    delete[] ubuff;
+  
+//    arma::mat Label(img_.cols,img_.rows,arma::fill::zeros);
+    
+    arma::mat Label(img_.cols,img_.rows,arma::fill::zeros);
+    for (int x=0; x<img_.cols;x++) {
+        
+        for (int y=0; y<img_.rows; y++) {
+            //std::cout<<labels[y*image.cols+x]<<std::endl;//[y * width + x]
+            Label[x,y]=seeds.get_labels()[y*img_.cols+x];
+        }
+        
+    }
+    
+    
+    seeds.deinitialize();
+    
+    return Label;
+    
   	// sz = 3*width*height;
   	//
   	//     UINT* output_buff = new UINT[sz];
@@ -164,28 +185,10 @@ UINT* SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
   	//
   	//
   	//
-  	//     delete[] ubuff;
-  	//     delete[] output_buff;
+
 }
 
 
-arma::mat SuperPixels::calculateSegmentation_armamat(cv::Mat &image, int nSuperpixels){
-    
-    UINT* labels=calculateSegmentation(image,nSuperpixels);
-    
-    
-    arma::mat Label(image.cols,image.rows,arma::fill::zeros);
-    for (int x=0; x<image.cols;x++) {
-        
-        for (int y=0; y<image.rows; y++) {
-            //std::cout<<labels[y*image.cols+x]<<std::endl;//[y * width + x]
-            Label(x,y)=labels[y*image.cols+x];
-        }
-        
-    }
-    
-    return Label;
-}
 
 
 

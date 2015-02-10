@@ -69,9 +69,9 @@ public:
                         const int&			width,				// size
                         const int&			height,
                         const string&		fileName);
-
+    void deinitialize();
 private:
-	void deinitialize();
+	
 	
 	bool initialized;
 

@@ -131,7 +131,7 @@ Struck getTracker(){
     int r_update = 60;
     
     bool useFilter=false;
-    bool useObjectness=false;
+    bool useObjectness=true;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     LocationSampler* samplerForUpdate = new LocationSampler(r_update,nRadial,nAngular);
@@ -267,15 +267,15 @@ int main(int argc, const char * argv[]) {
     Struck tracker=getTracker();
     //vot2014->showVideo(vot2014RootFolder,0);
     
-    //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,false);
+    applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,true);
     //applyTrackerOnDataset(vot2014, vot2014RootFolder, vot2014SaveFolder, true,false);
     
     //Struck tracker=getTracker();
     
     
     //cout<<tracker<<endl;
-    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 5, 0, 250);
-    tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, 0, 0, 250);
+    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 12, 0, 250);
+    //tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, 20, 0, 550);
     //tracker.videoCapture();
     
     return 0;
