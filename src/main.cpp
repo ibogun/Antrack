@@ -48,7 +48,7 @@
 #elif __APPLE__
 #include "TargetConditionals.h"
 
-#define NUM_THREADS         8
+#define NUM_THREADS         16
 
 #define wu2013RootFolder    "/Users/Ivan/Files/Data/Tracking_benchmark/"
 #define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
@@ -94,7 +94,7 @@ Struck getTracker(){
     p.n_R               = 10;
     int nRadial         = 5;
     int nAngular        = 16;
-    int B               = 33;
+    int B               = 100;
     
     int nRadial_search  = 12;
     int nAngular_search = 30;
@@ -106,22 +106,22 @@ Struck getTracker(){
     
     
     
-    HistogramFeatures* features=new HistogramFeatures(4,16);
+    //HistogramFeatures* features=new HistogramFeatures(4,16);
     // RBFKe
-    IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
+    //IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
     //ApproximateKernel* kernel= new ApproximateKernel(30);
     //IntersectionKernel* kernel=new IntersectionKernel;
     
-    //RBFKernel* kernel=new RBFKernel(0.2);
+    RBFKernel* kernel=new RBFKernel(0.2);
     
     //HoGandRawFeatures* features=new HoGandRawFeatures(size,16);
     //LinearKernel* kernel=new LinearKernel;
     
     
-    //Haar* features=new Haar(2);
+    Haar* features=new Haar(2);
     
     int verbose = 0;
-    int display = 1;
+    int display = 2;
     int m       = features->calculateFeatureDimension();
     
     OLaRank_old* olarank=new OLaRank_old(kernel);
@@ -130,7 +130,7 @@ Struck getTracker(){
     int r_search = 30;
     int r_update = 60;
     
-    bool useFilter=true;
+    bool useFilter=false;
     bool useObjectness=true;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
@@ -263,7 +263,7 @@ int main(int argc, const char * argv[]) {
     //
     DatasetVOT2014* vot2014=new DatasetVOT2014;
     vot2014->prepareDataset(vot2014RootFolder);
-    //wu2013->prepareDataset(wu2013RootFolder);
+    wu2013->prepareDataset(wu2013RootFolder);
     
     Struck tracker=getTracker();
     //vot2014->showVideo(vot2014RootFolder,0);
@@ -277,8 +277,8 @@ int main(int argc, const char * argv[]) {
 //        std::cout<<x.first<<" "<<x.second<<std::endl;
 //    }
     //cout<<tracker<<endl;
-    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 12, 0, 250);
-    tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, vot2014->vidToIndex.at("torus"), 0, 550);
+    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, wu2013->vidToIndex.at("singer2"), 0, 550);
+    tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, vot2014->vidToIndex.at("ball"), 0, 550);
     //tracker.videoCapture();
     
     return 0;

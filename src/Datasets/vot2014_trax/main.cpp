@@ -102,12 +102,12 @@ Struck getTracker(){
     p.n_R               = 10;
     int nRadial         = 5;
     int nAngular        = 16;
-    int B               = 33;
+    int B               = 100;
     
     int nRadial_search  = 12;
     int nAngular_search = 30;
     
-    RawFeatures* features=new RawFeatures(16);
+    //RawFeatures* features=new RawFeatures(16);
     cv::Size size(64,64);
     
     //HoG* features=new HoG(size);
@@ -120,16 +120,16 @@ Struck getTracker(){
     //ApproximateKernel* kernel= new ApproximateKernel(30);
     //IntersectionKernel* kernel=new IntersectionKernel;
     
-    //RBFKernel* kernel=new RBFKernel(0.2);
+    RBFKernel* kernel=new RBFKernel(0.2);
     
     //HoGandRawFeatures* features=new HoGandRawFeatures(size,16);
-    LinearKernel* kernel=new LinearKernel;
+    //LinearKernel* kernel=new LinearKernel;
     
     
-    //Haar* features=new Haar(2);
+    Haar* features=new Haar(2);
     
     int verbose = 0;
-    int display = 0;
+    int display = 2;
     int m       = features->calculateFeatureDimension();
     
     OLaRank_old* olarank=new OLaRank_old(kernel);
@@ -139,7 +139,7 @@ Struck getTracker(){
     int r_update = 60;
     
     bool useFilter=false;
-    bool useObjectness=false;
+    bool useObjectness=true;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     LocationSampler* samplerForUpdate = new LocationSampler(r_update,nRadial,nAngular);
@@ -169,6 +169,7 @@ Struck getTracker(){
     
     return tracker;
 }
+
 
 //#ifdef TRAX
 int main( int argc, char** argv)

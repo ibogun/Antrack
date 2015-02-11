@@ -28,6 +28,8 @@ double Straddling::findStraddlingMeasure(arma::mat &labels, cv::Rect &rect){
     //        std::cout<<uniqueLabels(i)<<std::endl;
     //    }
     
+    
+    
     using namespace arma;
     
     
@@ -92,26 +94,25 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
     
     for (int i=0; i<uniqueLabels.size(); i++) {
         
-        int label=uniqueLabels[i];
+        int label=uniqueLabels(i);
         
         // calculate integral image here
-        for (int j=1; j<m+1; j++) {
-            for (int s=1; s<n+1; s++) {
-                if (labels[s-1,j-1]==label) {
-                    integrals[s,j,i]++;
-                }
+        
+        for (int s=1; s<n+1; s++) {
+            for (int j=1; j<m+1; j++) {
                 
-                if (j!=0) {
-                    integrals[s,j,i]+=integrals[s,j-1,i];
-                }
+             
                 
-                if (s!=0) {
-                    integrals[s,j,i]+=integrals[s-1,j,i];
-                    
-                    if (j!=0) {
-                        integrals[s,j,i]-=integrals[s-1,j-1,i];
-                    }
+                if (labels(s-1,j-1)==label) {
+                    integrals(s,j,i)++;
                 }
+              
+                integrals(s,j,i)+=integrals(s,j-1,i);
+               
+                integrals(s,j,i)+=integrals(s-1,j,i);
+               
+                integrals(s,j,i)-=integrals(s-1,j-1,i);
+              
                 
             }
         }
@@ -126,22 +127,35 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
         
         double measure=0;
         // for each superpixel
+        // find area of the overlap between superpixel and window
+        cv::Rect rect_big(rects[i].x-translate_x,rects[i].y-
+                          translate_y,rects[i].width,rects[i].height);
+        
+        cv::Rect rect=getInnerRect(rect_big);
+        
         
         for (int superpixel=0; superpixel<uniqueLabels.size(); superpixel++) {
             
-            // find area of the overlap between superpixel and window
-            cv::Rect rect(rects[i].x-translate_x,rects[i].y-
-                          translate_y,rects[i].width,rects[i].height);
+            
+//            int A=integrals(rect.x+rect.width,
+//                            rect.y+rect.height,superpixel);
+//            
+//            int B=integrals(rect.x,rect.y,superpixel);
+//            
+//            int C=integrals(rect.x+rect.width,rect.y,superpixel);
+//            
+//            int D=integrals(rect.x,rect.y+rect.height,superpixel);
+            
+            int area_superpixel_window_overlap=integrals(rect.x+rect.width,
+                                                         rect.y+rect.height,superpixel)+
+            integrals(rect.x,rect.y,superpixel)-
+            integrals(rect.x+rect.width,rect.y,superpixel)-
+            integrals(rect.x,rect.y+rect.height,superpixel);
+            
+            int area_superpixel_without_window=integrals(n,m,superpixel)-area_superpixel_window_overlap;
             
             
-            int area_superpixel_window_overlap=integrals[rect.x+rect.width,
-                                                         rect.y+rect.height,superpixel]+
-            integrals[rect.x,rect.y,superpixel]-
-            integrals[rect.x+rect.width,rect.y,superpixel]-
-            integrals[rect.x,rect.y+rect.height,superpixel];
-            
-            int area_superpixel_without_window=integrals[n,m,superpixel]-area_superpixel_window_overlap;
-            
+            //int sum=integrals(n,m,superpixel);
             measure+=MIN(area_superpixel_window_overlap,
                          area_superpixel_without_window)/
             ((double)(rect.width*rect.height));
@@ -150,6 +164,9 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
         
         measures(i)=1-measure;
     }
+    
+    
+   
     
     
     return measures;
@@ -252,6 +269,19 @@ arma::rowvec EdgeDensity::findEdgeObjectness(cv::Mat &labels, std::vector<cv::Re
 }
 
 
+
+cv::Rect Straddling::getInnerRect(cv::Rect &rect){
+    // get inner rectangle
+    
+    int inner_rect_x=rect.x+rect.width*(1-this->inner_threshold)/(2.0);
+    int inner_rect_y=rect.y+rect.height*(1-this->inner_threshold)/(2.0);
+    int inner_width=rect.width*this->inner_threshold;
+    int inner_height=rect.height*this->inner_threshold;
+    
+    cv::Rect inner_rect(inner_rect_x,inner_rect_y,inner_width,inner_height);
+    
+    return inner_rect;
+}
 
 
 

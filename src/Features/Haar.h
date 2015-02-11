@@ -28,6 +28,8 @@ public:
     static int round_my(double);
     
     double getSumGivenCorners(cv::Mat& integral,const int& xmin,const int& xmax,const int& ymin,const int& ymax);
+    
+    std::string getInfo();
 };
 
 #endif /* defined(__Robust_Struck__Haar__) */

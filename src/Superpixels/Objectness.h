@@ -18,9 +18,17 @@ class Straddling{
     
     
     int nSuperPixels;
+    double inner_threshold;
+    
+    
     
 public:
-    Straddling(int n){this->nSuperPixels=n;};
+    
+
+    Straddling(int n,double inner=0.9){this->nSuperPixels=n;
+        inner_threshold=inner;};
+
+    cv::Rect getInnerRect(cv::Rect& r);
     
     arma::mat getLabels(cv::Mat&);
     arma::rowvec findStraddling(arma::mat& labels,std::vector<cv::Rect>& rects, int translate_x, int translate_y);

@@ -19,6 +19,13 @@ cv::Mat Haar::prepareImage(cv::Mat *imageIn){
 }
 
 
+std::string Haar::getInfo(){
+    
+    std::string result="Haar features with: "+std::to_string(dimPerScale) +" dimension \n";
+    return result;
+}
+
+
 arma::mat Haar::calculateFeature(cv::Mat &processedImage, std::vector<cv::Rect> &locations){
     
     cv::Mat blurredImg;

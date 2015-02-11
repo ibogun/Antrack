@@ -121,13 +121,15 @@ arma::mat SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
 
   seeds.iterate();
 
+    
+    
   //clock_t end = clock();
   //double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   //printf("    elapsed time=%lf sec\n", elapsed_secs);
 
   //printf("SEEDS produced %d labels\n", seeds.count_superpixels());
   
-  //seeds.DrawContoursAroundSegments(ubuff, seeds.labels[nr_levels-1], width, height, 0xff0000, false);//0xff0000 draws red contours
+  seeds.DrawContoursAroundSegments(ubuff, seeds.labels[nr_levels-1], width, height, 0xff0000, false);//0xff0000 draws red contours
 
     //     delete[] ubuff;
     //     delete[] output_buff;
@@ -148,14 +150,14 @@ arma::mat SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
         
         for (int y=0; y<img_.rows; y++) {
             //std::cout<<labels[y*image.cols+x]<<std::endl;//[y * width + x]
-            Label[x,y]=seeds.get_labels()[y*img_.cols+x];
+            Label(x,y)=seeds.get_labels()[y*img_.cols+x];
         }
         
     }
     
-    
     seeds.deinitialize();
     
+   
     return Label;
     
   	// sz = 3*width*height;

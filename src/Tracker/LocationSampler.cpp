@@ -101,25 +101,28 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
 
     auto div = [](double x, double y) {return x/y;};
 
-    int scaleR=this->radius/2;
+    int scaleR=this->radius;
     
-    double downsample=1.05;
-    radialValues=arma::linspace<arma::vec>(0,scaleR,nRadial/4+1);
-    angularValues=arma::linspace<arma::vec>(0,2*M_PI, nAngular/5+1);
+    double downsample=1.03;
+    radialValues=arma::linspace<arma::vec>(0,scaleR,nRadial/2+1);
+    angularValues=arma::linspace<arma::vec>(0,2*M_PI, nAngular/2+1);
     
-    //for (int scale_w=-2; scale_w<=2; scale_w++) {
+    
+    int scale=3;
+    
+    for (int scale_w=-2; scale_w<=scale; scale_w++) {
         
-        for (int scale_h=-2; scale_h<=2; scale_h++) {
+        for (int scale_h=-2; scale_h<=scale; scale_h++) {
             
             
-//            if (scale_w==0 && scale_h==0) {
-//                continue;
-//            }
+            if (scale_w==0 && scale_h==0) {
+                continue;
+            }
             
-            int halfWidth_scale=cvRound(halfWidth*pow(downsample, scale_h));
+            int halfWidth_scale=cvRound(halfWidth*pow(downsample, scale_w));
             int halfHeight_scale=cvRound(halfHeight*pow(downsample,scale_h));
             
-            if (halfWidth_scale<=8 || halfHeight_scale<=8) {
+            if (halfWidth_scale<=10 || halfHeight_scale<=10) {
                 continue;
             }
 
@@ -130,9 +133,9 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
             double widthRatio=((double)width_scale)/this->objectWidth;
             double heightRatio=((double)height_scale)/this->objectHeight;
             
-            if (widthRatio<=0.6 || heightRatio<=0.6) {
-                continue;
-            }
+//            if (widthRatio<=0.6 || heightRatio<=0.6) {
+//                continue;
+//            }
             
 //            if (std::abs(div(width_scale,height_scale)-div(this->objectWidth,this->objectHeight))*(div(height_scale,width_scale)-div(this->objectHeight,this->objectWidth))>1) {
 //                continue;
@@ -155,7 +158,7 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
                     }
                     
                 }
-        //    }
+            }
             
             
             

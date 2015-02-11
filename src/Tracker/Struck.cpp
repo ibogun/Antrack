@@ -116,7 +116,7 @@ cv::Rect Struck::track(cv::Mat &image){
         
         //Objectne
         //arma::rowvec obj_measure
-        this->weightWithStraddling(image, predictions, locationsOnaGrid, 40);
+        this->weightWithStraddling(image, predictions, locationsOnaGrid, 200);
         //predictions=predictions % obj_measure;
     }
    
@@ -141,6 +141,7 @@ cv::Rect Struck::track(cv::Mat &image){
         
         bestLocationFilter=filter.getBoundingBox(this->lastLocation.width, this->lastLocation.height, x_k);
         
+        this->lastLocationFilter=bestLocationFilter;
        
         double overlap=(bestLocationFilter&bestLocationDetector).area()/(double((bestLocationDetector |bestLocationFilter).area()));
         
@@ -392,14 +393,22 @@ void Struck::weightWithStraddling(cv::Mat &image, arma::rowvec &predictions,
     
     arma::mat labels=straddle.getLabels(smallImage);
     
-    
+  
     arma::rowvec obj_measure_fast=straddle.findStraddlng_fast(labels, rects,min_x,min_y);
+    //arma::rowvec obj_measure_fast=straddle.findStraddling(labels, rects, min_x, min_y);
+    uword maxBox;
+    
+    obj_measure_fast.max(maxBox);
+    
+    this->lastLocationObjectness=rects[maxBox];
     
 //  EdgeDensity edgeDensity(0.5, 0.5, 0.9);
 //    
 //  edgeDensity.getEdges(image);
 //  arma::rowvec edge_measure=edgeDensity.findEdgeObjectness(smallImage, rects, min_x, min_y);
 //  predictions=predictions % edge_measure;
+    
+    
     predictions=predictions % obj_measure_fast;
 }
 
@@ -526,6 +535,8 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
 
     //groundTruth[0].x=image.cols-1-groundTruth[0].width;
     //groundTruth[0].y=image.rows-1-groundTruth[0].height;
+    
+    this->display=0;
 
     this->initialize(image, groundTruth[0]);
     std::cout<<this->filter<<std::endl;
@@ -535,7 +546,32 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
         
         cout<<"Frame # "<<i<<endl;
         this->track(image);
+        
+        
+        cv::Scalar color(255,0,0);
+        cv::Mat plotImg=image.clone();
+        cv::rectangle(plotImg, lastLocation, color,2);
+        
+        if (useObjectness) {
+            
+            cv::rectangle(plotImg, lastLocationObjectness,cv::Scalar(0,204,102),0);
+
+        }
+        
+        
+        if (useFilter) {
+           
+            
+            cv::Rect bestLocationFilter=this->lastLocationFilter;
+            cv::rectangle(plotImg, bestLocationFilter,cv::Scalar(0,255,100),0);
+        }
+        cv::rectangle(plotImg, groundTruth[i],cv::Scalar(0,0,255),0);
+        
+        cv::imshow("Tracking window", plotImg);
+        cv::waitKey(1);
     }
+    
+
     std::time_t t2 = std::time(0);
     
     //std::cout<<"Frames per second: "<<gt_images.second.size()/(1.0*(t2-t1))<<std::endl;

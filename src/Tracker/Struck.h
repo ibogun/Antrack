@@ -37,6 +37,9 @@ class Struck {
     
     std::vector<cv::Rect> boundingBoxes;
     cv::Rect lastLocation;
+    
+    cv::Rect lastLocationFilter;
+    cv::Rect lastLocationObjectness;
 
     cv::Rect lastRectFilterAndDetectorAgreedOn;
     
