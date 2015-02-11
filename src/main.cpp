@@ -99,23 +99,23 @@ Struck getTracker(){
     int nRadial_search  = 12;
     int nAngular_search = 30;
     
-    RawFeatures* features=new RawFeatures(16);
+    //RawFeatures* features=new RawFeatures(16);
     cv::Size size(64,64);
     
     //HoG* features=new HoG(size);
     
     
     
-    //HistogramFeatures* features=new HistogramFeatures(4,16);
+    HistogramFeatures* features=new HistogramFeatures(4,16);
     // RBFKe
-    //IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
+    IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
     //ApproximateKernel* kernel= new ApproximateKernel(30);
     //IntersectionKernel* kernel=new IntersectionKernel;
     
     //RBFKernel* kernel=new RBFKernel(0.2);
     
     //HoGandRawFeatures* features=new HoGandRawFeatures(size,16);
-    LinearKernel* kernel=new LinearKernel;
+    //LinearKernel* kernel=new LinearKernel;
     
     
     //Haar* features=new Haar(2);
@@ -130,7 +130,7 @@ Struck getTracker(){
     int r_search = 30;
     int r_update = 60;
     
-    bool useFilter=false;
+    bool useFilter=true;
     bool useObjectness=true;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
@@ -262,20 +262,23 @@ int main(int argc, const char * argv[]) {
     //DatasetALOV300* alov300=new DatasetALOV300;
     //
     DatasetVOT2014* vot2014=new DatasetVOT2014;
+    vot2014->prepareDataset(vot2014RootFolder);
+    //wu2013->prepareDataset(wu2013RootFolder);
     
-
     Struck tracker=getTracker();
     //vot2014->showVideo(vot2014RootFolder,0);
     
-    applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,true);
+    //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,true);
     //applyTrackerOnDataset(vot2014, vot2014RootFolder, vot2014SaveFolder, true,false);
     
     //Struck tracker=getTracker();
     
-    
+//    for (auto & x:wu2013->vidToIndex){
+//        std::cout<<x.first<<" "<<x.second<<std::endl;
+//    }
     //cout<<tracker<<endl;
     //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, 12, 0, 250);
-    //tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, 20, 0, 550);
+    tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, vot2014->vidToIndex.at("torus"), 0, 550);
     //tracker.videoCapture();
     
     return 0;

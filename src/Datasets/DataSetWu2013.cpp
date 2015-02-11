@@ -109,6 +109,8 @@ std::vector<std::pair<std::string, std::vector<std::string>>> DataSetWu2013::pre
         
         vector<string> images=listImages(imgLocation, "jpg");
         
+        this->vidToIndex.insert(std::pair<std::string, int>(videos[i],i));
+        
         std::pair<string, vector<string>> groundTruth_images;
         groundTruth_images=std::make_pair(gt, images);
         

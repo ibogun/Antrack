@@ -36,6 +36,7 @@ std::vector<std::pair<std::string,std::vector<std::string>>> DatasetVOT2014::pre
         
         // list all images
         
+        this->vidToIndex.insert(std::pair<std::string, int>(videos[i],i));
         vector<string> images=Dataset::listImages(imgLocation, "jpg");
         
         std::pair<string, vector<string>> groundTruth_images;

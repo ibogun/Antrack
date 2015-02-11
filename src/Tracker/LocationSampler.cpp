@@ -98,8 +98,8 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
             
         }
     }
-    
-    //auto div = [](double x, double y) {return x + y;};
+
+    auto div = [](double x, double y) {return x/y;};
 
     int scaleR=this->radius/2;
     
@@ -107,27 +107,35 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
     radialValues=arma::linspace<arma::vec>(0,scaleR,nRadial/4+1);
     angularValues=arma::linspace<arma::vec>(0,2*M_PI, nAngular/5+1);
     
-    for (int scale_w=-2; scale_w<=2; scale_w++) {
+    //for (int scale_w=-2; scale_w<=2; scale_w++) {
         
         for (int scale_h=-2; scale_h<=2; scale_h++) {
             
             
-            if (scale_w==0 && scale_h==0) {
-                continue;
-            }
+//            if (scale_w==0 && scale_h==0) {
+//                continue;
+//            }
             
-            int halfWidth_scale=halfWidth*pow(downsample, scale_w);
-            int halfHeight_scale=halfHeight*pow(downsample,scale_h);
+            int halfWidth_scale=cvRound(halfWidth*pow(downsample, scale_h));
+            int halfHeight_scale=cvRound(halfHeight*pow(downsample,scale_h));
             
             if (halfWidth_scale<=8 || halfHeight_scale<=8) {
                 continue;
             }
+
             
             int width_scale=halfWidth_scale*2;
             int height_scale=halfHeight_scale*2;
             
+            double widthRatio=((double)width_scale)/this->objectWidth;
+            double heightRatio=((double)height_scale)/this->objectHeight;
+            
+            if (widthRatio<=0.6 || heightRatio<=0.6) {
+                continue;
+            }
+            
 //            if (std::abs(div(width_scale,height_scale)-div(this->objectWidth,this->objectHeight))*(div(height_scale,width_scale)-div(this->objectHeight,this->objectWidth))>1) {
-//                continue;mat
+//                continue;
 //            }
             
             for (int i=0; i<radialValues.size(); ++i) {
@@ -147,7 +155,7 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
                     }
                     
                 }
-            }
+        //    }
             
             
             
@@ -212,8 +220,8 @@ void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation, std::vector<cv::R
                 continue;
             }
             
-            int halfWidth_scale=halfWidth*pow(downsample, scale_w);
-            int halfHeight_scale=halfHeight*pow(downsample,scale_h);
+            int halfWidth_scale=cvRound(halfWidth*pow(downsample, scale_w));
+            int halfHeight_scale=cvRound(halfHeight*pow(downsample,scale_h));
             
             int width_scale=halfWidth_scale*2;
             int height_scale=halfHeight_scale*2;

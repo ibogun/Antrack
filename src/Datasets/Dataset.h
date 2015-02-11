@@ -14,12 +14,16 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
+#include <unordered_map>
+
+typedef std::unordered_map<std::string, int> hashtable;
 class Dataset {
     
     
 
 public:
     
+    hashtable vidToIndex;
     std::vector<std::string> videos;
     
     static std::vector<std::string> listSubFolders(std::string folder);

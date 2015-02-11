@@ -11,11 +11,16 @@
 
 #include <stdio.h>
 #include "Dataset.h"
+#include <unordered_map>
+
+
 
 class DatasetVOT2014:public Dataset {
         
     
 public:
+    
+    //hashtable vidToIndexHashTable;
     std::vector<std::pair<std::string, std::vector<std::string>>> prepareDataset(std::string rootFolder);
     std::vector<cv::RotatedRect> readComplete(std::string);
     std::vector<cv::Rect> readGroundTruth(std::string);
