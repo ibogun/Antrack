@@ -7,7 +7,7 @@
 //
 
 #include "Struck.h"
-
+#include <math.h> 
 
 void Struck::initialize(cv::Mat &image, cv::Rect &location){
     
@@ -118,6 +118,24 @@ cv::Rect Struck::track(cv::Mat &image){
         //arma::rowvec obj_measure
         this->weightWithStraddling(image, predictions, locationsOnaGrid, 200);
         //predictions=predictions % obj_measure;
+    }
+    
+    
+    if(this->scalePrior){
+        int sigma=10;
+        
+        int two_sigma_squared=2*pow(sigma,2);
+        
+        arma::rowvec scalePriors(locationsOnaGrid.size(),arma::fill::zeros);
+        
+        for (int i=0; i<locationsOnaGrid.size(); i++) {
+            scalePriors[i]=expf(-(pow(locationsOnaGrid[i].width-
+                                      this->samplerForSearch->objectWidth,2)/two_sigma_squared))*
+            expf(-(pow(locationsOnaGrid[i].height-this->samplerForSearch->objectHeight,2)/two_sigma_squared));
+        }
+        
+        predictions=predictions % scalePriors;
+        
     }
    
     
@@ -356,7 +374,11 @@ void Struck::updateDebugImage(cv::Mat* canvas,cv::Mat& img, cv::Rect &bestLocati
 void Struck::weightWithStraddling(cv::Mat &image, arma::rowvec &predictions,
                                   std::vector<cv::Rect>&rects,const int nSuperpixels){
     
-    Straddling straddle(nSuperpixels);
+    double inner=0.95;
+    
+    int objDisplay=2;
+    Straddling straddle(nSuperpixels,inner,objDisplay);
+    
     
 
     
@@ -396,20 +418,68 @@ void Struck::weightWithStraddling(cv::Mat &image, arma::rowvec &predictions,
   
     arma::rowvec obj_measure_fast=straddle.findStraddlng_fast(labels, rects,min_x,min_y);
     //arma::rowvec obj_measure_fast=straddle.findStraddling(labels, rects, min_x, min_y);
-    uword maxBox;
+
     
-    obj_measure_fast.max(maxBox);
-    
-    this->lastLocationObjectness=rects[maxBox];
-    
-//  EdgeDensity edgeDensity(0.5, 0.5, 0.9);
+  EdgeDensity edgeDensity(0.5, 0.5, 0.9,objDisplay);
 //    
-//  edgeDensity.getEdges(image);
-//  arma::rowvec edge_measure=edgeDensity.findEdgeObjectness(smallImage, rects, min_x, min_y);
+  cv::Mat edges=edgeDensity.getEdges(smallImage);
+  arma::rowvec edge_measure=edgeDensity.findEdgeObjectness(edges, rects, min_x, min_y);
 //  predictions=predictions % edge_measure;
+
     
     
-    predictions=predictions % obj_measure_fast;
+    if(objDisplay){
+        
+        uword maxBoxStraddling,maxBoxEdges, maxBoxObjectness;
+        
+        obj_measure_fast.max(maxBoxStraddling);
+       
+        
+        edge_measure.max(maxBoxEdges);
+        
+        arma::rowvec productObjScores=obj_measure_fast % edge_measure;
+        
+        
+        
+        productObjScores.max(maxBoxObjectness);
+        
+        this->lastLocationObjectness=rects[maxBoxObjectness];
+        cv::Rect r=rects[maxBoxStraddling];
+        cv::Rect bestStraddlingRect(r.x-min_x,r.y-min_y,r.width,r.height);
+        
+        r=rects[maxBoxEdges];
+        
+        cv::Rect bestEdgesRect(r.x-min_x,r.y-min_y,r.width,r.height);
+        
+        // convert gray to rgb
+        cv::cvtColor(straddle.canvas, straddle.canvas, cv::COLOR_GRAY2RGB);
+        cv::cvtColor(edges, edges, cv::COLOR_GRAY2RGB);
+        
+        cv::rectangle(straddle.canvas, bestStraddlingRect,cv::Scalar(100,255,0),2);
+        cv::rectangle(edges, bestEdgesRect,cv::Scalar(100,255,0),2);
+        
+        
+        // find dimensions
+        int separation=10;
+        int w=image.cols+smallImage.cols+separation;
+        int h=MAX(image.rows, 2*smallImage.rows);
+        
+        
+        this->objectnessCanvas=cv::Mat(h,w,edges.type(),CV_RGB(0, 0, 0));
+        
+        cv::Rect r1(0,0,image.rows,image.cols);
+        cv::Rect r2(0,image.cols+separation,smallImage.rows,smallImage.cols);
+        cv::Rect r3(smallImage.rows,image.cols+separation,smallImage.rows,smallImage.cols);
+        
+        this->copyFromRectangleToImage(this->objectnessCanvas, image, r1, 0, cv::Vec3b(0,0,0));
+        
+
+        this->copyFromRectangleToImage(this->objectnessCanvas, straddle.canvas, r2, 0, cv::Vec3b(0,0,0));
+        this->copyFromRectangleToImage(this->objectnessCanvas, edges, r3, 0, cv::Vec3b(0,0,0));
+
+    }
+    
+    predictions=predictions % (obj_measure_fast % edge_measure);
 }
 
 
@@ -544,12 +614,19 @@ void Struck::applyTrackerOnVideoWithinRange(Dataset *dataset, std::string rootFo
     for (int i=1; i<gt_images.second.size(); i++) {
         cv::Mat image=cv::imread(gt_images.second[i]);
         
-        cout<<"Frame # "<<i<<endl;
+        cout<<"Frame # "<<i<<"/"<<gt_images.second.size()<<endl;
         this->track(image);
         
         
         cv::Scalar color(255,0,0);
-        cv::Mat plotImg=image.clone();
+        
+        cv::Mat plotImg;
+        if (useObjectness) {
+            plotImg=this->objectnessCanvas;
+        }else{
+            plotImg=image.clone();
+        }
+        
         cv::rectangle(plotImg, lastLocation, color,2);
         
         if (useObjectness) {

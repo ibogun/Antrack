@@ -99,9 +99,18 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
         }
     }
 
+    
+    // CAREFUL!
+    return;
+    
+    
+    
     auto div = [](double x, double y) {return x/y;};
 
     int scaleR=this->radius;
+    
+    //halfWidth=cvRound(this->objectWidth/2.0);
+    //halfHeight=cvRound(this->objectHeight/2.0);
     
     double downsample=1.03;
     radialValues=arma::linspace<arma::vec>(0,scaleR,nRadial/2+1);
@@ -110,9 +119,9 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
     
     int scale=3;
     
-    for (int scale_w=-2; scale_w<=scale; scale_w++) {
+    for (int scale_w=-MIN(2, scale); scale_w<=scale; scale_w++) {
         
-        for (int scale_h=-2; scale_h<=scale; scale_h++) {
+        for (int scale_h=-MIN(2, scale); scale_h<=scale; scale_h++) {
             
             
             if (scale_w==0 && scale_h==0) {

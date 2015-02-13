@@ -9,7 +9,7 @@ SuperPixels::SuperPixels() {
 
 }
 
-arma::mat SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
+arma::mat SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels, int display) {
    
 
     IplImage* img=new IplImage(img_);
@@ -129,7 +129,7 @@ arma::mat SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
 
   //printf("SEEDS produced %d labels\n", seeds.count_superpixels());
   
-  seeds.DrawContoursAroundSegments(ubuff, seeds.labels[nr_levels-1], width, height, 0xff0000, false);//0xff0000 draws red contours
+//  seeds.DrawContoursAroundSegments(ubuff, seeds.labels[nr_levels-1], width, height, 0xff0000, false);//0xff0000 draws red contours
 
     //     delete[] ubuff;
     //     delete[] output_buff;
@@ -140,8 +140,7 @@ arma::mat SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
 
   // DRAW SEEDS OUTPUT
     
-    delete img;
-    delete[] ubuff;
+
   
 //    arma::mat Label(img_.cols,img_.rows,arma::fill::zeros);
     
@@ -154,6 +153,28 @@ arma::mat SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
         }
         
     }
+    
+    if (display!=0) {
+            seeds.DrawContoursAroundSegments(ubuff, seeds.labels[nr_levels-1], width, height, 0xff0000, false);//0xff0000 draws red contours
+        cv::Mat c(img_.rows,img_.cols,CV_8U);
+        
+        for (int x=0; x<img_.cols; x++) {
+            for (int y=0; y<img_.rows; y++) {
+                c.at<uchar>(y,x)=ubuff[y*img_.cols+x];
+            }
+        }
+        
+        this->canvas=c;
+    }
+    
+    
+
+
+    
+    
+    
+    delete img;
+    delete[] ubuff;
     
     seeds.deinitialize();
     
@@ -189,98 +210,3 @@ arma::mat SuperPixels::calculateSegmentation(cv::Mat& img_, int nSuperPixels) {
   	//
 
 }
-
-
-
-
-
-
-// void SuperPixels::DrawContoursAroundSegments_mat(cv::Mat img, UINT *labels, const int &width, const int &height, const UINT &color, bool internal) {
-//
-//     const int dx8[8] = {-1, -1,  0,  1, 1, 1, 0, -1};
-//     const int dy8[8] = { 0, -1, -1, -1, 0, 1, 1,  1};
-//
-//     int sz = width*height;
-//
-//     vector<bool> istaken(sz, false);
-//
-//     int mainindex(0);
-//     int cind(0);
-//     for( int j = 0; j < height; j++ )
-//     {
-//         for( int k = 0; k < width; k++ )
-//         {
-//             int np(0);
-//             for( int i = 0; i < 8; i++ )
-//             {
-//                 int x = k + dx8[i];
-//                 int y = j + dy8[i];
-//
-//                 if( (x >= 0 && x < width) && (y >= 0 && y < height) )
-//                 {
-//                     int index = y*width + x;
-//
-//                     if (internal)
-//                     {
-//                         {
-//                             if( labels[mainindex] != labels[index] ) np++;
-//                         }
-//                     } else {
-//                         if( false == istaken[index] )//comment this to obtain internal contours
-//                         {
-//                             if( labels[mainindex] != labels[index] ) np++;
-//                         }
-//                     }
-//                 }
-//             }
-//             if( np > 1 )
-//             {
-//                 istaken[mainindex] = true;
-//                 //img[mainindex] = color;
-//                 img.at<uchar>(j,k)=color;
-//                 cind++;
-//             }
-//             mainindex++;
-//         }
-//     }
-// }
-//
-//
-// cv::Mat SuperPixels::getBoundary() {
-//     // output buff
-//     cv::Mat boundary(imgWidth,imgHeight,CV_8U);
-//     DrawContoursAroundSegments_mat(boundary,
-//             seeds->labels[nr_levels-1], imgWidth, imgHeight,
-//             0xffffff, true);
-//
-//     return  boundary;
-//
-// }
-//
-//
-// cv::Mat SuperPixels::getLabels() {
-//     cv::Mat segLabels(imgWidth,imgHeight,CV_8U);
-//     DrawContoursAroundSegments_mat(segLabels,
-//             seeds->labels[nr_levels-1], imgWidth, imgHeight,
-//             0xff0000, false);
-//
-//     return  segLabels;
-//
-// }
-//
-//
-// cv::Mat SuperPixels::getSegmentation() {
-//     cv::Mat segmentation(imgWidth,imgHeight,CV_8U);
-//
-//     int i=0;
-//     for( int h = 0; h < imgHeight; h++ )
-//     {
-//         for( int w = 0; w < imgWidth ; w++ )
-//         {
-//             segmentation.at<uchar>(h, w)=seeds->labels[seeds_top_level][i];
-//             i++;
-//         }
-//     }
-//
-//     return segmentation;
-// }

@@ -28,6 +28,8 @@
 
 class Struck {
     
+
+    
     OLaRank_old* olarank;
     Feature* feature;
     LocationSampler* samplerForUpdate;
@@ -50,12 +52,16 @@ class Struck {
     // for plotting support vectors (used only if display==2)
     cv::Mat canvas;
     
+    cv::Mat objectnessCanvas;
+    
     int gridSearch=2;
     int R=30;
     int framesTracked=0;
     
     bool useFilter;
     bool useObjectness;
+    bool scalePrior;
+    
     bool updateTracker=true;
     
     int seed=1;
@@ -69,12 +75,13 @@ public:
     
     Struck();
     
-    Struck(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useObjectness_,bool useFilter_,int display_){
+    Struck(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useObjectness_,bool scalePrior_,bool useFilter_,int display_){
         olarank = olarank_;
         feature = feature_;
         samplerForSearch=samplerSearch_;
         samplerForUpdate = samplerUpdate_;
         useObjectness=useObjectness_;
+        scalePrior=scalePrior_;
         useFilter=useFilter_;
         display = display_;};
     

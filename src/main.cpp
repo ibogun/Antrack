@@ -106,19 +106,19 @@ Struck getTracker(){
     
     
     
-    //HistogramFeatures* features=new HistogramFeatures(4,16);
+    HistogramFeatures* features=new HistogramFeatures(4,16);
     // RBFKe
-    //IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
+    IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
     //ApproximateKernel* kernel= new ApproximateKernel(30);
     //IntersectionKernel* kernel=new IntersectionKernel;
     
-    RBFKernel* kernel=new RBFKernel(0.2);
+    //RBFKernel* kernel=new RBFKernel(0.2);
     
     //HoGandRawFeatures* features=new HoGandRawFeatures(size,16);
     //LinearKernel* kernel=new LinearKernel;
     
     
-    Haar* features=new Haar(2);
+    //Haar* features=new Haar(2);
     
     int verbose = 0;
     int display = 2;
@@ -130,14 +130,15 @@ Struck getTracker(){
     int r_search = 30;
     int r_update = 60;
     
-    bool useFilter=false;
-    bool useObjectness=true;
+    bool useFilter     = true;
+    bool useObjectness = true;
+    bool scalePrior    = false;
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     LocationSampler* samplerForUpdate = new LocationSampler(r_update,nRadial,nAngular);
     LocationSampler* samplerForSearch = new LocationSampler(r_search,nRadial_search,nAngular_search);
     
-    Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useObjectness, useFilter, display);
+    Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useObjectness,scalePrior, useFilter, display);
     
     
     int measurementSize=10;
@@ -170,15 +171,17 @@ Struck getTracker(){
 void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_images,Dataset* dataset,
                              int from, int to,std::string saveFolder, bool saveResults, bool fullDataset){
     
-    Struck tracker=getTracker();
     
-    tracker.display=0;
+    
+   
     
     std::time_t t1 = std::time(0);
     
     int frameNumber = 0;
     // paralelize this loop
     for (int videoNumber=from; videoNumber<to; videoNumber++) {
+        Struck tracker=getTracker();
+         tracker.display=0;
         pair<string, vector<string>> gt_images=video_gt_images[videoNumber];
         
         vector<cv::Rect> groundTruth=dataset->readGroundTruth(gt_images.first);
@@ -209,7 +212,7 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
             tracker.saveResults(saveFileName);
         }
         
-        tracker.reset();
+        //tracker.reset();
         
         
     }
@@ -268,7 +271,7 @@ int main(int argc, const char * argv[]) {
     Struck tracker=getTracker();
     //vot2014->showVideo(vot2014RootFolder,0);
     
-    //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,true);
+    //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder, true,false);
     //applyTrackerOnDataset(vot2014, vot2014RootFolder, vot2014SaveFolder, true,false);
     
     //Struck tracker=getTracker();
@@ -277,8 +280,8 @@ int main(int argc, const char * argv[]) {
 //        std::cout<<x.first<<" "<<x.second<<std::endl;
 //    }
     //cout<<tracker<<endl;
-    //tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, wu2013->vidToIndex.at("singer2"), 0, 550);
-    tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, vot2014->vidToIndex.at("ball"), 0, 550);
+    tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder, wu2013->vidToIndex.at("coke"), 0, 550);
+    //tracker.applyTrackerOnVideoWithinRange(vot2014, vot2014RootFolder, vot2014->vidToIndex.at("trellis"), 0, 550);
     //tracker.videoCapture();
     
     return 0;

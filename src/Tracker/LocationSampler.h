@@ -18,8 +18,7 @@ class LocationSampler {
     int radius;
     
     
-    int objectHeight;
-    int objectWidth;
+
     
     int n=0;
     int m=0;
@@ -29,6 +28,9 @@ class LocationSampler {
     friend std::ostream& operator<<(std::ostream&,const  LocationSampler&);
     
 public:
+    
+    int objectHeight;
+    int objectWidth;
     
     int nRadial;
     int nAngular;

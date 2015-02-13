@@ -17,13 +17,15 @@ class SuperPixels{
 
 
 public:
+    
+    cv::Mat canvas;
 
     SuperPixels();
 
 
 //    UINT* calculateSegmentation(cv::Mat& img_,int nSuperPixels);
     
-    arma::mat calculateSegmentation(cv::Mat& img_,int nSuperpixels);
+    arma::mat calculateSegmentation(cv::Mat& img_,int nSuperpixels, int display=0);
     // cv::Mat getBoundary();
     // cv::Mat getLabels();
     // cv::Mat getSegmentation();

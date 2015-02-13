@@ -20,15 +20,20 @@ class Straddling{
     int nSuperPixels;
     double inner_threshold;
     
+    // for plotting support vectors (used only if display==2)
+    
+    
     
     
 public:
     
-
-    Straddling(int n,double inner=0.9){this->nSuperPixels=n;
-        inner_threshold=inner;};
-
-    cv::Rect getInnerRect(cv::Rect& r);
+    cv::Mat canvas;
+    int display;
+    Straddling(int n,double inner,int display_=2){this->nSuperPixels=n;
+        inner_threshold=inner;
+        display=display_;};
+    
+    static cv::Rect getInnerRect(cv::Rect& r, double threshold);
     
     arma::mat getLabels(cv::Mat&);
     arma::rowvec findStraddling(arma::mat& labels,std::vector<cv::Rect>& rects, int translate_x, int translate_y);
@@ -47,9 +52,14 @@ class EdgeDensity{
     
     double inner_threshold;
     
+
 public:
-    EdgeDensity(double t1,double t2, double inner){this->threshold_1=t1; this->threshold_2=t2;
-        this->inner_threshold=inner;};
+    cv::Mat canvas;
+    
+    int display;
+    EdgeDensity(double t1,double t2, double inner, int display_){this->threshold_1=t1; this->threshold_2=t2;
+        this->inner_threshold=inner;
+        this->display=display_;};
     
     cv::Mat getEdges(cv::Mat&);
     

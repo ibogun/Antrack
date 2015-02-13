@@ -12,7 +12,11 @@ arma::mat Straddling::getLabels(cv::Mat& image){
     
     SuperPixels seeds;
     
-    arma::mat Label=seeds.calculateSegmentation(image, this->nSuperPixels);
+    arma::mat Label=seeds.calculateSegmentation(image, this->nSuperPixels,this->display);
+    
+    if (this->display) {
+        this->canvas=seeds.canvas;
+    }
     
     return Label;
 }
@@ -101,18 +105,18 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
         for (int s=1; s<n+1; s++) {
             for (int j=1; j<m+1; j++) {
                 
-             
+                
                 
                 if (labels(s-1,j-1)==label) {
                     integrals(s,j,i)++;
                 }
-              
+                
                 integrals(s,j,i)+=integrals(s,j-1,i);
-               
+                
                 integrals(s,j,i)+=integrals(s-1,j,i);
-               
+                
                 integrals(s,j,i)-=integrals(s-1,j-1,i);
-              
+                
                 
             }
         }
@@ -131,20 +135,20 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
         cv::Rect rect_big(rects[i].x-translate_x,rects[i].y-
                           translate_y,rects[i].width,rects[i].height);
         
-        cv::Rect rect=getInnerRect(rect_big);
+        cv::Rect rect=getInnerRect(rect_big,this->inner_threshold);
         
         
         for (int superpixel=0; superpixel<uniqueLabels.size(); superpixel++) {
             
             
-//            int A=integrals(rect.x+rect.width,
-//                            rect.y+rect.height,superpixel);
-//            
-//            int B=integrals(rect.x,rect.y,superpixel);
-//            
-//            int C=integrals(rect.x+rect.width,rect.y,superpixel);
-//            
-//            int D=integrals(rect.x,rect.y+rect.height,superpixel);
+            //            int A=integrals(rect.x+rect.width,
+            //                            rect.y+rect.height,superpixel);
+            //
+            //            int B=integrals(rect.x,rect.y,superpixel);
+            //
+            //            int C=integrals(rect.x+rect.width,rect.y,superpixel);
+            //
+            //            int D=integrals(rect.x,rect.y+rect.height,superpixel);
             
             int area_superpixel_window_overlap=integrals(rect.x+rect.width,
                                                          rect.y+rect.height,superpixel)+
@@ -166,7 +170,7 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
     }
     
     
-   
+    
     
     
     return measures;
@@ -178,23 +182,25 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
 cv::Mat EdgeDensity::getEdges(cv::Mat& image){
     using namespace cv;
     
-    Mat detected_edges;
+    Mat detected_edges(image.rows,image.cols,CV_8U);
     
     blur(image, detected_edges, Size(3,3));
     
     Canny(detected_edges,detected_edges,this->threshold_1,this->threshold_2);
     
-    //    cv::imshow("edges", detected_edges);
-    //
-    //    cv::waitKey();
-    //
-    //    cv::destroyAllWindows();
+//        cv::imshow("edges", detected_edges);
+//    
+//        cv::waitKey();
+//    
+//        cv::destroyAllWindows();
     
     return detected_edges;
 }
 
 
 arma::rowvec EdgeDensity::findEdgeObjectness(cv::Mat &labels, std::vector<cv::Rect> &rects, int translate_x, int translate_y){
+    
+    
     
     
     // calculate integral images for edges in x and y directions
@@ -205,29 +211,29 @@ arma::rowvec EdgeDensity::findEdgeObjectness(cv::Mat &labels, std::vector<cv::Re
     arma::Mat<int> edges_x(n+1,m+1,arma::fill::zeros);
     arma::Mat<int> edges_y(n+1,m+1,arma::fill::zeros);
     
-    for (int j=1; j<m+1; j++) {
-        for (int s=1; s<n+1; s++) {
-            
-            if (labels.at<uchar>(s, j)>0) {
-                edges_x[s,j]++;
+    
+    for (int s=1; s<n+1; s++) {
+        for (int j=1; j<m+1; j++) {
+            if (labels.at<uchar>(s-1, j-1)>0) {
+                edges_x(s,j)++;
             }
             
             
-            edges_x[s,j]+=edges_x[s,j-1];
+            edges_x(s,j)+=edges_x(s,j-1);
             
-            edges_x[s,j]+=edges_x[s-1,j];
-            edges_x[s,j]+=edges_x[s-1,j-1];
+            edges_x(s,j)+=edges_x(s-1,j);
+            edges_x(s,j)-=edges_x(s-1,j-1);
             
             
-            if (labels.at<uchar>(s, j)>0) {
-                edges_y[s,j]++;
+            if (labels.at<uchar>(s-1, j-1)>0) {
+                edges_y(s,j)++;
             }
             
             
-            edges_y[s,j]+=edges_y[s,j-1];
+            edges_y(s,j)+=edges_y(s,j-1);
             
-            edges_y[s,j]+=edges_y[s-1,j];
-            edges_y[s,j]+=edges_y[s-1,j-1];
+            edges_y(s,j)+=edges_y(s-1,j);
+            edges_y(s,j)-=edges_y(s-1,j-1);
             
             
         }
@@ -241,23 +247,22 @@ arma::rowvec EdgeDensity::findEdgeObjectness(cv::Mat &labels, std::vector<cv::Re
         
         cv::Rect rect(rects[i].x-translate_x,rects[i].y-
                       translate_y,rects[i].width,rects[i].height);
+
         
-        // get inner rectangle
-        
-        int inner_rect_x=rect.x+rect.width*(1-this->inner_threshold)/(2.0);
-        int inner_rect_y=rect.y+rect.height*(1-this->inner_threshold)/(2.0);
-        int inner_width=rect.width*this->inner_threshold;
-        int inner_height=rect.height*this->inner_threshold;
-        
-        cv::Rect inner_rect(inner_rect_x,inner_rect_y,inner_width,inner_height);
+        cv::Rect inner_rect=Straddling::getInnerRect(rect,this->inner_threshold);
         
         // calculate how many edges on the perimeter of the inner rectangle
+
         
-        int edges_in_x=edges_x[inner_rect_x+inner_width,inner_rect_y]+edges_x[inner_rect_x+inner_width,inner_rect_y+inner_height]-edges_x[inner_rect_x,inner_rect_y]-edges_x[inner_rect_x,inner_rect_y+inner_height];
+        int edges_in_x=edges_x(inner_rect.y,inner_rect.x+inner_rect.width)+edges_x(inner_rect.y+inner_rect.height,inner_rect.x+inner_rect.width)-edges_x(inner_rect.y,inner_rect.x)-edges_x(inner_rect.y+inner_rect.height,inner_rect.x);
         
-        int edges_in_y=edges_y[inner_rect_x,inner_rect_y+inner_height]+edges_y[inner_rect_x+inner_width,inner_rect_y+inner_height]-edges_y[inner_rect_x,inner_rect_y]-edges_y[inner_rect_x+inner_width,inner_rect_y];
+        int edges_in_y=edges_y(inner_rect.y+inner_rect.height,inner_rect.x)+edges_y(inner_rect.y+inner_rect.height,inner_rect.x+inner_rect.width)-edges_y(inner_rect.y,inner_rect.x)-edges_y(inner_rect.y,inner_rect.x+inner_rect.width);
         
-        measure=(edges_in_x+edges_in_y)/((double)(2*(inner_width+inner_height)));
+//        int edges_in_x=edges_x(inner_rect.x+inner_rect.width,inner_rect.y)+edges_x(inner_rect.x+inner_rect.width,inner_rect.y+inner_rect.height)-edges_x(inner_rect.x,inner_rect.y)-edges_x(inner_rect.x,inner_rect.y+inner_rect.height);
+//        
+//        int edges_in_y=edges_y(inner_rect.x,inner_rect.y+inner_rect.height)+edges_y(inner_rect.x+inner_rect.width,inner_rect.y+inner_rect.height)-edges_y(inner_rect.x,inner_rect.y)-edges_y(inner_rect.x+inner_rect.width,inner_rect.y);
+        
+        measure=(edges_in_x+edges_in_y)/((double)(2*(inner_rect.width+inner_rect.height)));
         
         measures[i]=measure;
     }
@@ -270,13 +275,13 @@ arma::rowvec EdgeDensity::findEdgeObjectness(cv::Mat &labels, std::vector<cv::Re
 
 
 
-cv::Rect Straddling::getInnerRect(cv::Rect &rect){
+cv::Rect Straddling::getInnerRect(cv::Rect &rect, double inner_threshold){
     // get inner rectangle
     
-    int inner_rect_x=rect.x+rect.width*(1-this->inner_threshold)/(2.0);
-    int inner_rect_y=rect.y+rect.height*(1-this->inner_threshold)/(2.0);
-    int inner_width=rect.width*this->inner_threshold;
-    int inner_height=rect.height*this->inner_threshold;
+    int inner_rect_x=rect.x+rect.width*(1-inner_threshold)/(2.0);
+    int inner_rect_y=rect.y+rect.height*(1-inner_threshold)/(2.0);
+    int inner_width=rect.width*inner_threshold;
+    int inner_height=rect.height*inner_threshold;
     
     cv::Rect inner_rect(inner_rect_x,inner_rect_y,inner_width,inner_height);
     
