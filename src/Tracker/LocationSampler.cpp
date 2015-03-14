@@ -98,81 +98,118 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
             
         }
     }
-
+    
     
     // CAREFUL!
-    return;
+    //return;
     
     
     
     auto div = [](double x, double y) {return x/y;};
-
+    
     int scaleR=this->radius;
     
     //halfWidth=cvRound(this->objectWidth/2.0);
     //halfHeight=cvRound(this->objectHeight/2.0);
     
-    double downsample=1.03;
-    radialValues=arma::linspace<arma::vec>(0,scaleR,nRadial/2+1);
-    angularValues=arma::linspace<arma::vec>(0,2*M_PI, nAngular/2+1);
+    
+    //halfWidth=cvRound(currentLocation.width/2.0);
+    //halfHeight=cvRound(currentLocation.height/2.0);
+    
+    double downsample=1.13;
+    radialValues=arma::linspace<arma::vec>(0,scaleR,nRadial/4+1);
+    angularValues=arma::linspace<arma::vec>(0,2*M_PI, nAngular/5+1);
     
     
-    int scale=3;
+    int scale=10;
     
-    for (int scale_w=-MIN(2, scale); scale_w<=scale; scale_w++) {
+    //return;
+    std::vector<int> scale_half_width;
+    std::vector<int> scale_half_height;
+    
+    //for (int scale_w=-MIN(2, scale); scale_w<=scale; scale_w++) {
+    
+    for (int scale_h=-1; scale_h<=1; scale_h++) {
+        int scale_w=scale_h;
         
-        for (int scale_h=-MIN(2, scale); scale_h<=scale; scale_h++) {
-            
-            
-            if (scale_w==0 && scale_h==0) {
-                continue;
-            }
-            
-            int halfWidth_scale=cvRound(halfWidth*pow(downsample, scale_w));
-            int halfHeight_scale=cvRound(halfHeight*pow(downsample,scale_h));
-            
-            if (halfWidth_scale<=10 || halfHeight_scale<=10) {
-                continue;
-            }
-
-            
-            int width_scale=halfWidth_scale*2;
-            int height_scale=halfHeight_scale*2;
-            
-            double widthRatio=((double)width_scale)/this->objectWidth;
-            double heightRatio=((double)height_scale)/this->objectHeight;
-            
-//            if (widthRatio<=0.6 || heightRatio<=0.6) {
-//                continue;
-//            }
-            
-//            if (std::abs(div(width_scale,height_scale)-div(this->objectWidth,this->objectHeight))*(div(height_scale,width_scale)-div(this->objectHeight,this->objectWidth))>1) {
-//                continue;
-//            }
-            
-            for (int i=0; i<radialValues.size(); ++i) {
-                for (int j=0; j<angularValues.size(); ++j) {
+        continue;
+        if (scale_w==0 && scale_h==0) {
+            continue;
+        }
+        
+        int halfWidth_scale=cvRound(halfWidth*pow(downsample, scale_w));
+        int halfHeight_scale=cvRound(halfHeight*pow(downsample,scale_h));
+        
+        if (halfWidth_scale<=10 || halfHeight_scale<=10) {
+            continue;
+        }
+        
+        scale_half_width.push_back(halfWidth_scale);
+        scale_half_height.push_back(halfHeight_scale);
+        
+    }
+    
+    for (int scale_h=- scale; scale_h<=scale; scale_h++) {
+        int scale_w=scale_h;
+        
+        if (scale_w==0 && scale_h==0) {
+            continue;
+        }
+        
+        int halfWidth_scale=cvRound(this->objectWidth*pow(downsample, scale_w));
+        int halfHeight_scale=cvRound(this->objectHeight*pow(downsample,scale_h));
+        
+        if (halfWidth_scale<=10 || halfHeight_scale<=10) {
+            continue;
+        }
+        
+        scale_half_width.push_back(halfWidth_scale);
+        scale_half_height.push_back(halfHeight_scale);
+        
+    }
+    
+    
+    for (int s=0;s<scale_half_width.size(); s++) {
+        
+        
+        
+        int width_scale=scale_half_width[s]*2;
+        int height_scale=scale_half_height[s]*2;
+        
+        //double widthRatio=((double)width_scale)/this->objectWidth;
+        //double heightRatio=((double)height_scale)/this->objectHeight;
+        
+        //            if (widthRatio<=0.6 || heightRatio<=0.6) {
+        //                continue;
+        //            }
+        
+        //            if (std::abs(div(width_scale,height_scale)-div(this->objectWidth,this->objectHeight))*(div(height_scale,width_scale)-div(this->objectHeight,this->objectWidth))>1) {
+        //                continue;
+        //            }
+        
+        for (int i=0; i<radialValues.size(); ++i) {
+            for (int j=0; j<angularValues.size(); ++j) {
+                
+                // get the top left corner
+                bb_x=centerX+(radialValues(i)*cos(angularValues(j)))-scale_half_width[s];
+                bb_y=centerY+(radialValues(i)*sin(angularValues(j)))-scale_half_height[s];
+                
+                cv::Point topLeft(bb_x, bb_y);
+                cv::Point bottomRight(bb_x+width_scale, bb_y+height_scale);
+                
+                if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
                     
-                    // get the top left corner
-                    bb_x=centerX+(radialValues(i)*cos(angularValues(j)))-halfWidth_scale;
-                    bb_y=centerY+(radialValues(i)*sin(angularValues(j)))-halfHeight_scale;
-                    
-                    cv::Point topLeft(bb_x, bb_y);
-                    cv::Point bottomRight(bb_x+width_scale, bb_y+height_scale);
-                    
-                    if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
-                        
-                        cv::Rect rect(bb_x,bb_y,width_scale,height_scale);
-                        locations.push_back(rect);
-                    }
-                    
+                    cv::Rect rect(bb_x,bb_y,width_scale,height_scale);
+                    locations.push_back(rect);
                 }
+                
             }
-            
-            
+            // }
             
         }
+        
     }
+
 }
 
 

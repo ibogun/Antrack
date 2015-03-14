@@ -32,7 +32,7 @@ std::vector<std::string> Dataset::listSubFolders(std::string folder){
     vector<string> r;
     while (entry != NULL)
     {
-        if (entry->d_type == DT_DIR){
+       // if (entry->d_type == DT_DIR){
             std::string fileName=std::string(entry->d_name);
             
             regex_match(fileName,match,e);
@@ -41,11 +41,15 @@ std::vector<std::string> Dataset::listSubFolders(std::string folder){
                 //printf("%s\n", entry->d_name);
                 r.push_back(fileName);
             }
-        }
+       // }
         
         
         entry = readdir(dir);
     }
+    
+    //delete PATH;
+    closedir(dir);
+    //delete dir;
     
     return r;
     

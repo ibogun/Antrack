@@ -221,19 +221,12 @@ arma::rowvec EdgeDensity::findEdgeObjectness(cv::Mat &labels, std::vector<cv::Re
             
             edges_x(s,j)+=edges_x(s,j-1);
             
-            edges_x(s,j)+=edges_x(s-1,j);
-            edges_x(s,j)-=edges_x(s-1,j-1);
-            
             
             if (labels.at<uchar>(s-1, j-1)>0) {
                 edges_y(s,j)++;
             }
             
-            
-            edges_y(s,j)+=edges_y(s,j-1);
-            
             edges_y(s,j)+=edges_y(s-1,j);
-            edges_y(s,j)-=edges_y(s-1,j-1);
             
             
         }

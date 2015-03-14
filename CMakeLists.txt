@@ -5,8 +5,12 @@ option(test "Build all tests." OFF) # Makes boolean 'test' available.
 option(VOT2014 "Build VOT2014-friendly" OFF)
 option(experiments "Build all experiments." OFF) # Makes boolean 'test' available.
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
+option(python "Build python wrappers." OFF)
 
+option(parallel "Build parallel dataset evaluation." OFF)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY bin)
 # Make PROJECT_SOURCE_DIR, PROJECT_BINARY_DIR, and PROJECT_NAME available.
 set(PROJECT_NAME Robust_tracking_by_detection)
 project(${PROJECT_NAME})
@@ -16,6 +20,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 find_package(OpenCV REQUIRED )
 find_package(Armadillo REQUIRED)
 find_package (Threads REQUIRED)
+
+
+
 # If you want your own include/ directory, set this, and then you can do
 # include_directories(${COMMON_INCLUDES}) in other CMakeLists.txt files.
 # set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include)
@@ -29,6 +36,10 @@ find_package (Threads REQUIRED)
 # own executable. Separating out main() means you can add this library to be
 # used elsewhere.
 
+set(PYTHON_FILES
+	python/wrappers/objectness_topy.cpp
+)
+
 
 set(TEST_FILES
 	src/Tests/IntersectionKernelTest.cpp
@@ -36,12 +47,16 @@ set(TEST_FILES
 	src/Tests/main.cpp
 	)
 
+set(PARALLEL_MAIN
+  src/main_parallel.cpp
+)
+
 set(PROJECT_MAIN
 	src/main.cpp
 )
 
-set(Experiment_01 
-	src/Experiments/Experiment_efficient_int_kernel.cpp  
+set(Experiment_01
+	src/Experiments/Experiment_efficient_int_kernel.cpp
 	src/Experiments/Experiment_efficient_int_kernel.h
 )
 
@@ -61,10 +76,10 @@ FILE(GLOB TRAX_FILES
 	src/Datasets/vot2014_trax/*.c
 	src/Datasets/vot2014_trax/main.cpp
 )
-	
 
 
-FILE(GLOB SOURCE_FILES 
+
+FILE(GLOB SOURCE_FILES
 	src/Datasets/*.cpp
 	src/Datasets/*.h
 	src/Features/*.cpp
@@ -75,7 +90,7 @@ FILE(GLOB SOURCE_FILES
 	src/Filter/*.h
 	src/Tracker/*.cpp
 	src/Tracker/*.h
-)	
+)
 
 
 
@@ -124,6 +139,42 @@ if(VOT2014)
 endif()
 
 
+
+
+
+if(python)
+	set(PYTHON_DESTINATION "../python/Experiments/")
+
+
+
+	find_package(PythonLibs)
+
+	set(PYTHON_INCLUDE_DIRS /usr/local/Cellar/python/2.7.9/Frameworks/Python.framework/Versions/2.7/Headers)
+
+	set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.9/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
+
+	include_directories (${PYTHON_INCLUDE_DIRS})
+	find_package( Boost COMPONENTS python)
+	include_directories (${Boost_INCLUDE_DIRS})
+
+	PYTHON_ADD_MODULE(objectness ${SOURCE_FILES} ${PYTHON_FILES} ${Superpixels})
+target_link_libraries (objectness
+    boost_python
+    ${PYTHON_LIBRARIES}
+    ${Boost_LIBRARIES}
+		${OpenCV_LIBS}
+		${ARMADILLO_LIBRARIES}
+		${CMAKE_THREAD_LIBS_INIT}
+	)
+	set_target_properties(objectness PROPERTIES
+				LIBRARY_OUTPUT_DIRECTORY ${PYTHON_DESTINATION})
+
+	#FILE(COPY objectness.so DESTINATION ${PYTHON_DESTINATION})
+endif()
+
+
+
+
 add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJECT_MAIN})
 
 
@@ -133,3 +184,16 @@ include_directories(${ARMADILLO_INCLUDE_DIRS})
 
 TARGET_LINK_LIBRARIES(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
+
+if (parallel)
+
+  find_package(OpenMP)
+  if (OPENMP_FOUND)
+      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  endif()
+  add_executable(parallel_main ${Superpixels} ${SOURCE_FILES} ${PARALLEL_MAIN})
+  TARGET_LINK_LIBRARIES(parallel_main ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+
+
+endif()

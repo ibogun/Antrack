@@ -13,7 +13,7 @@ if [ "$(uname)" == "Darwin" ]; then
 	savePath="/Users/Ivan/Files/Results/Tracking/wu2013"  
 else
 	# consider it linux
-	savePath="/media/drive/UbuntuFiles/Results/wu2013"
+	savePath="/udrive/student/ibogun2010/Research/Results/wu2013/"
 fi
 
 
@@ -23,7 +23,7 @@ datasetType='wu2013'
 echo "Please enter run identifier..."
 read runIdentifier
 
-./build/bin/robust_struck_tracker_v1.0
+#./build/bin/robust_struck_tracker_v1.0
 
 cd python/Evaluation/
 

@@ -93,89 +93,12 @@
 
 
 
-Struck getTracker(){
-    // Parameters
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    params p;
-    p.C                 = 100;
-    p.n_O               = 10;
-    p.n_R               = 10;
-    int nRadial         = 5;
-    int nAngular        = 16;
-    int B               = 100;
-    
-    int nRadial_search  = 12;
-    int nAngular_search = 30;
-    
-    //RawFeatures* features=new RawFeatures(16);
-    cv::Size size(64,64);
-    
-    //HoG* features=new HoG(size);
-    
-    
-    
-    //HistogramFeatures* features=new HistogramFeatures(4,16);
-    // RBFKe
-    //IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
-    //ApproximateKernel* kernel= new ApproximateKernel(30);
-    //IntersectionKernel* kernel=new IntersectionKernel;
-    
-    RBFKernel* kernel=new RBFKernel(0.2);
-    
-    //HoGandRawFeatures* features=new HoGandRawFeatures(size,16);
-    //LinearKernel* kernel=new LinearKernel;
-    
-    
-    Haar* features=new Haar(2);
-    
-    int verbose = 0;
-    int display = 2;
-    int m       = features->calculateFeatureDimension();
-    
-    OLaRank_old* olarank=new OLaRank_old(kernel);
-    olarank->setParameters(p, B,m,verbose);
-    
-    int r_search = 30;
-    int r_update = 60;
-    
-    bool useFilter=false;
-    bool useObjectness=true;
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    LocationSampler* samplerForUpdate = new LocationSampler(r_update,nRadial,nAngular);
-    LocationSampler* samplerForSearch = new LocationSampler(r_search,nRadial_search,nAngular_search);
-    
-    Struck tracker(olarank, features,samplerForSearch, samplerForUpdate,useObjectness, useFilter, display);
-    
-    
-    int measurementSize=10;
-    arma::colvec x_k(measurementSize,fill::zeros);
-    x_k(0)=0;
-    x_k(1)=0;
-    x_k(2)=0;
-    x_k(3)=0;
-    
-    int robustConstant_b=10;
-    
-    int R_cov=5;
-    int Q_cov=5;
-    int P=3;
-    
-    
-    //KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
-    KalmanFilter_my filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
-    
-    tracker.setFilter(filter);
-    
-    return tracker;
-}
-
 
 //#ifdef TRAX
 int main( int argc, char** argv)
 {
 
-    Struck tracker=getTracker();
+    Struck tracker=Struck::getTracker();
     trax_image* img = NULL;
     trax_region* reg = NULL;
     trax_region* mem = NULL;

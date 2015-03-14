@@ -9,10 +9,18 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import datetime
 import os
+
+
 class Dataset(object):
 
-    def __init__(self,path_groundTruth,datasetType):
 
+    def __init__(self,path_groundTruth,datasetType):
+        '''
+
+        :param path_groundTruth:
+        :param datasetType:
+        :return:
+        '''
         self.path_gt=path_groundTruth
 
         self.datasetType=datasetType
@@ -28,13 +36,38 @@ class Dataset(object):
 
         l=list()
 
+        listDicts=list()
+
         for vid in videos:
-            boxes=self.loadOneGroundTruth(self.path_gt+"/"+vid)
-            l.append((vid,boxes))
+            d = dict()
+            vidPath= self.path_gt + "/" + vid
+            boxes=self.loadOneGroundTruth(vidPath)
+
+            images=self.loadImages(vidPath)
+            l.append((vid,boxes)) # <== This should be deprecated
+
+            d["name"]=vid;
+            d["boxes"]=boxes;
+            d["images"]=images;
+            listDicts.append(d);
 
         self.data=l;
+        self.dictData=listDicts;
 
+    def loadImages(self,path):
 
+        if self.datasetType=='vot2014':
+            format='jpg'
+        elif self.datasetType=='wu2013':
+            format='jpg'
+
+            path=path+"/img/";
+
+            images=glob.glob(path+"*."+format);
+        else:
+            print "Dataset not recognized"
+
+        return  images;
 
     def loadOneGroundTruth(self,path):
 
@@ -322,6 +355,7 @@ class Evaluator(object):
             sc_y_list.append(success_y)
 
         self.createPlot(pr_x_list,pr_y_list,sc_x_list,sc_y_list)
+
 
         # get some real data and finish this plot
         #self.createHistogramPlot(pr_x_list,pr_y_list,sc_x_list,sc_y_list)

@@ -19,7 +19,23 @@
 #include "../Features/Feature.h"
 
 
+#include "../Kernels/RBFKernel.h"
+#include "../Kernels/IntersectionKernel.h"
+#include "../Kernels/IntersectionKernel_fast.h"
+#include "../Kernels/ApproximateKernel.h"
+#include "../Kernels/LinearKernel.h"
+#include "../Kernels/MultiKernel.h"
+
+#include "../Features/RawFeatures.h"
+#include "../Features/Haar.h"
+#include "../Features/Histogram.h"
+#include "../Features/HoG.h"
+#include "../Features/HoGandRawFeatures.h"
+#include "../Features/MultiFeature.h"
+
+
 #include "../Datasets/Dataset.h"
+#include "../Datasets/EvaluationRun.h"
 
 #include "../Superpixels/Objectness.h"
 
@@ -37,7 +53,7 @@ class Struck {
     
     KalmanFilter_my filter;
     
-    std::vector<cv::Rect> boundingBoxes;
+    
     cv::Rect lastLocation;
     
     cv::Rect lastLocationFilter;
@@ -58,6 +74,7 @@ class Struck {
     int R=30;
     int framesTracked=0;
     
+    bool pretraining;
     bool useFilter;
     bool useObjectness;
     bool scalePrior;
@@ -72,10 +89,11 @@ class Struck {
     
 public:
     int display;
+    std::vector<cv::Rect> boundingBoxes;
     
     Struck();
     
-    Struck(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useObjectness_,bool scalePrior_,bool useFilter_,int display_){
+    Struck(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useObjectness_,bool scalePrior_,bool useFilter_,int usePretraining_,int display_){
         olarank = olarank_;
         feature = feature_;
         samplerForSearch=samplerSearch_;
@@ -83,7 +101,9 @@ public:
         useObjectness=useObjectness_;
         scalePrior=scalePrior_;
         useFilter=useFilter_;
-        display = display_;};
+        display = display_;
+        pretraining=usePretraining_;
+    };
     
     void setParameters(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useFilter_,int display_){
       
@@ -95,6 +115,8 @@ public:
         this->display=display_;
     };
     
+    
+    static Struck getTracker();
     
     std::vector<cv::Rect> getBoundingBoxes(){
         return this->boundingBoxes;
@@ -114,13 +136,16 @@ public:
     
     void applyTrackerOnVideo(Dataset* dataset, std::string rootFolder, int videoNumber);
     
-    void applyTrackerOnVideoWithinRange(Dataset* dataset,std::string rootFolder,int videoNumber, int frameFrom, int frameTo);
+    EvaluationRun applyTrackerOnVideoWithinRange(Dataset* dataset,std::string rootFolder,std::string saveFolder,int videoNumber, int frameFrom, int frameTo, bool saveResults=false);
     
     void saveResults(string fileName);
     
     void setFilter(const KalmanFilter_my& var){filter=var;};
     
-    void weightWithStraddling(cv::Mat& image,arma::rowvec& predictions, std::vector<cv::Rect>& rects,const int nSuperpixels);
+    std::pair<arma::rowvec, arma::rowvec> weightWithStraddling(cv::Mat& image,arma::rowvec& predictions, std::vector<cv::Rect>& rects,const int nSuperpixels);
+    
+
+    void preTraining(cv::Mat&,const cv::Rect& location);
     
     void reset(){
         

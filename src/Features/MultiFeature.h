@@ -17,6 +17,11 @@ class MultiFeature:public Feature{
     std::vector<Feature*> features;
     
 public:
+    
+    MultiFeature(std::vector<Feature*>& fs){
+        this->features=fs;
+    };
+    
     cv::Mat prepareImage(cv::Mat* imageIn);
     
     //virtual int calculateDimension()=0;
