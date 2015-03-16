@@ -239,12 +239,12 @@ int main(int argc, const char * argv[]) {
 
     //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder,true,n_threads,frames);
 
-    std::string vidName="soccer";
+    std::string vidName="walking";
     int vidIndex=wu2013->vidToIndex.at(vidName);
     //tracker.display=0;
 
 
-    tracker.display=2;
+    tracker.display=3;
     EvaluationRun run= tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder,wu2013SaveFolder, vidIndex, 0, 400);
 
 

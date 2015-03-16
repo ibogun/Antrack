@@ -37,7 +37,7 @@ find_package (Threads REQUIRED)
 # used elsewhere.
 
 set(PYTHON_FILES
-	python/wrappers/objectness_topy.cpp
+	src/python_wrappers/objectness_topy.cpp
 )
 
 

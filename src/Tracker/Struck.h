@@ -93,6 +93,10 @@ public:
     
     Struck();
     
+    cv::Mat getObjectnessCanvas(){
+        return objectnessCanvas;
+    }
+    
     Struck(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useObjectness_,bool scalePrior_,bool useFilter_,int usePretraining_,int display_){
         olarank = olarank_;
         feature = feature_;

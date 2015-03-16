@@ -170,9 +170,6 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
     }
     
     
-    
-    
-    
     return measures;
     
     

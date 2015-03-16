@@ -114,16 +114,22 @@ cv::Rect Struck::track(cv::Mat &image){
     arma::mat x=this->feature->calculateFeature(processedImage, locationsOnaGrid);
     
     arma::rowvec predictions=this->olarank->predictAll(x);
+    
+    uword groundTruth;
+    predictions.max(groundTruth);
+    
+    
+    //std::cout<<groundTruth<<std::endl;
+    cv::Rect bestLocationDetector=locationsOnaGrid[groundTruth];
     if (this->useObjectness) {
-        
-        
-        
-        predictions=predictions-predictions.min();
-        predictions=predictions/sum(predictions);
         
         //Objectne
         //arma::rowvec obj_measure
-        this->weightWithStraddling(image, predictions, locationsOnaGrid, 200);
+        std::pair<arma::rowvec, arma::rowvec> obj_measures=this->weightWithStraddling
+            (image, predictions, locationsOnaGrid, 200);
+        
+        std::cout<<obj_measures.first[groundTruth]<<std::endl;
+        std::cout<<obj_measures.second[groundTruth]<<std::endl;
         //predictions=predictions % obj_measure;
     }
     
@@ -147,10 +153,7 @@ cv::Rect Struck::track(cv::Mat &image){
     }
     
     
-    uword groundTruth;
-    predictions.max(groundTruth);
-    
-    cv::Rect bestLocationDetector=locationsOnaGrid[groundTruth];
+
     /**
      Filter business
      **/
@@ -398,12 +401,13 @@ std::pair<arma::rowvec, arma::rowvec> Struck::weightWithStraddling(cv::Mat &imag
     
     // iterate over all rects and location minimum and maximu
     
-    int max_x,max_y=0;
+    int max_x=rects[0].x+rects[0].width;
+    int max_y=rects[0].y+rects[0].height;
     
-    int min_x=image.cols;
-    int min_y=image.rows;
+    int min_x=rects[0].x;
+    int min_y=rects[0].y;
     
-    for (int i=0; i<rects.size(); i++) {
+    for (int i=1; i<rects.size(); i++) {
         
         min_x=MIN(min_x, rects[i].x);
         min_y=MIN(min_y,rects[i].y);
@@ -411,7 +415,7 @@ std::pair<arma::rowvec, arma::rowvec> Struck::weightWithStraddling(cv::Mat &imag
         max_y=MAX(max_y,rects[i].y+rects[i].height);
     }
     
-    int delta=20;
+    int delta=50;
     min_x=MAX(0,min_x-delta);
     min_y=MAX(0,min_y-delta);
     
@@ -437,6 +441,8 @@ std::pair<arma::rowvec, arma::rowvec> Struck::weightWithStraddling(cv::Mat &imag
     EdgeDensity edgeDensity(0.5, 0.5, 0.9,objDisplay);
     //
     cv::Mat edges=edgeDensity.getEdges(smallImage);
+    
+    
     arma::rowvec edge_measure=edgeDensity.findEdgeObjectness(edges, rects, min_x, min_y);
     //  predictions=predictions % edge_measure;
     
