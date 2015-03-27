@@ -64,6 +64,8 @@ set(Superpixels
    src/Superpixels/helper.h
    src/Superpixels/seeds2.h
    src/Superpixels/seeds2.cpp
+   src/Superpixels/Plot.h
+   src/Superpixels/Plot.cpp
    src/Superpixels/SuperPixels.h
    src/Superpixels/SuperPixels.cpp
    src/Superpixels/Objectness.h
@@ -158,13 +160,13 @@ if(python)
 	include_directories (${Boost_INCLUDE_DIRS})
 
 	PYTHON_ADD_MODULE(objectness ${SOURCE_FILES} ${PYTHON_FILES} ${Superpixels})
-target_link_libraries (objectness
+target_link_libraries(objectness
     boost_python
     ${PYTHON_LIBRARIES}
     ${Boost_LIBRARIES}
-		${OpenCV_LIBS}
-		${ARMADILLO_LIBRARIES}
-		${CMAKE_THREAD_LIBS_INIT}
+	${OpenCV_LIBS}
+	${ARMADILLO_LIBRARIES}
+	${CMAKE_THREAD_LIBS_INIT}
 	)
 	set_target_properties(objectness PROPERTIES
 				LIBRARY_OUTPUT_DIRECTORY ${PYTHON_DESTINATION})
@@ -182,18 +184,24 @@ add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJE
 include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 
-TARGET_LINK_LIBRARIES(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 
 if (parallel)
 
   find_package(OpenMP)
+
+find_package( Boost COMPONENTS program_options REQUIRED )
+
+include_directories( ${Boost_INCLUDE_DIR} )
+
+
   if (OPENMP_FOUND)
       set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
       set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
   endif()
   add_executable(parallel_main ${Superpixels} ${SOURCE_FILES} ${PARALLEL_MAIN})
-  TARGET_LINK_LIBRARIES(parallel_main ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(parallel_main ${Boost_LIBRARIES} ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 
 endif()

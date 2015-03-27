@@ -7,6 +7,11 @@ xcode/*
 *.p
 
 
+# ignore numpy arrays
+*.npy
+*.csv
+
+
 # Compiled Object files
 *.slo
 *.lo

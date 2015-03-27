@@ -115,7 +115,6 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
 
             cv::Mat image=cv::imread(gt_images.second[i]);
 
-            cv::Mat* im;
 
             tracker.track(image);
         }
@@ -226,7 +225,7 @@ int main(int argc, const char * argv[]) {
     //std::vector<std::pair<std::string, std::vector<std::string>>> votPrepared=vot2014->prepareDataset(vot2014RootFolder);
     std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared=wu2013->prepareDataset(wu2013RootFolder);
 
-    Struck tracker=Struck::getTracker();
+    Struck tracker=Struck::getTracker(false,false,false,false,false);
 
 
     //vot2014->showVideo(vot2014RootFolder,0);
@@ -239,13 +238,13 @@ int main(int argc, const char * argv[]) {
 
     //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder,true,n_threads,frames);
 
-    std::string vidName="walking";
+    std::string vidName="shaking";
     int vidIndex=wu2013->vidToIndex.at(vidName);
     //tracker.display=0;
 
 
-    tracker.display=3;
-    EvaluationRun run= tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder,wu2013SaveFolder, vidIndex, 0, 400);
+    tracker.display=2;
+    EvaluationRun run= tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder,wu2013SaveFolder, vidIndex, 0, 900);
 
 
     //tracker.reset();
