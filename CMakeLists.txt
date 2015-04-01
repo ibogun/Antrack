@@ -41,9 +41,9 @@ set(PYTHON_FILES
 )
 
 
-set(TEST_FILES
-	src/Tests/IntersectionKernelTest.cpp
-	src/Tests/IntersectionKernelTest.h
+FILE(GLOB TEST_FILES
+	src/Tests/*.cpp
+	src/Tests/*.h
 	src/Tests/main.cpp
 	)
 
@@ -112,7 +112,7 @@ if (test)
   ##############
   # Unit Tests
   ##############
-  add_executable(RunUnitTests ${SOURCE_FILES} ${TEST_FILES})
+  add_executable(RunUnitTests ${SOURCE_FILES} ${TEST_FILES} ${Superpixels})
   #add_executable(RunUnitTests ${SOURCE_FILES})
   # Standard linking to gtest stuff.
   target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
@@ -177,7 +177,7 @@ endif()
 
 
 
-add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJECT_MAIN})
+add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJECT_MAIN} src/Tests/ObjectnessTest.cpp src/Tests/ObjectnessTest.h)
 
 
 

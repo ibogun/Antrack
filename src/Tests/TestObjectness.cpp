@@ -14,7 +14,8 @@
 TEST_F(TestObjectness,findStraddeling){
     
     int superpixels=25;
-    Straddling straddeling(superpixels);
+    double inner=0.9;
+    Straddling straddeling(superpixels,inner);
     
     arma::mat labels=straddeling.getLabels(image);
     

@@ -105,7 +105,7 @@ public:
     
     double computeEdgeDensity(cv::Rect& rect);
     
-    arma::rowvec findEdgeObjectness(cv::Mat& labels, std::vector<cv::Rect>& rects, int translate_x, int translate_y);
+    arma::rowvec findEdgeObjectness(std::vector<cv::Rect>& rects, int translate_x, int translate_y);
 };
 
 #endif /* defined(__Robust_tracking_by_detection__Objectness__) */

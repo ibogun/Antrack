@@ -99,6 +99,8 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
         Struck tracker=Struck::getTracker();
          tracker.display=0;
         pair<string, vector<string>> gt_images=video_gt_images[videoNumber];
+        
+        std::cout<<gt_images.first<<std::endl;
 
         vector<cv::Rect> groundTruth=dataset->readGroundTruth(gt_images.first);
 
@@ -156,7 +158,11 @@ vector<EvaluationRun> applyTrackerOnDataset(Dataset* dataset, std::string rootFo
 
     #pragma omp parallel for
     for (int i=0; i<video_gt_images.size(); i++) {
-        Struck tracker=Struck::getTracker();
+        std::string feature="hist";
+        std::string kernel="int";
+        
+        Struck tracker=Struck::getTracker(true,true,true,true,false,kernel,feature);
+        
         tracker.display=0;
         int n=MIN(frames,video_gt_images[i].second.size());
         EvaluationRun r= tracker.applyTrackerOnVideoWithinRange(dataset, rootFolder,saveFolder, i, 0, n);
@@ -171,6 +177,8 @@ vector<EvaluationRun> applyTrackerOnDataset(Dataset* dataset, std::string rootFo
 
     return results;
 }
+
+
 
 void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string saveFolder, bool saveResults,int n_threads, int nFrames=5000){
 
@@ -224,31 +232,44 @@ int main(int argc, const char * argv[]) {
 
     //std::vector<std::pair<std::string, std::vector<std::string>>> votPrepared=vot2014->prepareDataset(vot2014RootFolder);
     std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared=wu2013->prepareDataset(wu2013RootFolder);
+    
+    
+    std::string feature="hist";
+    std::string kernel="int";
+    
+    bool pretraining=false;
+    bool filter=true;
+    bool straddling=true;
+    bool edgeness=true;
+    bool spatialPrior=false;
 
-    Struck tracker=Struck::getTracker(false,false,false,false,false);
+    Struck tracker=Struck::getTracker(pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
 
 
     //vot2014->showVideo(vot2014RootFolder,0);
-    int frames=50;
-
-    int n_threads=50;
+    int frames=100;
 
     std::cout<<wu2013RootFolder<<std::endl;
     std::cout<<wu2013SaveFolder<<std::endl;
 
     //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder,true,n_threads,frames);
 
-    std::string vidName="shaking";
+    std::string vidName="basketball";
     int vidIndex=wu2013->vidToIndex.at(vidName);
     //tracker.display=0;
 
-
-    tracker.display=2;
+    
+    tracker.display=3;
     EvaluationRun run= tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder,wu2013SaveFolder, vidIndex, 0, 900);
+//    tracker.display=3;
+//    
+//    for (int i=0; i<50; i++) {
+//        Struck tracker=Struck::getTracker(pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
+//
+//        tracker.display=3;
+//        std::cout<<wuPrepared[i].first<<std::endl;
+//        EvaluationRun run= tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder,wu2013SaveFolder, i, 0, frames);
+//    }
 
-
-    //tracker.reset();
-
-    //delete wu2013;
     return 0;
 }

@@ -79,8 +79,8 @@ if __name__ == "__main__":
             list_of_experiments_edge.append(list())
             list_of_experiments_straddling.append(list())
 
-        #for idx in range(minIdx, min(len(d["boxes"]), 3)):
-        for idx in range(minIdx,min(len(d["boxes"]),len(d["images"]))):
+        for idx in range(minIdx, min(len(d["boxes"]), 3)):
+        #for idx in range(minIdx,min(len(d["boxes"]),len(d["images"]))):
 
             print idx,;
 
@@ -88,10 +88,13 @@ if __name__ == "__main__":
 
             bbox= d["boxes"][idx]
 
+            objness.readImage(imName)
+            objness.initializeStraddling(nSuperpixels,inner_rectangle)
+            objness.initializeEdgeDensity(edge_t1,edge_t2,inner_rectangle)
 
-            objness.initialize(imName,int(bbox[0]),int(bbox[1]),int(bbox[2]),int(bbox[3]))
-            l_straddling.append(objness.getStraddling(nSuperpixels, inner_rectangle))
-            l_edgeness.append(objness.getEdgeness(edge_t1, edge_t2, inner_rectangle))
+            #objness.initialize(imName,int(bbox[0]),int(bbox[1]),int(bbox[2]),int(bbox[3]))
+            l_straddling.append(objness.getStraddling(int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])))
+            l_edgeness.append(objness.getEdgeness(int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])))
 
             image=cv2.imread(imName)
 
@@ -130,15 +133,17 @@ if __name__ == "__main__":
                     if experiment_box[0]>=0 and experiment_box[1]>=0 and experiment_box[0]+bbox[2]<m \
                             and experiment_box[1]+bbox[3]<n:
 
-                        objness.initialize(imName, int(experiment_box[0]), int(experiment_box[1]), int(bbox[2]), int(bbox[3]))
+                        #objness.initialize(imName, int(experiment_box[0]), int(experiment_box[1]), int(bbox[2]), int(bbox[3]))
 
 
 
 
                         number_good_boxes= number_good_boxes+1
 
-                        edgeness = edgeness + objness.getEdgeness(edge_t1,edge_t2,inner_rectangle)
-                        straddling = straddling +objness.getStraddling(nSuperpixels,inner_rectangle)
+                        edgeness = edgeness + objness.getEdgeness(int(experiment_box[0]), int(experiment_box[1]),
+                                                                  int(bbox[2]), int(bbox[3]))
+                        straddling = straddling +objness.getStraddling(int(experiment_box[0]), int(experiment_box[1]),
+                                                                       int(bbox[2]), int(bbox[3]))
 
                         #objness.plot()
 
@@ -174,5 +179,5 @@ if __name__ == "__main__":
 
         number_to_skip= number_to_skip+1
 
-    saveDictionaryAsCSV(dict_straddling,"straddling.csv")
-    saveDictionaryAsCSV(dict_edgeness,"edgeness.csv")
+    #saveDictionaryAsCSV(dict_straddling,"straddling.csv")
+    #saveDictionaryAsCSV(dict_edgeness,"edgeness.csv")

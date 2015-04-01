@@ -60,13 +60,13 @@ class Struck {
 
     bool useEdgeDensity=false;
     bool useStraddling = false;
+    bool gtAvaliable=false;
 
     cv::Rect lastLocation;
-
     cv::Rect lastLocationFilter;
     cv::Rect lastLocationObjectness;
-
     cv::Rect lastRectFilterAndDetectorAgreedOn;
+    cv::Rect gtBox;
 
 
 
@@ -107,6 +107,10 @@ public:
     std::vector<cv::Rect> boundingBoxes;
 
     Struck();
+    
+    void setGroundTruthBox(cv::Rect box){
+        this->gtBox=box;
+    }
 
     cv::Mat getObjectnessCanvas(){
         return objectnessCanvas;
@@ -143,9 +147,12 @@ public:
 
     static Struck getTracker();
     static Struck getTracker(bool,bool,bool,bool,bool);
+    static Struck getTracker(bool,bool,bool,bool,bool,std::string,std::string);
 
     std::vector<cv::Rect> getBoundingBoxes(){
         return this->boundingBoxes;
+
+
     };
 
     void videoCapture();

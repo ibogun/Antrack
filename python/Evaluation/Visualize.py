@@ -12,7 +12,7 @@ from matplotlib import gridspec
 
 from matplotlib.widgets import Slider, Button
 
-
+import seaborn as sns
 class Visualize(object):
     """Visualize the object here and there"""
 
@@ -267,7 +267,11 @@ class Visualize(object):
 
         names=list()
         n_groups = len(self.dataset.data)
-        for gt_data,tracker_data in zip(self.dataset.data,self.run.data):
+
+        for tracker_data in self.run.data:
+            gt_data = [x for x in self.dataset.data if x[0] == tracker_data[0]][0]
+
+        #for gt_data,tracker_data in zip(self.dataset.data,self.run.data):
 
             if gt_data[0]!=tracker_data[0]:
                 print "Should be happening"
@@ -382,7 +386,7 @@ def main(argv=None):
 
     datasetType = 'wu2013'
 
-    runName='./Runs/ms_hog_int_pre_f.p'
+    runName='./Runs/obj_hist_int_pre0_filter1_edge0_straddling1_prior0.p'
 
     run=loadPickle(runName)
 

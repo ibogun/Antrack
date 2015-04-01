@@ -30,8 +30,9 @@ cv::Mat DrawRandomImage::getRandomImage(){
     char window_name[] = "Drawing_2 Tutorial";
     
     /// Also create a random object (RNG)
+    // set seed once ready
     RNG rng( 0xFFFFFFFF );
-    
+
     
     
     /// Initialize a matrix filled with zeros

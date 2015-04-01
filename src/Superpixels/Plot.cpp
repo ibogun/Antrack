@@ -13,7 +13,7 @@ void Plot::initialize(){
     
     
     const cv::Scalar AXIS_COLOR(0,0,0);
-    const int thickness=1.5;
+    const int thickness=1;
     /*
      1) locate the point of the origin using equation:
      origin_x=0.05*width

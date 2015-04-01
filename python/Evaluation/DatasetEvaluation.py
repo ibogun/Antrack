@@ -4,13 +4,13 @@ import numpy as np
 import os.path
 import cPickle
 import cv2
-
+import sys
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import datetime
 import os
 
-import seaborn as sns
+#import seaborn as sns
 
 class Dataset(object):
 
@@ -203,7 +203,7 @@ class Evaluator(object):
 
         n_groups=len(x_pr)
         names=list()
-        plt.figure()
+        plt.figure(figsize=(15, 10))
         for i in range(0,n_groups):
 
             p=np.trapz(y_pr[i],x=x_pr[i])/50
@@ -234,7 +234,7 @@ class Evaluator(object):
 
 
         precisionTrackerNames = [trackerNames[x] for x in idx_success]
-        sorted_precision = [success[x] for x in idx_success]
+        sorted_precision = [precision[x] for x in idx_success]
 
 
         plt.bar(index, sorted_precision, align="center")
@@ -251,7 +251,7 @@ class Evaluator(object):
 
     def createPlot(self, x_s, y_s,x_pr,y_pr,savefilename=''):
 
-        plt.figure()
+        plt.figure(figsize=(15,10))
         cm = plt.get_cmap('gist_rainbow')
         NUM_COLORS=len(x_pr)
 
@@ -293,6 +293,7 @@ class Evaluator(object):
 
             plt.legend(handles=handlesLegendSuccess, prop={'size': legendSize})
             plt.grid(b=False)
+            #plt.axes("on")
             plt.subplot(1, 2, 2)
 
             for i in range(0,len(x_pr)):
@@ -301,6 +302,7 @@ class Evaluator(object):
             plt.xlim([-0.5,51])
             plt.title("precision", fontsize=headerFontSize)
             plt.grid(b=False)
+            #plt.axes("on")
             plt.xlabel('Location error threshold', fontsize=axisFontSize)
             plt.ylabel('Precision', fontsize=axisFontSize)
 
@@ -323,6 +325,9 @@ class Evaluator(object):
         :param n:       number of points to sample
         :return:        (x_pr,y_pr,x_s,y_s) list
         '''
+
+        if video[0]!=gt[0]:
+            raise Exception("You cannot compare apples to oranges \n OR "+video[0]+" and "+gt[0])
 
         findCenter = lambda x: np.array([x[0] + x[2] / 2.0, x[1] + x[3] / 2.0])
 
@@ -374,7 +379,9 @@ class Evaluator(object):
         success_x = np.zeros(n)
         success_y = np.zeros(n)
 
-        for video, gt in zip(runs, listGT):
+        for video in runs:
+
+            gt=[x for x in listGT if x[0]==video[0]][0]
             (x_pr, y_pr, x_s, y_s)= Evaluator.evaluateSingleVideo(video, gt, n=n)
 
             precision_x = precision_x + x_pr
@@ -454,6 +461,8 @@ if __name__ == "__main__":
 
     # trackerLabel="STR+f_hog"
 
+    wildcard=sys.argv[1]
+    #wildcard="obj"
     #
     # run=Experiment(wu2013results,datasetType,trackerLabel)
     # run.loadResults()
@@ -469,7 +478,7 @@ if __name__ == "__main__":
     dataset=Dataset(wu2013GroundTruth,datasetType)
 
 
-    runsNames=glob.glob('./Runs/*.p')
+    runsNames=glob.glob('./Runs/'+ wildcard+'*.p')
 
     runs=list()
 
@@ -480,15 +489,15 @@ if __name__ == "__main__":
 
     evaluator=Evaluator(dataset,runs)
 
-    saveFigureToFolder='/Users/Ivan/Code/personal-website/Projects/Object_aware_tracking/images/fixedScale/'
+    saveFigureToFolder='/Users/Ivan/Code/personal-website/Projects/Object_aware_tracking/images/multiScale/'
     saveFormat=['png','pdf']
 
     successAndPrecision='SuccessAndPrecision_wu2013'
     histograms='histogram_wu2013'
 
-    # for i in saveFormat:
-    #     evaluator.evaluate(successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
-    #                                                    i,histogramPlot=saveFigureToFolder+histograms+'.'+
-    #                                                                                i)
+    for i in saveFormat:
+        evaluator.evaluate(successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
+                                                       i,histogramPlot=saveFigureToFolder+histograms+'.'+
+                                                                                   i)
 
-    evaluator.evaluate()
+    #evaluator.evaluate()

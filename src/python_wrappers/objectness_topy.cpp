@@ -15,7 +15,18 @@ public:
     Straddling* straddle;
     EdgeDensity *edgeDensity;
 
+    double downsample=1.03;
+    int minScale=-2;
+    int maxScale=4;
+
     double getStraddling(int x, int y, int width, int height){
+        if (x<0){
+            x=0;
+        }
+
+        if (y<0){
+            y=0;
+        }
         if (x + width >= image.cols) {
           width = image.cols - x - 1;
         }
@@ -30,6 +41,14 @@ public:
     };
 
     double getEdgeness(int x, int y, int width, int height) {
+        if (x<0){
+            x=0;
+        }
+
+        if (y<0){
+            y=0;
+        }
+
         if (x + width >= image.cols) {
           width = image.cols - x - 1;
         }
@@ -42,6 +61,42 @@ public:
 
         return this->edgeDensity->computeEdgeDensity(rect);
     };
+
+    double getEdgenessMultiscale(int x, int y,int width, int height){
+
+        double sum=0;
+        for (int j = minScale ;j <= maxScale; ++j) {
+
+            int width_s=width*pow(downsample,j);
+            int height_s=height*pow(downsample,j);
+
+            int new_x=(int)(x+width/2.0-width_s/2.0);
+            int new_y=(int)(y+height/2.0-height_s/2.0);
+
+            sum+=getEdgeness(new_x,new_y,width_s,height_s);
+        }
+
+        sum=sum/(maxScale-minScale);
+        return sum;
+    }
+
+    double getStraddlingMultiscale(int x, int y,int width, int height){
+
+        double sum=0;
+        for (int j = minScale ;j <= maxScale; ++j) {
+
+            int width_s=width*pow(downsample,j);
+            int height_s=height*pow(downsample,j);
+
+            int new_x=(int)(x+width/2.0-width_s/2.0);
+            int new_y=(int)(y+height/2.0-height_s/2.0);
+
+            sum+=getStraddling(new_x,new_y,width_s,height_s);
+        }
+
+        sum=sum/(maxScale-minScale);
+        return sum;
+    }
 
     void plotObjectness(){
         //   cv::imshow("Objectness", this->tracker.getObjectnessCanvas());
@@ -138,7 +193,8 @@ BOOST_PYTHON_MODULE(objectness)
       .def("getEdgeness", &Objectness::getEdgeness)
       .def("getEdgenessList",&Objectness::getEdgenessList)
       .def("getStraddlingList",&Objectness::getStraddlingList)
-
+      .def("getEdgenessMultiscale",&Objectness::getEdgenessMultiscale)
+      .def("getStraddlingMultiscale",&Objectness::getStraddlingMultiscale)
       ;
 }
 // find how to write functions which return some values in c++/python boost

@@ -133,7 +133,7 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
     // allocate matrices for each superpixel
     // assume labels are labelled from 0 to max(labels)
 
-    this->computeIntegralImages(labels);
+    
 
     
     
@@ -201,20 +201,22 @@ double Straddling::computeStraddling(cv::Rect &rect_big){
 }
 
 
+/**
+ *  Compute edges from the image using Canny edge detector
+ *
+ *  @param image cv::Mat image (either RGB or grayscale)
+ *
+ *  @return cv::Mat of type CV_8U with edges
+ */
 cv::Mat EdgeDensity::getEdges(cv::Mat& image){
     using namespace cv;
     
     Mat detected_edges(image.rows,image.cols,CV_8U);
     
-    //blur(image, detected_edges, Size(3,3));
+    blur(image, detected_edges, Size(3,3));  //<-- this line cannot be deleted
     
     Canny(detected_edges,detected_edges,this->threshold_1,this->threshold_2);
-    
-//        cv::imshow("edges", detected_edges);
-//    
-//        cv::waitKey();
-//    
-//        cv::destroyAllWindows();
+
     
     return detected_edges;
 }
@@ -255,42 +257,8 @@ void EdgeDensity::computeIntegrals(cv::Mat &labels){
 }
 
 
-arma::rowvec EdgeDensity::findEdgeObjectness(cv::Mat &labels, std::vector<cv::Rect> &rects, int translate_x, int translate_y){
-    
-    
-    
-    
-//    // calculate integral images for edges in x and y directions
-//    
-//    int m=labels.cols;
-//    int n=labels.rows;
-//    
-//    arma::Mat<int> edges_x(n+1,m+1,arma::fill::zeros);
-//    arma::Mat<int> edges_y(n+1,m+1,arma::fill::zeros);
-//    
-//    
-//    for (int s=1; s<n+1; s++) {
-//        for (int j=1; j<m+1; j++) {
-//            if (labels.at<uchar>(s-1, j-1)>0) {
-//                edges_x(s,j)++;
-//            }
-//            
-//            
-//            edges_x(s,j)+=edges_x(s,j-1);
-//            
-//            
-//            if (labels.at<uchar>(s-1, j-1)>0) {
-//                edges_y(s,j)++;
-//            }
-//            
-//            edges_y(s,j)+=edges_y(s-1,j);
-//            
-//            
-//        }
-//    }
-    
-    computeIntegrals(labels);
-    
+arma::rowvec EdgeDensity::findEdgeObjectness(std::vector<cv::Rect> &rects, int translate_x, int translate_y){
+
     arma::rowvec measures(rects.size(),arma::fill::zeros);
     for (int i=0; i<rects.size(); i++) {
         
@@ -298,21 +266,6 @@ arma::rowvec EdgeDensity::findEdgeObjectness(cv::Mat &labels, std::vector<cv::Re
         cv::Rect rect(rects[i].x-translate_x,rects[i].y-
                       translate_y,rects[i].width,rects[i].height);
 
-        
-//        cv::Rect inner_rect=Straddling::getInnerRect(rect,this->inner_threshold);
-//        
-//        // calculate how many edges on the perimeter of the inner rectangle
-//
-//        
-//        int edges_in_x=edges_x(inner_rect.y,inner_rect.x+inner_rect.width)+edges_x(inner_rect.y+inner_rect.height,inner_rect.x+inner_rect.width)-edges_x(inner_rect.y,inner_rect.x)-edges_x(inner_rect.y+inner_rect.height,inner_rect.x);
-//        
-//        int edges_in_y=edges_y(inner_rect.y+inner_rect.height,inner_rect.x)+edges_y(inner_rect.y+inner_rect.height,inner_rect.x+inner_rect.width)-edges_y(inner_rect.y,inner_rect.x)-edges_y(inner_rect.y,inner_rect.x+inner_rect.width);
-        
-//        int edges_in_x=edges_x(inner_rect.x+inner_rect.width,inner_rect.y)+edges_x(inner_rect.x+inner_rect.width,inner_rect.y+inner_rect.height)-edges_x(inner_rect.x,inner_rect.y)-edges_x(inner_rect.x,inner_rect.y+inner_rect.height);
-//        
-//        int edges_in_y=edges_y(inner_rect.x,inner_rect.y+inner_rect.height)+edges_y(inner_rect.x+inner_rect.width,inner_rect.y+inner_rect.height)-edges_y(inner_rect.x,inner_rect.y)-edges_y(inner_rect.x+inner_rect.width,inner_rect.y);
-        
-        //measure=(edges_in_x+edges_in_y)/((double)(2*(inner_rect.width+inner_rect.height)));
         
         measures[i]=computeEdgeDensity(rect);
     }

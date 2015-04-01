@@ -90,14 +90,14 @@ runTrackerOnDatasetPart(vector<pair<string, vector<string>>> &video_gt_images,
                         Dataset *dataset, int from, int to,
                         std::string saveFolder, bool saveResults, int nFrames,
                         bool pretraining, bool useFilter, bool useEdgeDensity,
-                        bool useStraddling, bool scalePrior ) {
+                        bool useStraddling, bool scalePrior, std::string kernel,std::string feature) {
 
     std::time_t t1 = std::time(0);
 
     int frameNumber = 0;
     // parallelize this loop
     for (int videoNumber=from; videoNumber<to; videoNumber++) {
-        Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior);
+        Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernel,feature);
          tracker.display=0;
         pair<string, vector<string>> gt_images=video_gt_images[videoNumber];
 
@@ -109,8 +109,7 @@ runTrackerOnDatasetPart(vector<pair<string, vector<string>>> &video_gt_images,
 
         tracker.initialize(image, groundTruth[0]);
 
-
-        nFrames=MIN(nFrames,gt_images.second.size());
+        nFrames = MIN(nFrames, gt_images.second.size());
         //std::cout<<"Number of frames: "<<nFrames<<std::endl;
 
         for (int i=1; i<nFrames; i++) {
@@ -121,9 +120,8 @@ runTrackerOnDatasetPart(vector<pair<string, vector<string>>> &video_gt_images,
         }
 
         if (saveResults) {
-            std::string saveFileName=saveFolder+"/"+dataset->videos[videoNumber]+".dat";
-
-
+          std::string saveFileName =
+              saveFolder + "/" + dataset->videos[videoNumber] + ".dat";
 
             tracker.saveResults(saveFileName);
         }
@@ -136,68 +134,45 @@ runTrackerOnDatasetPart(vector<pair<string, vector<string>>> &video_gt_images,
         std::cout<<r<<std::endl;
 
         //tracker.reset();
-
-
     }
 
     std::time_t t2 = std::time(0);
-    std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
+    std::cout << "Frames per second: " << frameNumber / (1.0 * (t2 - t1))
+              << std::endl;
     //std::cout<<"No threads: "<<(t2-t1)<<std::endl;
 }
 
 
-vector<EvaluationRun> applyTrackerOnDataset(Dataset* dataset, std::string rootFolder,std::string saveFolder,int frames=10){
 
-    vector<EvaluationRun> results;
-
-    vector<pair<string, vector<string>>> video_gt_images=dataset->prepareDataset(rootFolder);
-
-    std::time_t t1 = std::time(0);
-
-    #pragma omp parallel for
-    for (int i=0; i<video_gt_images.size(); i++) {
-        Struck tracker=Struck::getTracker();
-        tracker.display=0;
-        int n=MIN(frames,video_gt_images[i].second.size());
-        EvaluationRun r= tracker.applyTrackerOnVideoWithinRange(dataset, rootFolder,saveFolder, i, 0, n);
-
-        results.push_back(r);
-    }
-
-    std::time_t t2 = std::time(0);
-    //std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
-    std::cout<<"Time with threads: "<<(t2-t1)<<std::endl;
-
-
-    return results;
-}
 
 void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
                            std::string saveFolder, bool saveResults,
                            int n_threads, bool pretraining, bool useFilter,
                            bool useEdgeDensity, bool useStraddling,
-                           bool scalePrior, int nFrames = 5000) {
+                   bool scalePrior,std::string kernel, std::string feature, int nFrames = 5000) {
 
     using namespace std;
 
-    vector<pair<string, vector<string>>> video_gt_images=dataset->prepareDataset(rootFolder);
+    std::vector<std::pair<std::string, std::vector<std::string>>> video_gt_images=dataset->prepareDataset(rootFolder);
 
     std::time_t t1 = std::time(0);
 
 
     std::vector<std::thread> th;
 
-    arma::rowvec bounds=arma::linspace<rowvec>(0, video_gt_images.size(),MIN(n_threads,video_gt_images.size()));
+    arma::rowvec bounds = arma::linspace<rowvec>(
+        0, video_gt_images.size(), MIN(MAX(n_threads,2), video_gt_images.size()));
 
     bounds=arma::round(bounds);
 
     for (int i=0; i<n_threads; i++) {
+        std::cout<<"Video: "<<video_gt_images[i].first<<std::endl;
       th.push_back(std::thread(
           runTrackerOnDatasetPart, std::ref(video_gt_images), std::ref(dataset),
           std::ref(bounds[i]), std::ref(bounds[i + 1]), std::ref(saveFolder),
           std::ref(saveResults), std::ref(nFrames), std::ref(pretraining),
           std::ref(useFilter), std::ref(useEdgeDensity),
-          std::ref(useStraddling), std::ref(scalePrior)));
+          std::ref(useStraddling), std::ref(scalePrior),std::ref(kernel),std::ref(feature)));
     }
 
     for(auto &t : th){
@@ -274,6 +249,8 @@ int main(int ac, char* av[])
         desc.add_options()("help", "produce help message")(
             "TrackerID", po::value<std::string>(),
             "give a name to the tracker run")(
+            "features", po::value<std::string>(), "Feature to use")(
+            "kernel", po::value<std::string>(), "Kernel to use")(
             "Pretraining", po::value<double>(), "set flag, e.g. 0 or 1")(
             "useFilter", po::value<double>(), "set flag, e.g. 0 or 1")(
             "useEdgeDensity", po::value<double>(), "set flag, e.g. 0 or 1")(
@@ -294,6 +271,20 @@ int main(int ac, char* av[])
         if(vm.count("TrackerID")){
           cout << "TrackerID is " << vm["TrackerID"].as<std::string>() << ".\n";
           trackerID = vm["TrackerID"].as<std::string>();
+        }
+
+
+        std::string feature="raw";
+        if(vm.count("features")){
+          cout << "Feature is " << vm["features"].as<std::string>() << ".\n";
+          feature = vm["features"].as<std::string>();
+        }
+
+
+        std::string kernel="hist";
+        if(vm.count("kernel")){
+          cout << "Kernel is " << vm["kernel"].as<std::string>() << ".\n";
+          kernel = vm["kernel"].as<std::string>();
         }
 
 
@@ -378,7 +369,10 @@ int main(int ac, char* av[])
 
             std::cout << folderName << std::endl;
 
+            // remote location
             std::string datasetSaveLocation="/udrive/student/ibogun2010/Research/Results";
+
+            //std::string datasetSaveLocation="/Users/Ivan/Code/Tracking/Antrack/tmp";
             std::string fullFolderName =
                 datasetSaveLocation + "/" + folderName + "/";
 
@@ -394,7 +388,7 @@ int main(int ac, char* av[])
             applyTrackerOnDataset(wu2013, wu2013RootFolder, fullFolderName,
                                   true, n_threads, pretraining, useFilter,
                                   useEdgeDensity, useStraddling, scalePrior,
-                                  frames);
+                                  kernel,feature,frames);
 
 
             std::stringstream ss;

@@ -184,11 +184,14 @@ TEST_F(IntersectionKernel_tracking_test, DISABLED_Tracking){
 
 
     //Struck t(olarank, features,samplerForSearch, samplerForUpdate,useFilter, display);
-    Struck t_fast(olarank_fast, features,samplerForSearch, samplerForUpdate,useObjectness,useFilter, display);
+    //Struck t_fast(olarank_fast, features,samplerForSearch, samplerForUpdate,useObjectness,useFilter, display);
 
+    Struck t_fast(olarank_fast, features, samplerForSearch, samplerForUpdate,
+                   useObjectness, false, useFilter, false, display);
 
 
     std::string rootFolder="/Users/Ivan/Files/Data/Tracking_benchmark/";
+    std::string saveFolder="";
     DataSetWu2013* datasetWu2013=new DataSetWu2013;
 
 
@@ -196,11 +199,14 @@ TEST_F(IntersectionKernel_tracking_test, DISABLED_Tracking){
 
     // use only on the first 'basketball' sequence
 
+    int vidNumber=0;
     int nOfFrames=30;
 
-    t_fast.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 0, 0, nOfFrames);
-    Struck t(olarank,features,samplerForSearch,samplerForUpdate,useObjectness,useFilter,display);
-    t.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder, 0, 0, nOfFrames);
+    t_fast.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder,saveFolder, 0, 0, nOfFrames);
+
+    Struck t(olarank,features,samplerForSearch,samplerForUpdate,useObjectness,false,useFilter,false,display);
+
+    t.applyTrackerOnVideoWithinRange(datasetWu2013, rootFolder,saveFolder, 0, 0, nOfFrames);
     std::vector<cv::Rect> boxes_fast=t_fast.getBoundingBoxes();
     std::vector<cv::Rect> boxes_slow=t.getBoundingBoxes();
 
