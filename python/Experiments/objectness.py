@@ -37,7 +37,6 @@ if __name__ == "__main__":
     edge_t1=1
     edge_t2=200;
     inner_rectangle=0.95
-
     nSuperpixels=200;
 
     number_to_skip=0

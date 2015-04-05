@@ -30,6 +30,14 @@ public:
     
     
     void showVideo(std::string rootFolder, int vidNumber);
+
+    std::string getInfo(){
+        std::stringstream ss;
+
+        ss<<"VOT 2014 dataset (ECCV 2014)\n";
+        ss<<"25 videos\n";
+        return ss.str();
+    }
 };
 
 #endif /* defined(__Robust_tracking_by_detection__DatasetVOT2014__) */

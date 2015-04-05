@@ -155,7 +155,6 @@ if(python)
 
 	set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.9/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
 
-	include_directories (${PYTHON_INCLUDE_DIRS})
 	find_package( Boost COMPONENTS python)
 	include_directories (${Boost_INCLUDE_DIRS})
 
@@ -176,22 +175,23 @@ endif()
 
 
 
-
-add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJECT_MAIN} src/Tests/ObjectnessTest.cpp src/Tests/ObjectnessTest.h)
+find_package( Boost COMPONENTS filesystem system REQUIRED )
+add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJECT_MAIN})
 
 
 
 include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
-
-target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+include_directories (${Boost_INCLUDE_DIRS})
+target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES} )
 
 
 if (parallel)
 
   find_package(OpenMP)
 
-find_package( Boost COMPONENTS program_options REQUIRED )
+find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
 
 include_directories( ${Boost_INCLUDE_DIR} )
 

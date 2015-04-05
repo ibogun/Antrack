@@ -20,6 +20,10 @@
 #include "Datasets/DatasetALOV300.h"
 #include "Datasets/DatasetVOT2014.h"
 #include "Datasets/EvaluationRun.h"
+#include "Datasets/ExperimentTemporalRobustness.h"
+#include "Datasets/ExperimentSpatialRobustness.h"
+#include "Datasets/ExperimentRunner.h"
+#include "Datasets/AllExperimentsRunner.h"
 
 #include "Superpixels/SuperPixels.h"
 
@@ -38,6 +42,7 @@
 //define something for Windows (64-bit only)
 #endif
 #elif __APPLE__
+
 #include "TargetConditionals.h"
 
 #define NUM_THREADS         16
@@ -83,6 +88,7 @@
 #endif
 
 #include <boost/program_options.hpp>
+
 namespace po = boost::program_options;
 
 void
@@ -90,21 +96,22 @@ runTrackerOnDatasetPart(vector<pair<string, vector<string>>> &video_gt_images,
                         Dataset *dataset, int from, int to,
                         std::string saveFolder, bool saveResults, int nFrames,
                         bool pretraining, bool useFilter, bool useEdgeDensity,
-                        bool useStraddling, bool scalePrior, std::string kernel,std::string feature) {
+                        bool useStraddling, bool scalePrior, std::string kernel, std::string feature) {
 
     std::time_t t1 = std::time(0);
 
     int frameNumber = 0;
     // parallelize this loop
-    for (int videoNumber=from; videoNumber<to; videoNumber++) {
-        Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernel,feature);
-         tracker.display=0;
-        pair<string, vector<string>> gt_images=video_gt_images[videoNumber];
+    for (int videoNumber = from; videoNumber < to; videoNumber++) {
+        Struck tracker = Struck::getTracker(pretraining, useFilter, useEdgeDensity, useStraddling, scalePrior, kernel,
+                                            feature);
+        tracker.display = 0;
+        pair<string, vector<string>> gt_images = video_gt_images[videoNumber];
 
-        vector<cv::Rect> groundTruth=dataset->readGroundTruth(gt_images.first);
+        vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
 
-        frameNumber+=gt_images.second.size();
-        cv::Mat image=cv::imread(gt_images.second[0]);
+        frameNumber += gt_images.second.size();
+        cv::Mat image = cv::imread(gt_images.second[0]);
 
 
         tracker.initialize(image, groundTruth[0]);
@@ -112,16 +119,16 @@ runTrackerOnDatasetPart(vector<pair<string, vector<string>>> &video_gt_images,
         nFrames = MIN(nFrames, gt_images.second.size());
         //std::cout<<"Number of frames: "<<nFrames<<std::endl;
 
-        for (int i=1; i<nFrames; i++) {
+        for (int i = 1; i < nFrames; i++) {
 
-            cv::Mat image=cv::imread(gt_images.second[i]);
+            cv::Mat image = cv::imread(gt_images.second[i]);
 
             tracker.track(image);
         }
 
         if (saveResults) {
-          std::string saveFileName =
-              saveFolder + "/" + dataset->videos[videoNumber] + ".dat";
+            std::string saveFileName =
+                    saveFolder + "/" + dataset->videos[videoNumber] + ".dat";
 
             tracker.saveResults(saveFileName);
         }
@@ -130,30 +137,28 @@ runTrackerOnDatasetPart(vector<pair<string, vector<string>>> &video_gt_images,
 
         r.evaluate(groundTruth, tracker.boundingBoxes);
 
-        std::cout<<dataset->videos[videoNumber]<<std::endl;
-        std::cout<<r<<std::endl;
+        std::cout << dataset->videos[videoNumber] << std::endl;
+        std::cout << r << std::endl;
 
         //tracker.reset();
     }
 
     std::time_t t2 = std::time(0);
     std::cout << "Frames per second: " << frameNumber / (1.0 * (t2 - t1))
-              << std::endl;
+    << std::endl;
     //std::cout<<"No threads: "<<(t2-t1)<<std::endl;
 }
-
-
 
 
 void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
                            std::string saveFolder, bool saveResults,
                            int n_threads, bool pretraining, bool useFilter,
                            bool useEdgeDensity, bool useStraddling,
-                   bool scalePrior,std::string kernel, std::string feature, int nFrames = 5000) {
+                           bool scalePrior, std::string kernel, std::string feature, int nFrames = 5000) {
 
     using namespace std;
 
-    std::vector<std::pair<std::string, std::vector<std::string>>> video_gt_images=dataset->prepareDataset(rootFolder);
+    std::vector<std::pair<std::string, std::vector<std::string>>> video_gt_images = dataset->prepareDataset(rootFolder);
 
     std::time_t t1 = std::time(0);
 
@@ -161,30 +166,30 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
     std::vector<std::thread> th;
 
     arma::rowvec bounds = arma::linspace<rowvec>(
-        0, video_gt_images.size(), MIN(MAX(n_threads,2), video_gt_images.size()));
+            0, video_gt_images.size(), MIN(MAX(n_threads, 2), video_gt_images.size()));
 
-    bounds=arma::round(bounds);
+    bounds = arma::round(bounds);
 
-    for (int i=0; i<n_threads; i++) {
-        std::cout<<"Video: "<<video_gt_images[i].first<<std::endl;
-      th.push_back(std::thread(
-          runTrackerOnDatasetPart, std::ref(video_gt_images), std::ref(dataset),
-          std::ref(bounds[i]), std::ref(bounds[i + 1]), std::ref(saveFolder),
-          std::ref(saveResults), std::ref(nFrames), std::ref(pretraining),
-          std::ref(useFilter), std::ref(useEdgeDensity),
-          std::ref(useStraddling), std::ref(scalePrior),std::ref(kernel),std::ref(feature)));
+    for (int i = 0; i < n_threads; i++) {
+        std::cout << "Video: " << video_gt_images[i].first << std::endl;
+        th.push_back(std::thread(
+                runTrackerOnDatasetPart, std::ref(video_gt_images), std::ref(dataset),
+                std::ref(bounds[i]), std::ref(bounds[i + 1]), std::ref(saveFolder),
+                std::ref(saveResults), std::ref(nFrames), std::ref(pretraining),
+                std::ref(useFilter), std::ref(useEdgeDensity),
+                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature)));
     }
 
-    for(auto &t : th){
+    for (auto &t : th) {
         t.join();
     }
 
 
     std::time_t t2 = std::time(0);
     //std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
-    std::cout<<"Time with threads: "<<(t2-t1)<<std::endl;
+    std::cout << "Time with threads: " << (t2 - t1) << std::endl;
 
-    std::ofstream out(saveFolder+"/"+"tracker_info.txt");
+    std::ofstream out(saveFolder + "/" + "tracker_info.txt");
     out << Struck::getTracker();
     out.close();
 
@@ -221,41 +226,43 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
 #include <iterator>
 
 #include <string>
+
 using std::string;
 
 #include <boost/lexical_cast.hpp>
+
 using boost::lexical_cast;
 
 #include <boost/uuid/uuid.hpp>
+
 using boost::uuids::uuid;
 
 #include <boost/uuid/uuid_generators.hpp>
+
 using boost::uuids::random_generator;
 
 #include <boost/uuid/uuid_io.hpp>
 
-string make_uuid()
-{
-    return lexical_cast<string>((random_generator())());
+string make_uuid() {
+    return lexical_cast<string>((random_generator()) ());
 }
 
-int main(int ac, char* av[])
-{
+int main(int ac, char *av[]) {
     using namespace std;
     namespace po = boost::program_options;
     try {
 
         po::options_description desc("Allowed options");
         desc.add_options()("help", "produce help message")(
-            "TrackerID", po::value<std::string>(),
-            "give a name to the tracker run")(
-            "features", po::value<std::string>(), "Feature to use")(
-            "kernel", po::value<std::string>(), "Kernel to use")(
-            "Pretraining", po::value<double>(), "set flag, e.g. 0 or 1")(
-            "useFilter", po::value<double>(), "set flag, e.g. 0 or 1")(
-            "useEdgeDensity", po::value<double>(), "set flag, e.g. 0 or 1")(
-            "useStraddling", po::value<double>(), "set flag, e.g. 0 or 1")(
-            "scalePrior", po::value<double>(), "set flag, e.g. 0 or 1");
+                "TrackerID", po::value<std::string>(),
+                "give a name to the tracker run")(
+                "features", po::value<std::string>(), "Feature to use")(
+                "kernel", po::value<std::string>(), "Kernel to use")(
+                "Pretraining", po::value<double>(), "set flag, e.g. 0 or 1")(
+                "useFilter", po::value<double>(), "set flag, e.g. 0 or 1")(
+                "useEdgeDensity", po::value<double>(), "set flag, e.g. 0 or 1")(
+                "useStraddling", po::value<double>(), "set flag, e.g. 0 or 1")(
+                "scalePrior", po::value<double>(), "set flag, e.g. 0 or 1");
 
         po::variables_map vm;
         po::store(po::parse_command_line(ac, av, desc), vm);
@@ -268,157 +275,162 @@ int main(int ac, char* av[])
 
         std::string trackerID = "";
 
-        if(vm.count("TrackerID")){
-          cout << "TrackerID is " << vm["TrackerID"].as<std::string>() << ".\n";
-          trackerID = vm["TrackerID"].as<std::string>();
+        if (vm.count("TrackerID")) {
+            cout << "TrackerID is " << vm["TrackerID"].as<std::string>() << ".\n";
+            trackerID = vm["TrackerID"].as<std::string>();
         }
 
 
-        std::string feature="raw";
-        if(vm.count("features")){
-          cout << "Feature is " << vm["features"].as<std::string>() << ".\n";
-          feature = vm["features"].as<std::string>();
+        std::string feature = "raw";
+        if (vm.count("features")) {
+            cout << "Feature is " << vm["features"].as<std::string>() << ".\n";
+            feature = vm["features"].as<std::string>();
         }
 
 
-        std::string kernel="hist";
-        if(vm.count("kernel")){
-          cout << "Kernel is " << vm["kernel"].as<std::string>() << ".\n";
-          kernel = vm["kernel"].as<std::string>();
+        std::string kernel = "hist";
+        if (vm.count("kernel")) {
+            cout << "Kernel is " << vm["kernel"].as<std::string>() << ".\n";
+            kernel = vm["kernel"].as<std::string>();
         }
 
 
-
-        bool pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior;
+        bool pretraining, useFilter, useEdgeDensity, useStraddling, scalePrior;
 
         if (vm.count("Pretraining")) {
-          cout << "Pretraining level was set to "
-               << vm["Pretraining"].as<double>() << ".\n";
+            cout << "Pretraining level was set to "
+            << vm["Pretraining"].as<double>() << ".\n";
 
-          if (vm["Pretraining"].as<double>() != 0) {
-                   pretraining=true;
-               }else{
-                 pretraining = false;
-               }
+            if (vm["Pretraining"].as<double>() != 0) {
+                pretraining = true;
+            } else {
+                pretraining = false;
+            }
         } else {
-          cout << "Pretraining flag was not set.\n";
+            cout << "Pretraining flag was not set.\n";
         }
 
         if (vm.count("useFilter")) {
-          cout << "useFilter level was set to "
-               << vm["useFilter"].as<double>() << ".\n";
+            cout << "useFilter level was set to "
+            << vm["useFilter"].as<double>() << ".\n";
 
-          if (vm["useFilter"].as<double>() != 0) {
-              useFilter=true;
-               }else{
-                 useFilter = false;
-               }
+            if (vm["useFilter"].as<double>() != 0) {
+                useFilter = true;
+            } else {
+                useFilter = false;
+            }
         } else {
             cout << "Filter flag was not set.\n";
         }
 
         if (vm.count("useEdgeDensity")) {
-          cout << "useEdgeDensity level was set to "
-               << vm["useEdgeDensity"].as<double>() << ".\n";
+            cout << "useEdgeDensity level was set to "
+            << vm["useEdgeDensity"].as<double>() << ".\n";
 
-          if (vm["useEdgeDensity"].as<double>() != 0) {
-              useEdgeDensity=true;
-               }else{
-                   useEdgeDensity = false;
-               }
+            if (vm["useEdgeDensity"].as<double>() != 0) {
+                useEdgeDensity = true;
+            } else {
+                useEdgeDensity = false;
+            }
         } else {
-          cout << "Edge density flag was not set.\n";
+            cout << "Edge density flag was not set.\n";
         }
 
         if (vm.count("useStraddling")) {
-          cout << "useStraddling level was set to "
-               << vm["useStraddling"].as<double>() << ".\n";
+            cout << "useStraddling level was set to "
+            << vm["useStraddling"].as<double>() << ".\n";
 
-          if (vm["useStraddling"].as<double>() != 0) {
-              useStraddling=true;
-               }else{
-                 useStraddling = false;
-               }
+            if (vm["useStraddling"].as<double>() != 0) {
+                useStraddling = true;
+            } else {
+                useStraddling = false;
+            }
         } else {
-          cout << "Straddling flag was not set.\n";
+            cout << "Straddling flag was not set.\n";
         }
 
         if (vm.count("scalePrior")) {
-          cout << "scalePrior level was set to "
-               << vm["scalePrior"].as<double>() << ".\n";
+            cout << "scalePrior level was set to "
+            << vm["scalePrior"].as<double>() << ".\n";
 
-          if (vm["scalePrior"].as<double>() != 0) {
-              scalePrior=true;
-               }else{
-                   scalePrior = false;
-               }
+            if (vm["scalePrior"].as<double>() != 0) {
+                scalePrior = true;
+            } else {
+                scalePrior = false;
+            }
         } else {
-          cout << "Edge density flag was not set.\n";
+            cout << "Edge density flag was not set.\n";
         }
 
         // Now, run everything
-            DataSetWu2013* wu2013=new DataSetWu2013;
+        DataSetWu2013 *wu2013 = new DataSetWu2013;
 
-            std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared=wu2013->prepareDataset(wu2013RootFolder);
+        std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared = wu2013->prepareDataset(
+                wu2013RootFolder);
 
-            int frames = 50000;
+        int frames = 50000;
 
-            int n_threads = 50;
+        int n_threads = 240;
 
-            std::string folderName=make_uuid();
+        std::string folderName = make_uuid();
 
-            std::cout << folderName << std::endl;
+        std::cout << folderName << std::endl;
 
-            // remote location
-            std::string datasetSaveLocation="/udrive/student/ibogun2010/Research/Results";
+        // remote location
+        std::string datasetSaveLocation = "/udrive/student/ibogun2010/Research/Results";
 
-            //std::string datasetSaveLocation="/Users/Ivan/Code/Tracking/Antrack/tmp";
-            std::string fullFolderName =
-                datasetSaveLocation + "/" + folderName + "/";
+        //std::string datasetSaveLocation="/Users/Ivan/Code/Tracking/Antrack/tmp";
+        std::string fullFolderName =
+                datasetSaveLocation + "/" + folderName;
 
-            std::cout << "Enter tracker identifier: "<<std::endl;
+        std::cout << "Enter tracker identifier: " << std::endl;
 
-            std::string trackerName=trackerID;
+        std::string trackerName = trackerID;
 
-            std::cout << "Tracker name entered is: " << trackerName
-                      << std::endl;
+        std::cout << "Tracker name entered is: " << trackerName
+        << std::endl;
 
-            std::string createFolderCommand = "mkdir " + fullFolderName;
-            system(createFolderCommand.c_str());
-            applyTrackerOnDataset(wu2013, wu2013RootFolder, fullFolderName,
-                                  true, n_threads, pretraining, useFilter,
-                                  useEdgeDensity, useStraddling, scalePrior,
-                                  kernel,feature,frames);
+        std::string createFolderCommand = "mkdir " + fullFolderName;
+
+        AllExperimentsRunner::createDirectory(fullFolderName);
+
+        wu2013->setRootFolder(wu2013RootFolder);
+        AllExperimentsRunner run(wu2013);
 
 
-            std::stringstream ss;
+        run.run(fullFolderName,n_threads,true,pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernel,feature);
+        // this line has to be replaced
+//        applyTrackerOnDataset(wu2013, wu2013RootFolder, fullFolderName,
+//                              true, n_threads, pretraining, useFilter,
+//                              useEdgeDensity, useStraddling, scalePrior,
+//                              kernel, feature, frames);
 
-            ss << "python "
-               << "/udrive/student/ibogun2010/Research/Code/Antrack/python/"
-               << "Evaluation/generatePythonFilePickle.py"
-               << " " << fullFolderName << " "
-               << "wu2013"
-               << " " << trackerName << " "
-               << "/udrive/student/ibogun2010/Research/"
-               << "Code/Antrack/python/Evaluation/Runs/";
 
-            std::string createPickleCommand = ss.str();
+        std::stringstream ss;
 
-            system(createPickleCommand.c_str());
-            std::cout << "Pickel was created" << std::endl;
+        ss << "python "
+        << "/udrive/student/ibogun2010/Research/Code/Antrack/python/"
+        << "Evaluation/generatePythonFilePickle.py"
+        << " " << fullFolderName << " "
+        << "wu2013"
+        << " " << trackerName << " "
+        << "/udrive/student/ibogun2010/Research/"
+        << "Code/Antrack/python/Evaluation/Runs/";
 
-            // now delete the folder
+        std::string createPickleCommand = ss.str();
 
-            std::string deletecommand="rm -rf "+fullFolderName;
+        system(createPickleCommand.c_str());
+        std::cout << "Pickel was created" << std::endl;
 
-            system(deletecommand.c_str());
+
+        AllExperimentsRunner::deleteDirectory(fullFolderName);
 
     }
-    catch(exception& e) {
+    catch (exception &e) {
         cerr << "error: " << e.what() << "\n";
         return 1;
     }
-    catch(...) {
+    catch (...) {
         cerr << "Exception of unknown type!\n";
     }
 

@@ -3,10 +3,12 @@ __author__ = 'Ivan'
 import sys
 import math
 
-sys.path.append('../Experiments')
+#sys.path.append('../Experiments')
 import objectness
 
-sys.path.append('../Evaluation')
+import os
+# .path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/modules')
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)) + '/Evaluation')
 # from  Evaluation import  DatasetEvaluation
 from DatasetEvaluation import Dataset,savePickle,loadPickle
 import cv2
@@ -17,10 +19,6 @@ import pyprind
 
 import copy
 import multiprocessing as mp
-
-sys.path.append('../modules')
-from Parallelize import Parallelize
-
 
 def processOneImage(imageName, box,minScale,maxScale,downsample, R=60):
     objness = objectness.Objectness()

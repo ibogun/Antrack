@@ -63,7 +63,7 @@ void LocationSampler::sampleEquiDistant(cv::Rect& currentLocation,
 void LocationSampler::sampleEquiDistantMultiScale(cv::Rect& currentLocation,
                                                   std::vector<cv::Rect> &locations){
 
-  double centerX = currentLocation.x + currentLocation.width / 2;
+    double centerX = currentLocation.x + currentLocation.width / 2;
     double centerY=currentLocation.y+currentLocation.height/2;
 
     //    std::vector<double> radialValues=linspace(0, radius, nRadial+1);

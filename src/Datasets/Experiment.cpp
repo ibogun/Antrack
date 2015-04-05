@@ -9,59 +9,62 @@
 #include "Experiment.h"
 
 
+std::vector<std::tuple<int, int, cv::Rect>> Experiment::generateAllBoxesToEvaluate(Dataset *dataset) {
+    using namespace std;
+    vector<pair<string, vector<string>>> video_gt_images =
+            dataset->prepareDataset();
 
-//void runTrackerOnDatasetPart(cv::vector<std::pair<std::string, cv::vector<std::string>>>& video_gt_images,Dataset* dataset,
-//                             int from, int to,std::string saveFolder, bool saveResults, bool fullDataset){
-//    
-//    
-//    using namespace std;
-//    
-//    
-//    std::time_t t1 = std::time(0);
-//    
-//    int frameNumber = 0;
-//    // paralelize this loop
-//    for (int videoNumber=from; videoNumber<to; videoNumber++) {
-//      
-//        Struck tracker=Struck::getTracker();
-//        tracker.display=0;
-//        pair<string, vector<string>> gt_images=video_gt_images[videoNumber];
-//        
-//        vector<cv::Rect> groundTruth=dataset->readGroundTruth(gt_images.first);
-//        
-//        frameNumber+=gt_images.second.size();
-//        cv::Mat image=cv::imread(gt_images.second[0]);
-//        
-//        
-//        tracker.initialize(image, groundTruth[0]);
-//        
-//        
-//        int nFrames=10;
-//        if (fullDataset) {
-//            nFrames=gt_images.second.size();
-//            
-//        }
-//        
-//        
-//        for (int i=1; i<nFrames; i++) {
-//            
-//            cv::Mat image=cv::imread(gt_images.second[i]);
-//            
-//            tracker.track(image);
-//        }
-//        
-//        if (saveResults) {
-//            std::string saveFileName=saveFolder+"/"+dataset->videos[videoNumber]+".dat";
-//            
-//            tracker.saveResults(saveFileName);
-//        }
-//        
-//        //tracker.reset();
-//        
-//        
-//    }
-//    
-//    std::time_t t2 = std::time(0);
-//    std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
-//    //std::cout<<"No threads: "<<(t2-t1)<<std::endl;
+
+    std::vector<std::tuple<int, int, cv::Rect>> exp_boxes;// video - frame - bbox
+
+    for (int i = 0; i < video_gt_images.size(); ++i) {
+
+        pair<string, vector<string>> gt_images = video_gt_images[i];
+        vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
+
+        cv::Mat image = cv::imread(gt_images.second[0]);
+        int n = image.cols;
+        int m = image.rows;
+
+        std::vector<std::pair<cv::Rect, int>> experiment_boxes = this->generateBoundingBoxes(groundTruth, n, m);
+
+        for (int j = 0; j < experiment_boxes.size(); ++j) {
+
+            auto t = make_tuple(i, experiment_boxes[j].second, experiment_boxes[j].first);
+            exp_boxes.push_back(t);
+        }
+
+    }
+
+    return exp_boxes;
+
+}
+
+
+void Experiment::showBoxes(Dataset *dataset, int vidNumber) {
+    using namespace std;
+    std::vector<std::tuple<int, int, cv::Rect>> b=this->generateAllBoxesToEvaluate(dataset);
+
+    vector<pair<string, vector<string>>> video_gt_images =
+                                dataset->prepareDataset();
+
+    for (int j = 0; j < b.size(); ++j) {
+        if (std::get<0>(b[j])==vidNumber){
+            int frame=std::get<1>(b[j]);
+            cv::Rect r=std::get<2>(b[j]);
+            cv::Mat im=cv::imread(video_gt_images[vidNumber].second[frame]);
+
+            cv::rectangle(im,r,cv::Scalar(144,144,144),2);
+
+            cv::imshow("",im);
+
+            cv::waitKey();
+            cv::destroyAllWindows();
+        }
+    }
+}
+
+
+//std::ostream& operator<<(std::ostream &strm, const Experiment &f){
+//    return strm;
 //}

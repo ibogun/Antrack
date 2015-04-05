@@ -13,12 +13,22 @@
 #include "Dataset.h"
 
 class DataSetWu2013:public Dataset{
-    
+
 
 public:
 
+
+
     std::vector<std::pair<std::string, std::vector<std::string>>> prepareDataset(std::string rootFolder);
     std::vector<cv::Rect> readGroundTruth(std::string);
+
+    std::string getInfo(){
+        std::stringstream ss;
+
+        ss<<"Wu dataset (CVPR 2013)\n";
+        ss<<"50 videos\n";
+        return ss.str();
+    }
     
 };
 

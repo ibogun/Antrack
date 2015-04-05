@@ -18,23 +18,32 @@
 
 typedef std::unordered_map<std::string, int> hashtable;
 class Dataset {
-    
-    
 
+
+    std::string root_folder;
 public:
-    
+
+
     hashtable vidToIndex;
     std::vector<std::string> videos;
-    
+
+
+    void setRootFolder(std::string root){
+        this->root_folder=root;
+    }
     static std::vector<std::string> listSubFolders(std::string folder);
     //static std::vector<std::string> listOnlySubfolders(std::string folder);
     
     static std::vector<std::string> listImages(std::string folder,std::string format);
     
     virtual std::vector<std::pair<std::string, std::vector<std::string>>> prepareDataset(std::string rootFolder)=0;
-    
+
+    std::vector<std::pair<std::string, std::vector<std::string>>> prepareDataset(){
+        return this->prepareDataset(this->root_folder);
+    }
     
     virtual std::vector<cv::Rect> readGroundTruth(std::string)=0;
+    virtual std::string getInfo()=0;
 };
 
 #endif /* defined(__Robust_Struck__Dataset__) */

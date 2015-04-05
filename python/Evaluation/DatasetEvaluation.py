@@ -9,101 +9,131 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import datetime
 import os
+import re
 
-#import seaborn as sns
+
+# import seaborn as sns
+
+
+class AllExperiments(object):
+    """"""
+
+    def load(self, results_path, datasetType, trackerLabel):
+        paths = list()
+
+        paths.append(results_path + "/default/");
+        paths.append(results_path + "/SRE/");
+        paths.append(results_path + "/TRE/");
+
+        run1 = Experiment(paths[0], datasetType, trackerLabel)
+        run1.loadResults()
+
+        run2 = Experiment(paths[1], datasetType, trackerLabel)
+        run2.loadResults()
+
+        run3 = Experiment(paths[2], datasetType, trackerLabel)
+        run3.loadResults()
+
+        d = dict()
+
+        d['default'] = run1;
+        d['SRE'] = run2;
+        d['TRE'] = run3;
+
+        self.data = d;
+
+
+    def save(self, trackerLabel, picklePathPrefix='./Runs/'):
+        picklePath = picklePathPrefix + '/' + trackerLabel + '.p'
+        savePickle(self, picklePath)
 
 class Dataset(object):
-
-
-    def __init__(self,path_groundTruth,datasetType):
+    def __init__(self, path_groundTruth, datasetType):
         '''
 
         :param path_groundTruth:
         :param datasetType:
         :return:
         '''
-        self.path_gt=path_groundTruth
+        self.path_gt = path_groundTruth
 
-        self.datasetType=datasetType
+        self.datasetType = datasetType
 
         self.loadGroundTruth()
 
     def loadGroundTruth(self):
 
 
-        videos=[f for f in os.listdir(self.path_gt) if not f.startswith('.')]
+        videos = [f for f in os.listdir(self.path_gt) if not f.startswith('.')]
 
         # list videos
 
-        l=list()
+        l = list()
 
-        listDicts=list()
+        listDicts = list()
 
         for vid in videos:
             d = dict()
-            vidPath= self.path_gt + "/" + vid
-            boxes=self.loadOneGroundTruth(vidPath)
+            vidPath = self.path_gt + "/" + vid
+            boxes = self.loadOneGroundTruth(vidPath)
 
-            images=self.loadImages(vidPath)
-            l.append((vid,boxes)) # <== This should be deprecated
+            images = self.loadImages(vidPath)
+            l.append((vid, boxes))  # <== This should be deprecated
 
-            d["name"]=vid;
-            d["boxes"]=boxes;
-            d["images"]=images;
+            d["name"] = vid;
+            d["boxes"] = boxes;
+            d["images"] = images;
             listDicts.append(d);
 
-        self.data=l;
-        self.dictData=listDicts;
+        self.data = l;
+        self.dictData = listDicts;
 
-    def loadImages(self,path):
+    def loadImages(self, path):
 
-        if self.datasetType=='vot2014':
-            format='jpg'
-        elif self.datasetType=='wu2013':
-            format='jpg'
+        if self.datasetType == 'vot2014':
+            format = 'jpg'
+        elif self.datasetType == 'wu2013':
+            format = 'jpg'
 
-            path=path+"/img/";
+            path = path + "/img/";
 
-            images=glob.glob(path+"*."+format);
+            images = glob.glob(path + "*." + format);
         else:
             print "Dataset not recognized"
 
-        return  images;
+        return images;
 
-    def loadOneGroundTruth(self,path):
+    def loadOneGroundTruth(self, path):
 
 
-        if self.datasetType=='vot2014':
+        if self.datasetType == 'vot2014':
 
-            gt=np.genfromtxt(path+"/groundtruth.txt",delimiter=',')
+            gt = np.genfromtxt(path + "/groundtruth.txt", delimiter=',')
 
             print "VOT 2014 need rework"
             return gt
 
-        elif self.datasetType=='wu2013':
+        elif self.datasetType == 'wu2013':
 
-            gt=np.genfromtxt(path+"/groundtruth_rect.txt",delimiter=',')
+            gt = np.genfromtxt(path + "/groundtruth_rect.txt", delimiter=',')
 
             #print gt.max()
             if np.isnan(np.min(gt)):
-
-                gt=np.genfromtxt(path+"/groundtruth_rect.txt",)
-
+                gt = np.genfromtxt(path + "/groundtruth_rect.txt", )
 
             return gt;
         else:
 
             print "Dataset not recognized"
 
+
 class Experiment(object):
+    def __init__(self, path_current, datasetType, tracker_label):
 
+        self.path_results = path_current
+        self.trackerLabel = tracker_label
 
-    def __init__(self,path_current, datasetType, tracker_label):
-
-        self.path_results=path_current
-        self.trackerLabel=tracker_label
-
-        self.datasetType=datasetType
+        self.datasetType = datasetType
 
 
     def loadResults(self):
@@ -118,124 +148,145 @@ class Experiment(object):
         '''
 
         # list all the files
-        resultFilesNames=glob.glob(self.path_results+"/*.dat")
+        resultFilesNames = glob.glob(self.path_results + "/*.dat")
 
+        f = open(self.path_results + "/tracker_info.txt", 'r')
 
-        f=open(self.path_results+"/tracker_info.txt",'r')
+        trackerInformation = f.read();
 
-        trackerInformation=f.read();
+        f.close();
 
-        self.trackerInformation=trackerInformation
+        f = open(self.path_results + "/experiment_info.txt", 'r')
+
+        experimentInformation = f.read();
+
+        f.close()
+        self.trackerInformation = trackerInformation
+        self.experimentInformation = experimentInformation;
+
+        regExpression = re.compile("(.*\/+)(\w+)(?=__.*)")
 
         # get rid of absolute path and then delete extension
 
-        l=list()
+        l = list()
+
+        counts = dict()
+        boxesDict = dict();
+        names = set()
 
         for fileNames in resultFilesNames:
+            m = regExpression.match(fileNames)
 
-            sequenceName=os.path.splitext(os.path.basename(fileNames))[0]
+            names.add(m.group(2))
 
-            boxes=np.loadtxt(fileNames,delimiter=',')
+        for video in names:
+            counts[video] = 0;
+            boxesDict[video] = list()
 
-            l.append((sequenceName,boxes))
+        for fileNames in resultFilesNames:
+            m = regExpression.match(fileNames)
 
+            video = m.group(2)
+            #sequenceName=os.path.splitext(os.path.basename(fileNames))[0]
+            boxes = np.loadtxt(fileNames, delimiter=',')
 
-        self.data=l;
+            boxesDict[video].append(boxes)
+            counts[video] = counts[video] + 1
 
-        self.time=datetime.datetime.now()
+        for video, videoList in boxesDict.iteritems():
+            l.append((video, videoList))
+
+            #l.append((sequenceName,boxes))
+
+        self.data = l;
+
+        self.time = datetime.datetime.now()
 
 
     def __str__(self):
 
-        s="Results on "+self.datasetType +" dataset \n"
-        s=s+"Time: "+str(self.time)+"\n\n"
-        s=s+"Tracker information: \n\n"
-        s=s+self.trackerInformation
+        s = "Results on " + self.datasetType + " dataset \n"
+        s = s + "Time: " + str(self.time) + "\n\n"
+        s = s + "Tracker information: \n\n"
+        s = s + self.trackerInformation
 
         return s
 
 
-    def save(self,saveTo):
+    def save(self, saveTo):
 
 
-        cPickle.dump(self,open(saveTo,'w'))
-
+        cPickle.dump(self, open(saveTo, 'w'))
 
 
 def loadPickle(path):
+    return cPickle.loads(open(path, 'r').read())
 
-    return cPickle.loads(open(path,'r').read())
 
-def savePickle(obj,path):
-
-    cPickle.dump(obj,open(path,'w'))
+def savePickle(obj, path):
+    cPickle.dump(obj, open(path, 'w'))
 
 
 class Evaluator(object):
+    def __init__(self, dataset, listOfExperiments):
 
-
-    def __init__(self,dataset,listOfExperiments):
-
-        self.dataset=dataset
-        self.listOfExperiments=listOfExperiments
+        self.dataset = dataset
+        self.listOfExperiments = listOfExperiments
 
     @staticmethod
-    def createPlotData(centerDistance,maxValue=50,n=100):
+    def createPlotData(centerDistance, maxValue=50, n=100):
 
 
-        x=np.linspace(0,maxValue,num=n);
+        x = np.linspace(0, maxValue, num=n);
 
-        y=np.zeros(n)
+        y = np.zeros(n)
 
-        for idx in range(0,n):
-
+        for idx in range(0, n):
             # find percentage of centerDistance<= x[idx
 
-            y[idx]=len(np.nonzero(centerDistance<=x[idx])[0])/(centerDistance.shape[0]*1.0)
+            y[idx] = len(np.nonzero(centerDistance <= x[idx])[0]) / (centerDistance.shape[0] * 1.0)
 
-        return (x,y)
+        return (x, y)
 
 
-    def createHistogramPlot(self, x_s, y_s,x_pr,y_pr,trackerNames,savefilename=''):
+    def createHistogramPlot(self, x_s, y_s, x_pr, y_pr, trackerNames, savefilename=''):
 
-        precision=list()
-        success  =list()
+        precision = list()
+        success = list()
 
-        n_groups=len(x_pr)
-        names=list()
+        n_groups = len(x_pr)
+        names = list()
         plt.figure(figsize=(15, 10))
-        for i in range(0,n_groups):
-
-            p=np.trapz(y_pr[i],x=x_pr[i])/50
-            s=np.trapz(y_s[i],x=x_s[i])
+        for i in range(0, n_groups):
+            p = np.trapz(y_pr[i], x=x_pr[i]) / 50
+            s = np.trapz(y_s[i], x=x_s[i])
 
             precision.append(p)
             success.append(s)
 
             names.append(self.listOfExperiments[i].trackerLabel)
 
-        plt.subplot(1,2,1)
+        plt.subplot(1, 2, 1)
         plt.subplots_adjust(bottom=0.2)
         #plt.xlim([0,1.1])
         index = np.arange(n_groups)
 
-        idx_success= [i[0] for i in sorted(enumerate(success), key=lambda x: x[1])]
+        idx_success = [i[0] for i in sorted(enumerate(success), key=lambda x: x[1])]
 
-        successTrackerNames=[trackerNames[x] for x in idx_success ]
-        sorted_success=[success[x] for x in idx_success]
+        successTrackerNames = [trackerNames[x] for x in idx_success]
+        sorted_success = [success[x] for x in idx_success]
 
         plt.xticks(index, successTrackerNames, rotation=45)
-        plt.bar(index, sorted_success, align = "center")
-        plt.ylim((0,1))
+        plt.bar(index, sorted_success, align="center")
+        plt.ylim((0, 1))
         plt.title("Success")
-        plt.subplot(1,2,2)
+        plt.subplot(1, 2, 2)
 
         # NOTE: BOTH ARE SORTED ACCORDING TO SUCCESS
 
 
         precisionTrackerNames = [trackerNames[x] for x in idx_success]
         sorted_precision = [precision[x] for x in idx_success]
-
 
         plt.bar(index, sorted_precision, align="center")
         plt.xticks(index, precisionTrackerNames, rotation=45)
@@ -249,17 +300,17 @@ class Evaluator(object):
             plt.savefig(savefilename)
 
 
-    def createPlot(self, x_s, y_s,x_pr,y_pr,savefilename=''):
+    def createPlot(self, x_s, y_s, x_pr, y_pr, savefilename=''):
 
-        plt.figure(figsize=(15,10))
+        plt.figure(figsize=(15, 10))
         cm = plt.get_cmap('gist_rainbow')
-        NUM_COLORS=len(x_pr)
+        NUM_COLORS = len(x_pr)
 
-        headerFontSize=14;
-        axisFontSize=12;
-        lineWidth=1.8;
+        headerFontSize = 14;
+        axisFontSize = 12;
+        lineWidth = 1.8;
 
-        legendSize=9;
+        legendSize = 9;
 
         with plt.style.context('grayscale'):
 
@@ -269,21 +320,22 @@ class Evaluator(object):
                 p = np.trapz(y_pr[i], x=x_pr[i]) / 50
                 s = np.trapz(y_s[i], x=x_s[i])
 
-                p=np.ma.round(p,2)
-                s=np.ma.round(s,2)
+                p = np.ma.round(p, 2)
+                s = np.ma.round(s, 2)
 
                 color = cm(1. * i / NUM_COLORS)
-                red_patch = mpatches.Patch(label=self.listOfExperiments[i].trackerLabel + ' ['+str(p)+']', color=color)
-                blue_path = mpatches.Patch(label=self.listOfExperiments[i].trackerLabel + ' ['+str(s)+']', color=color)
+                red_patch = mpatches.Patch(label=self.listOfExperiments[i].trackerLabel + ' [' + str(p) + ']',
+                                           color=color)
+                blue_path = mpatches.Patch(label=self.listOfExperiments[i].trackerLabel + ' [' + str(s) + ']',
+                                           color=color)
                 handlesLegendPrecision.append(red_patch)
                 handlesLegendSuccess.append(blue_path)
                 print self.listOfExperiments[i].trackerLabel
 
-
             plt.subplot(1, 2, 1)
 
             for i in range(0, len(x_s)):
-                plt.plot(x_s[i], y_s[i], linewidth = lineWidth, color=cm(1. * i / NUM_COLORS))
+                plt.plot(x_s[i], y_s[i], linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
             plt.title('success', fontsize=headerFontSize)
 
             plt.ylim([0, 1.1])
@@ -296,28 +348,27 @@ class Evaluator(object):
             #plt.axes("on")
             plt.subplot(1, 2, 2)
 
-            for i in range(0,len(x_pr)):
-                plt.plot(x_pr[i],y_pr[i], linewidth=lineWidth,color=cm(1.*i/NUM_COLORS))
-            plt.ylim([0,1.1])
-            plt.xlim([-0.5,51])
+            for i in range(0, len(x_pr)):
+                plt.plot(x_pr[i], y_pr[i], linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
+            plt.ylim([0, 1.1])
+            plt.xlim([-0.5, 51])
             plt.title("precision", fontsize=headerFontSize)
             plt.grid(b=False)
             #plt.axes("on")
             plt.xlabel('Location error threshold', fontsize=axisFontSize)
             plt.ylabel('Precision', fontsize=axisFontSize)
 
+            plt.legend(handles=handlesLegendPrecision, prop={'size': legendSize}, loc=2)
 
-
-            plt.legend(handles=handlesLegendPrecision,prop={'size': legendSize}, loc=2)
-
-
-        if savefilename=='':
+        if savefilename == '':
             plt.show()
         else:
             plt.savefig(savefilename)
 
     @staticmethod
-    def evaluateSingleVideo(video,gt,n=1000):
+    def evaluateSingleVideo(video, gt,
+                            experimentNumber=0,
+                            n=1000):
         '''
         Evaluate single video tracker run
         :param video:   video data
@@ -326,8 +377,8 @@ class Evaluator(object):
         :return:        (x_pr,y_pr,x_s,y_s) list
         '''
 
-        if video[0]!=gt[0]:
-            raise Exception("You cannot compare apples to oranges \n OR "+video[0]+" and "+gt[0])
+        if video[0] != gt[0]:
+            raise Exception("You cannot compare apples to oranges \n OR " + video[0] + " and " + gt[0])
 
         findCenter = lambda x: np.array([x[0] + x[2] / 2.0, x[1] + x[3] / 2.0])
 
@@ -343,9 +394,13 @@ class Evaluator(object):
 
         distJarrardFull = lambda x, y: distJaccard(get4D(x), get4D(y))
 
-        boxes = video[1]
+        boxes = video[1][experimentNumber]
 
         boxes_gt = gt[1]
+
+        # print video[0], " ", " ground truth size: ", boxes_gt.shape[0], " got size: ", boxes[0].shape[0]
+        # print boxes_gt.shape[0]
+        # print boxes[0].shape[0]
 
         nFrames = min(boxes.shape[0], boxes_gt.shape[0]);
 
@@ -353,10 +408,12 @@ class Evaluator(object):
         overlap_over_union = np.zeros((nFrames, 1))
 
         for idx in range(0, nFrames):
+
             # calculate different statistics: overlap over union and euclidean distance of centers
 
             overlap_over_union[idx] = distJarrardFull(boxes[idx], boxes_gt[idx])
             centerDistance[idx] = distCenter((boxes[idx]), (boxes_gt[idx]))
+
 
         (x_pr, y_pr) = Evaluator.createPlotData(centerDistance, maxValue=50, n=n)
         (x_s, y_s) = Evaluator.createPlotData(overlap_over_union, maxValue=1, n=n)
@@ -364,12 +421,11 @@ class Evaluator(object):
         # complement success plot curve
         y_s = 1 - y_s;
 
-        return (x_pr,y_pr,x_s,y_s)
+        return (x_pr, y_pr, x_s, y_s)
 
-    def evaluateSingleTracker(self, listRun,n=1000):
+    def evaluateSingleTracker(self, listRun, n=1000):
 
         listGT = self.dataset.data
-
 
         runs = listRun.data
 
@@ -380,9 +436,8 @@ class Evaluator(object):
         success_y = np.zeros(n)
 
         for video in runs:
-
-            gt=[x for x in listGT if x[0]==video[0]][0]
-            (x_pr, y_pr, x_s, y_s)= Evaluator.evaluateSingleVideo(video, gt, n=n)
+            gt = [x for x in listGT if x[0] == video[0]][0]
+            (x_pr, y_pr, x_s, y_s) = Evaluator.evaluateSingleVideo(video, gt, n=n)
 
             precision_x = precision_x + x_pr
             precision_y = precision_y + y_pr
@@ -390,16 +445,15 @@ class Evaluator(object):
             success_x = success_x + x_s
             success_y = success_y + y_s
 
-
         precision_x = precision_x / len(runs)
         precision_y = precision_y / len(runs)
 
         success_x = success_x / len(runs)
         success_y = success_y / len(runs)
 
-        return (precision_x,precision_y,success_x,success_y)
+        return (precision_x, precision_y, success_x, success_y)
 
-    def evaluate(self,n=1000,successAndPrecisionPlotName='',histogramPlot=''):
+    def evaluate(self, n=1000, successAndPrecisionPlotName='', histogramPlot=''):
 
         '''
 
@@ -408,24 +462,21 @@ class Evaluator(object):
         :return: accuracy and precision
         '''
 
-        listGT=self.dataset.data
+        listGT = self.dataset.data
 
+        pr_x_list = list()
+        pr_y_list = list()
 
-        pr_x_list=list()
-        pr_y_list=list()
+        sc_x_list = list()
+        sc_y_list = list();
 
-        sc_x_list=list()
-        sc_y_list=list();
-
-        experimentNames=list()
+        experimentNames = list()
 
         for listRun in self.listOfExperiments:
-
-            runs=listRun.data
+            runs = listRun.data
             experimentNames.append(listRun.trackerLabel)
 
-            (precision_x, precision_y, success_x, success_y)= self.evaluateSingleTracker(listRun,n)
-
+            (precision_x, precision_y, success_x, success_y) = self.evaluateSingleTracker(listRun, n)
 
             pr_x_list.append(precision_x)
             pr_y_list.append(precision_y)
@@ -437,32 +488,28 @@ class Evaluator(object):
         # REWRITE THIS FUNCTION: SUCCESS plots are not generated properly
 
 
-        self.createPlot(sc_x_list, sc_y_list,pr_x_list,pr_y_list,savefilename=successAndPrecisionPlotName)
+        self.createPlot(sc_x_list, sc_y_list, pr_x_list, pr_y_list, savefilename=successAndPrecisionPlotName)
 
 
         # get some real data and finish this plot
-        self.createHistogramPlot(sc_x_list, sc_y_list,pr_x_list,pr_y_list,trackerNames=experimentNames,savefilename=histogramPlot)
-
-
-
-
-
+        self.createHistogramPlot(sc_x_list, sc_y_list, pr_x_list, pr_y_list, trackerNames=experimentNames,
+                                 savefilename=histogramPlot)
 
 
 if __name__ == "__main__":
-    wu2013results="/Users/Ivan/Files/Results/Tracking/wu2013"
-    wu2013GroundTruth="/Users/Ivan/Files/Data/Tracking_benchmark"
+    wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
 
-    vot2014Results="/Users/Ivan/Files/Results/Tracking/vot2014"
-    vot2014GrounTruth="/Users/Ivan/Files/Data/vot2014"
+    vot2014Results = "/Users/Ivan/Files/Results/Tracking/vot2014"
+    vot2014GrounTruth = "/Users/Ivan/Files/Data/vot2014"
 
-    datasetType='wu2013'
+    datasetType = 'wu2013'
     # Note: in wu2013 i
 
     # trackerLabel="STR+f_hog"
 
-    wildcard=sys.argv[1]
-    #wildcard="obj"
+    #wildcard = sys.argv[1]
+    wildcard="obj"
     #
     # run=Experiment(wu2013results,datasetType,trackerLabel)
     # run.loadResults()
@@ -475,29 +522,32 @@ if __name__ == "__main__":
     # run=loadPickle(picklePath)
     #
     #
-    dataset=Dataset(wu2013GroundTruth,datasetType)
+    dataset = Dataset(wu2013GroundTruth, datasetType)
+
+    runsNames = glob.glob('./Runs/' + wildcard + '*.p')
 
 
-    runsNames=glob.glob('./Runs/'+ wildcard+'*.p')
+    experimentType='default'
 
-    runs=list()
+    runs = list()
 
     for runName in runsNames:
-        run=loadPickle(runName)
+        run = loadPickle(runName)
 
+        run=run.data[experimentType]
         runs.append(run)
 
-    evaluator=Evaluator(dataset,runs)
+    evaluator = Evaluator(dataset, runs)
 
-    saveFigureToFolder='/Users/Ivan/Code/personal-website/Projects/Object_aware_tracking/images/multiScale/'
-    saveFormat=['png','pdf']
+    saveFigureToFolder = '/Users/Ivan/Code/personal-website/Projects/Object_aware_tracking/images/multiScale/'
+    saveFormat = ['png', 'pdf']
 
-    successAndPrecision='SuccessAndPrecision_wu2013'
-    histograms='histogram_wu2013'
+    successAndPrecision = 'SuccessAndPrecision_wu2013'
+    histograms = 'histogram_wu2013'
 
-    for i in saveFormat:
-        evaluator.evaluate(successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
-                                                       i,histogramPlot=saveFigureToFolder+histograms+'.'+
-                                                                                   i)
+    # for i in saveFormat:
+    #     evaluator.evaluate(successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
+    #                                                    i,histogramPlot=saveFigureToFolder+histograms+'.'+
+    #                                                                                i)
 
-    #evaluator.evaluate()
+    evaluator.evaluate()

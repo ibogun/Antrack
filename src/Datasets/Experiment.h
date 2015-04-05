@@ -10,20 +10,24 @@
 #define __Robust_tracking_by_detection__Experiment__
 
 #include <stdio.h>
+#include <vector>
+#include <opencv2/opencv.hpp>
 #include "Dataset.h"
-#include "../Tracker/Struck.h"
 
 
 class Experiment {
-    Dataset* dataset;
-    
+
+
+
 public:
-    
-    Experiment(Dataset* d){
-        this->dataset=d;
-    };
-    
-    
+
+
+    virtual std::vector<std::pair<cv::Rect, int>> generateBoundingBoxes(std::vector<cv::Rect> &rects, int n, int m) = 0;
+    virtual std::string getInfo()=0;
+
+    std::vector<std::tuple<int, int, cv::Rect>> generateAllBoxesToEvaluate(Dataset *dataset);
+
+    void showBoxes(Dataset *dataset, int vidNumber);
 };
 
 #endif /* defined(__Robust_tracking_by_detection__Experiment__) */

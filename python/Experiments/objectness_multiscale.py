@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     dataset = DatasetEvaluation.Dataset(wu2013GroundTruth, datasetType)
 
-    objness = objectness.Objectness()
+
 
 
     # dictionary which maps video_name -> dict, which in its turn maps
@@ -87,7 +87,7 @@ if __name__ == "__main__":
             imName = d["images"][idx];
 
             bbox = d["boxes"][idx]
-
+            objness = objectness.Objectness()
             objness.readImage(imName)
             objness.initializeStraddling(nSuperpixels, inner_rectangle)
             objness.initializeEdgeDensity(edge_t1, edge_t2, inner_rectangle)

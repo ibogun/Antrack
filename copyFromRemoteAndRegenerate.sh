@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 currentDir=$(pwd)
 
 echo "Please enter the name or wildcard to use to copy files from remote (ms_hog or ms*)"

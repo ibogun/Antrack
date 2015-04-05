@@ -198,12 +198,13 @@ if __name__ == '__main__':
 
     sizes=getSizesDictionary(dataset)
 
+    # exp_type='_multiscale';
+    exp_type = '';
 
+    straddling_filename = "straddling" + exp_type + ".csv"
+    edgeness_filename = "edgeness" + exp_type + ".csv";
 
-    straddling_filename = "straddling.csv"
-    edgeness_filename = "edgeness.csv";
-
-    plotNames=['Straddling', 'Edgeness']
+    plotNames = ['Straddling' + exp_type, 'Edgeness' + exp_type]
 
     saveFolderString='../../web/images/objectness_measures/'
 

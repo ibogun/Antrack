@@ -1,6 +1,7 @@
 __author__ = 'Ivan'
 import sys
 from DatasetEvaluation import Dataset,loadPickle,Evaluator
+from generatePythonFilePickle import AllExperiments
 
 import cPickle
 import cv2
@@ -13,16 +14,16 @@ from matplotlib import gridspec
 from matplotlib.widgets import Slider, Button
 
 import seaborn as sns
-class Visualize(object):
-    """Visualize the object here and there"""
+class VisualizeExperiment(object):
+    """VisualizeExperiment the object here and there"""
 
     def __init__(self, dataset,run):
-        """Constructor for Visualize"""
+        """Constructor for VisualizeExperiment"""
         self.dataset=dataset
         self.run=run
         # what for do we need the dataset?
 
-    def show(self,vidName,delay=1):
+    def show(self,vidName,experimentRunNumber=0,delay=1):
         """Show the movie
 
         Args:
@@ -32,7 +33,8 @@ class Visualize(object):
             None
         """
 
-        movie=self.getMovie(vidName)
+
+        movie=self.getMovie(vidName, experimentRunNumber)
 
         fig = plt.figure(figsize=(14, 9))
         gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1])
@@ -79,7 +81,6 @@ class Visualize(object):
                                        color=cm(1. * 1 / NUM_COLORS))
             handlesLegend.append(red_patch)
             handlesLegend.append(blue_path)
-            print self.run.trackerLabel
 
 
 
@@ -164,7 +165,7 @@ class Visualize(object):
         # cv2.destroyAllWindows()
 
 
-    def precisionAndSuccessPlotData(self, vidName,n=1000):
+    def precisionAndSuccessPlotData(self, vidName,experimentNumber=0,n=1000):
         """Get the data necessary for plotting precision and recall
 
         Args:
@@ -173,13 +174,62 @@ class Visualize(object):
         Returns:
             (x_pr, y_pr, x_s, y_s)
         """
+
         gt_data = [x for x in self.dataset.data if x[0] == vidName][0]
 
         tracker_data = [x for x in self.run.data if x[0] == vidName][0]
 
-        (x_pr, y_pr, x_s, y_s) = Evaluator.evaluateSingleVideo(tracker_data, gt_data)
+        (x_pr, y_pr, x_s, y_s) = Evaluator.evaluateSingleVideo(tracker_data, gt_data,
+                                                               experimentNumber=0)
 
         return (x_pr, y_pr, x_s, y_s)
+
+    def precisionAndSuccessDataAveragedPerRun(self,videoName,n=1000):
+        (x_pr, y_pr, x_s, y_s) = self.precisionAndSuccessPlotData(videoName, 0, n=1000)
+        for experimentRunNumber in range(1, len(self.run.data[0])):
+            # another loop -> for every experiment run on the video
+
+
+            (x_pr_next, y_pr_next, x_s_next, y_s_next) = self.precisionAndSuccessPlotData(videoName, experimentRunNumber,
+                                                                                       n=1000)
+
+            x_pr = x_pr + x_pr_next
+            y_pr = y_pr + y_pr_next
+            x_s = x_s + x_s_next
+            y_s = y_s + y_s_next
+
+        x_pr = x_pr / len(self.run.data[0])
+        y_pr = y_pr / len(self.run.data[0])
+        x_s = x_s / len(self.run.data[0])
+        y_s = y_s / len(self.run.data[0])
+
+        return (x_pr,y_pr,x_s,y_s)
+
+
+    def precisionAndSuccessDataAveragedPerVideo(self,n=1000):
+
+        vidNames = [x[0] for x in self.dataset.data];
+
+        (x_pr, y_pr, x_s, y_s) = self.precisionAndSuccessDataAveragedPerRun(vidNames[0])
+        for vidIdx in range(1, len(vidNames)):
+            vidName = vidNames[vidIdx];
+            (x_pr_next, y_pr_next, x_s_next, y_s_next) = self.precisionAndSuccessDataAveragedPerRun(vidName)
+
+            x_pr = x_pr + x_pr_next
+            y_pr = y_pr + y_pr_next
+            x_s = x_s + x_s_next
+            y_s = y_s + y_s_next
+
+        l=len(vidNames)
+
+        x_pr = x_pr / l
+        y_pr = y_pr / l
+        x_s = x_s / l
+        y_s = y_s / l
+
+
+        return (x_pr,y_pr,x_s,y_s)
+
 
     def precisionAndSuccessPlot(self,vidName,n=1000):
         """Plot precision and success plots for a single video run
@@ -225,7 +275,6 @@ class Visualize(object):
                                        color=color)
             handlesLegendPrecision.append(red_patch)
             handlesLegendSuccess.append(blue_path)
-            print self.run.trackerLabel
 
             plt.suptitle(vidName, fontsize=titleFontSize)
             plt.subplot(1, 2, 1)
@@ -252,6 +301,8 @@ class Visualize(object):
 
             plt.legend(handles=handlesLegendPrecision, prop={'size': legendSize}, loc=2)
 
+            plt.show()
+
     def barplot(self, n=1000):
         """Plots barplot with precision and success for specific run
         
@@ -274,6 +325,7 @@ class Visualize(object):
         #for gt_data,tracker_data in zip(self.dataset.data,self.run.data):
 
             if gt_data[0]!=tracker_data[0]:
+
                 print "Should be happening"
                 return
 
@@ -330,7 +382,7 @@ class Visualize(object):
 
         plt.show()
 
-    def getMovie(self,vidName):
+    def getMovie(self,vidName,experimentRunNumber=0):
         """ Creates a movie based on the tracking results
 
         Args:
@@ -340,6 +392,7 @@ class Visualize(object):
             movie - list of frames with bounding boxes
         """
 
+
         color_GT=(0,0,255)
         color_tracker=(255,0,0)
 
@@ -347,6 +400,8 @@ class Visualize(object):
         thickness_tracker=2
 
         vidData_gt = [x for x in self.dataset.dictData if x['name'] == vidName][0]
+
+
         vidData_tracker= [x for x in self.run.data if x[0]==vidName][0]
 
         def getPointsFromRectangle(rect):
@@ -357,7 +412,7 @@ class Visualize(object):
 
         boxes_gt=vidData_gt['boxes']
 
-        boxes_tracker=vidData_tracker[1]
+        boxes_tracker=vidData_tracker[1][experimentRunNumber]
 
 
         movie=list()
@@ -386,7 +441,7 @@ def main(argv=None):
 
     datasetType = 'wu2013'
 
-    runName='./Runs/obj_hist_int_pre0_filter1_edge0_straddling1_prior0.p'
+    runName='./Runs/raw_test.p'
 
     run=loadPickle(runName)
 
@@ -397,7 +452,7 @@ def main(argv=None):
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
 
-    viz=Visualize(dataset,run)
+    viz=VisualizeExperiment(dataset,run)
 
     #viz.show(vidName,100)
 

@@ -91,6 +91,8 @@ class Struck {
 
     int seed=1;
 
+    std::string note="Objectness measures which add top 10 bounding boxes on each scale (boxes addition)";
+
 
     friend std::ostream& operator<<(std::ostream&, const Struck&);
 
@@ -100,6 +102,10 @@ public:
         this->pretraining=false;
     };
     int display;
+
+    void setNote(std::string note_){
+        this->note=note_;
+    }
 
     std::vector<double> edge_params;
     std::vector<double> straddling_params;
@@ -148,6 +154,8 @@ public:
     static Struck getTracker();
     static Struck getTracker(bool,bool,bool,bool,bool);
     static Struck getTracker(bool,bool,bool,bool,bool,std::string,std::string);
+
+    static Struck getTracker(bool,bool,bool,bool,bool,std::string,std::string,std::string);
 
     std::vector<cv::Rect> getBoundingBoxes(){
         return this->boundingBoxes;

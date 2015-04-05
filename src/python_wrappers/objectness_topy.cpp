@@ -13,7 +13,7 @@ public:
 
 
     Straddling* straddle;
-    EdgeDensity *edgeDensity;
+    EdgeDensity* edgeDensity;
 
     double downsample=1.03;
     int minScale=-2;
@@ -165,6 +165,11 @@ public:
         return output;
   }
 
+
+~Objectness(){
+    delete straddle;
+    delete edgeDensity;
+}
 
 
   void initializeEdgeDensity(double t1, double t2, double inner){
