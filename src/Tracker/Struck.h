@@ -199,6 +199,18 @@ public:
         this->boundingBoxes.clear();
         this->frames.clear();
         this->framesTracked=0;
+
+
+    };
+
+    ~Struck(){
+
+        this->reset();
+        delete olarank;
+        delete feature;
+        delete samplerForSearch;
+        delete samplerForUpdate;
+        delete objPlot;
     };
 };
 

@@ -27,6 +27,8 @@ public:
     int calculateFeatureDimension();
     
     std::string getInfo();
+
+    ~HoG(){}
     
 };
 

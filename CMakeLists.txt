@@ -47,6 +47,10 @@ FILE(GLOB TEST_FILES
 	src/Tests/main.cpp
 	)
 
+set(FILTER_PRETRAINING_MAIN
+	src/main_filter_pretraining.cpp
+)
+
 set(PARALLEL_MAIN
   src/main_parallel.cpp
 )
@@ -189,19 +193,14 @@ target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBR
 
 if (parallel)
 
-  find_package(OpenMP)
 
-find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
+	find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
 
-include_directories( ${Boost_INCLUDE_DIR} )
+	include_directories( ${Boost_INCLUDE_DIR} )
 
+  	add_executable(parallel_main ${Superpixels} ${SOURCE_FILES} ${PARALLEL_MAIN})
+	target_link_libraries(parallel_main ${Boost_LIBRARIES} ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
-  if (OPENMP_FOUND)
-      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  endif()
-  add_executable(parallel_main ${Superpixels} ${SOURCE_FILES} ${PARALLEL_MAIN})
-target_link_libraries(parallel_main ${Boost_LIBRARIES} ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-
-
+	add_executable(filter_pretraining_experiments ${Superpixels} ${SOURCE_FILES} ${FILTER_PRETRAINING_MAIN})
+	target_link_libraries(filter_pretraining_experiments ${Boost_LIBRARIES} ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif()

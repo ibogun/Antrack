@@ -27,7 +27,10 @@ public:
         std::string r="Raw features with size: "+std::to_string(size)+" \n";
         return r;
     };
-    
+
+
+    ~RawFeatures(){
+    }
 };
 
 #endif /* defined(__Robust_Struck__RawFeatures__) */

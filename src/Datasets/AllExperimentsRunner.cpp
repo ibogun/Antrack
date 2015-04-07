@@ -17,7 +17,12 @@
 void AllExperimentsRunner::createDirectory(std::string s) {
     const char *path = s.c_str();
     boost::filesystem::path dir(path);
-    boost::filesystem::create_directory(dir);
+
+    if (!(boost::filesystem::exists(dir))){
+
+        boost::filesystem::create_directory(dir);
+    }
+
 }
 
 void AllExperimentsRunner::deleteDirectory(std::string s) {
@@ -107,16 +112,14 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveRe
     std::string saveFolderTRE = saveFolder + "/TRE/";
 
 
-    deleteDirectory(saveFolderDefault);
-    deleteDirectory(saveFolderSRE);
-    deleteDirectory(saveFolderTRE);
+    //deleteDirectory(saveFolderDefault);
+    //deleteDirectory(saveFolderSRE);
+    //deleteDirectory(saveFolderTRE);
 
     createDirectory(saveFolderDefault);
     createDirectory(saveFolderSRE);
     createDirectory(saveFolderTRE);
 
-
-    // TODO: Rewrite this
 
 
     std::vector<std::tuple<int, int, cv::Rect>> ed_boxes = ed.generateAllBoxesToEvaluate(this->dataset);
@@ -173,12 +176,23 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveRe
     for (int j = 0; j < video_gt_images.size(); ++j) {
         pair<string, vector<string>> p = video_gt_images[j];
         p.first = this->dataset->videos[j];
+
+
+        vector<string> p_second=p.second;
+
         video_gt_images[j] = p;
+
+
+
     }
 
 
+    // to make sure same set of boxes is generates all the time.
+    std::srand(0);
     auto engine = std::default_random_engine{};
     std::shuffle(std::begin(jobs), std::end(jobs), engine);
+
+
 
 
     std::time_t t1 = std::time(0);

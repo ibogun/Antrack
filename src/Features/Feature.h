@@ -17,8 +17,8 @@ class Feature {
 
     
 public:
-    
-    ~Feature(){}
+
+    virtual ~Feature(){}
     
     virtual cv::Mat prepareImage(cv::Mat* imageIn)=0;
     

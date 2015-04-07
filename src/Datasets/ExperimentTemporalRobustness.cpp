@@ -10,7 +10,11 @@
 std::vector<std::pair<cv::Rect,int>> ExperimentTemporalRobustness::generateBoundingBoxes(std::vector<cv::Rect>& rects, int n,
                                                                                          int m) {
     std::vector<std::pair<cv::Rect,int>> boxes;
-    arma::urowvec t=arma::linspace<arma::urowvec>(0,rects.size()-1,this->segments);
+
+
+
+    int frames=rects.size()-1;
+    arma::urowvec t=arma::linspace<arma::urowvec>(0,frames,this->segments);
 
 
     for (int j=0;j<this->segments;j++) {

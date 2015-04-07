@@ -31,6 +31,9 @@ public:
     std::string getInfo(){
         return "Linear kernel";
     }
+
+    ~LinearKernel(){
+    }
     
 };
 

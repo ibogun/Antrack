@@ -9,13 +9,13 @@
 
 #include <sstream>
 #include <random>
-
+#include <boost/filesystem.hpp>
 
 void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox, std::vector<std::string> frameNames,
                         std::string saveName,
                         bool saveResults,
                         bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
-                        std::string kernel, std::string feature) {
+                        std::string kernel, std::string feature,int display) {
 
 
     // forward run of the tracker
@@ -25,12 +25,12 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox
 
 
 
-    forwardTracker.display=3;
+    forwardTracker.display=display;
     Struck backwardTracker = Struck::getTracker(pretraining, useFilter, useEdgeDensity, useStraddling, scalePrior,
                                                 kernel,
                                                 feature);
 
-    backwardTracker.display=3;
+    backwardTracker.display=display;
 
     std::string initalFrame = frameNames[startingFrame];
     cv::Mat im = cv::imread(initalFrame);
@@ -86,6 +86,9 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox
     if (saveResults) {
         backwardTracker.saveResults(saveName);
     }
+
+    //forwardTracker.reset();
+    //backwardTracker.reset();
 }
 
 
@@ -114,6 +117,11 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<int, int, cv::Rect>> &jobs,
 
 
         std::string finalFilename = ss.str();
+
+
+        if (boost::filesystem::exists(finalFilename)){
+            continue;
+        }
 
 
         ExperimentRunner::runOneThreadOneJob(frame, bb, frameNames, finalFilename, saveResults, pretraining, useFilter, useEdgeDensity,
@@ -212,7 +220,7 @@ void ExperimentRunner::run(std::string saveFolder, int n_threads, bool saveResul
 void ExperimentRunner::runExample(int video, int startingFrame, std::string saveName, bool saveResults,
                                   bool pretraining,
                                   bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
-                                  std::string kernel, std::string feature) {
+                                  std::string kernel, std::string feature, int display) {
 
 
     vector<pair<string, vector<string>>> video_gt_images =
@@ -229,7 +237,7 @@ void ExperimentRunner::runExample(int video, int startingFrame, std::string save
     cv::Rect gt = rects[startingFrame];
 
     runOneThreadOneJob(startingFrame, gt, frames, saveName, saveResults, pretraining, useFilter, useEdgeDensity,
-                       useStraddling, scalePrior, kernel, feature);
+                       useStraddling, scalePrior, kernel, feature,display);
 
 }
 

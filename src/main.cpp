@@ -239,13 +239,13 @@ int main(int argc, const char * argv[]) {
     std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared=wu2013->prepareDataset(wu2013RootFolder);
     
     
-    std::string feature="raw";
-    std::string kernel="linear";
+    std::string feature="hist";
+    std::string kernel="int";
     
     bool pretraining=false;
     bool filter=false;
     bool straddling=false;
-    bool edgeness=true;
+    bool edgeness=false;
     bool spatialPrior=false;
 
     Struck tracker=Struck::getTracker(pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
@@ -279,7 +279,10 @@ int main(int argc, const char * argv[]) {
     AllExperimentsRunner run(wu2013);
 
 
-    runner.runExample(8,119,"test.dat",false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
+    int display=2;
+
+
+    runner.runExample(vidIndex,119,"test.dat",false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature,display);
     //run.run(wu2013SaveFolder,3,true,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
     //runner.run(wu2013SaveFolder,1,false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
 

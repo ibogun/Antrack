@@ -75,7 +75,7 @@ private:
     int verbose;
 
     // frameNumber - list of <frameNumber,value> pairs
-    unordered_map<Key,arma::mat*,KeyHash, KeyEqual>* kern;
+    unordered_map<Key,arma::mat,KeyHash, KeyEqual> kern;
 
     double decayFactor=0.5;
     bool useVelocity=false;
@@ -96,8 +96,7 @@ public:
 
     void clear(){
 
-        this->kern->clear();
-        this->S.clear();
+        this->kern.clear();
         this->velocity.clear();
         this->locations.clear();
     };

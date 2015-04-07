@@ -28,7 +28,7 @@ using namespace std;
 OLaRank_old::OLaRank_old(Kernel* svm_kernel_,int seed){
     srand (seed);
     svm_kernel=svm_kernel_;
-    this->kern=new unordered_map<Key,arma::mat*,KeyHash, KeyEqual>;
+    //this->kern=new unordered_map<Key,arma::mat,KeyHash, KeyEqual>;
 }
 
 /***
@@ -728,42 +728,45 @@ double OLaRank_old::kernel_fast(mat& x,mat& y_loc, int y,int frameNumber_1, mat&
     // we can always assume that frameNumber_1>=frameNumber_2
     Key key(frameNumber_1,frameNumber_2);
 
-    auto it=(*this->kern).find(key);
+
+
+    auto it=(this->kern).find(key);
 
 
     double result=0;
 
-    if (it==(*this->kern).end()) {
+    if (it==(this->kern).end()) {
         // key is not found
 
         // allocate memory for the new matrix
-        arma::mat* kern_matrix=new mat(x.n_rows,xp.n_rows,arma::fill::ones);
+
+        arma::mat kern_matrix(x.n_rows,xp.n_rows,arma::fill::ones);
 
         // set all elements to -infinity which means that the kernel value wasn't calculated
-        *kern_matrix=(DBL_MIN)*(*kern_matrix);
+        kern_matrix=(DBL_MIN)*(kern_matrix);
 
         // calculate the value
 
         result=calculate_kernel(x, y, xp, yp);
 
-        (*kern_matrix)(y,yp)=result;
+        (kern_matrix)(y,yp)=result;
         // add it to the kernel map
-        (*this->kern).insert({key,kern_matrix});
+        (this->kern).insert({key,kern_matrix});
 
 
 
     }else{
         // key is found - check if value is calculated
 
-        if ((*it->second)(y,yp)!=DBL_MIN) {
+        if ((it->second)(y,yp)!=DBL_MIN) {
             // the value was previously calculated - return it
-            result=(*it->second)(y,yp);
+            result=(it->second)(y,yp);
 
         }else{
             // the value wasn't calculated. Firstly, calculate it and store in the kernel
 
             result=calculate_kernel(x, y, xp, yp);
-            (*it->second)(y,yp)=result;
+            (it->second)(y,yp)=result;
             // check if it will change
         }
 
@@ -793,7 +796,7 @@ OLaRank_old::OLaRank_old(Kernel* svm_kernel_,params& learningParams, int& balanc
     B = balance;
     verbose = verbose_;
 
-    this->kern=new unordered_map<Key,arma::mat*,KeyHash, KeyEqual>;
+    //this->kern=new unordered_map<Key,arma::mat*,KeyHash, KeyEqual>;
 }
 
 /**
@@ -1123,13 +1126,13 @@ void OLaRank_old::deleteKernelValues(int frameNumber){
         // get the key
         Key key(f1,f2);
 
-        auto it=this->kern->find(key);
+        auto it=this->kern.find(key);
 
-        if (it!=this->kern->end()) {
+        if (it!=this->kern.end()) {
             // if the key is present. Delete the matrix associated with it from the heap
-            delete it->second;
+
             //and then from the unordered map
-            this->kern->erase(key);
+            this->kern.erase(key);
         }
 
     }
@@ -1158,6 +1161,14 @@ OLaRank_old::~OLaRank_old(){
             deleteKernelValues(i);
         }
 
-        delete kern;
+        for (int j = 0; j < this->S.size(); ++j) {
+            supportData* s=S[j];
+            delete s;
+        }
+
+        this->S.clear();
+
+        this->clear();
+        delete svm_kernel;
     }
 }

@@ -38,6 +38,8 @@ public:
         
         return r;
     };
+
+    ~HistogramFeatures(){}
     
 };
 

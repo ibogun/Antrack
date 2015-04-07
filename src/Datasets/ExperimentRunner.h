@@ -27,14 +27,14 @@ public:
                     std::string saveName,
                     bool saveResults,
                     bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
-                    std::string kernel, std::string feature);
+                    std::string kernel, std::string feature, int display);
 
 
     static void runOneThreadOneJob(int startingFrame, cv::Rect initialBox, std::vector<std::string> frameNames,
                             std::string saveName,
                             bool saveResults,
                             bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
-                            std::string kernel, std::string feature);
+                            std::string kernel, std::string feature,int display=0);
 };
 
 

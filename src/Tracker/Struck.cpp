@@ -733,7 +733,6 @@ arma::rowvec Struck::weightWithEdgeDensity(cv::Mat &smallImage,
 
     edgeDensity.computeIntegrals(edges);
 
-    // TODO: Rewrite objectness measure for edgeness
 
     //    arma::rowvec edge_measure(rects.size(),arma::fill::zeros);
     //
