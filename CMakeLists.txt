@@ -140,8 +140,11 @@ if (experiments)
 endif()
 
 if(VOT2014)
+	find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
+
+	include_directories( ${Boost_INCLUDE_DIR} )
 	add_executable(struck_vot2014 ${Superpixels} ${SOURCE_FILES} ${TRAX_FILES})
-	target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_INCLUDE_DIR})
 endif()
 
 

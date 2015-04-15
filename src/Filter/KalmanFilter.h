@@ -37,6 +37,9 @@ class KalmanFilter_my {
     
     // constant used for robustness of the filter, if infinity -> classical filter ( by default it is)
     double b;
+
+
+    double b_given;
     
     friend std::ostream& operator<<(std::ostream &strm, const KalmanFilter_my &f);
     
@@ -48,7 +51,12 @@ public:
     
     cv::Rect getBoundingBox(int,int,arma::colvec);
     
-    void setB(const double b_){this->b=b_;};
+    void setBothB(const double b_){this->b=b_; this->b_given=b_;};
+    void setB(const double b_){this->b=b_;}
+
+    double getGivenB(){
+        return b_given;
+    }
     
     KalmanFilter_my(arma::mat& F_,arma::mat& H_,arma::mat& Q_,arma::mat& R_,
                  arma::mat& P_0,arma::colvec& x_0,int im_w,int im_h,double b=std::numeric_limits<double>::infinity());

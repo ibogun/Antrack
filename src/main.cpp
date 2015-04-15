@@ -243,7 +243,7 @@ int main(int argc, const char * argv[]) {
     std::string kernel="int";
     
     bool pretraining=false;
-    bool filter=false;
+    bool filter= true;
     bool straddling=false;
     bool edgeness=false;
     bool spatialPrior=false;
@@ -281,8 +281,10 @@ int main(int argc, const char * argv[]) {
 
     int display=2;
 
+    double b=10;
 
-    runner.runExample(vidIndex,119,"test.dat",false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature,display);
+
+    runner.runExample(vidIndex,0,"test.dat",false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature,b,display);
     //run.run(wu2013SaveFolder,3,true,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
     //runner.run(wu2013SaveFolder,1,false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
 

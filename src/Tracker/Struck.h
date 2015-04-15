@@ -116,6 +116,12 @@ public:
     
     void setGroundTruthBox(cv::Rect box){
         this->gtBox=box;
+
+
+    }
+
+    void setRobustConstantInFilter(double b){
+        this->filter.setBothB(b);
     }
 
     cv::Mat getObjectnessCanvas(){

@@ -1,15 +1,17 @@
 __author__ = 'Ivan'
 import glob
-import numpy as np
-import os.path
 import cPickle
-import cv2
-import sys
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import datetime
 import os
 import re
+
+import sys
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+
 
 
 # import seaborn as sns
@@ -19,28 +21,61 @@ class AllExperiments(object):
     """"""
 
     def load(self, results_path, datasetType, trackerLabel):
-        paths = list()
 
-        paths.append(results_path + "/default/");
-        paths.append(results_path + "/SRE/");
-        paths.append(results_path + "/TRE/");
+        # find how many subfolders in the result path
 
-        run1 = Experiment(paths[0], datasetType, trackerLabel)
-        run1.loadResults()
+        subfolders=os.listdir(results_path);
+        subfolders=[x for x in subfolders if not ("." in x)]
+        if len(subfolders)==2:
+            paths = list()
 
-        run2 = Experiment(paths[1], datasetType, trackerLabel)
-        run2.loadResults()
+            paths.append(results_path + "/SRE/");
+            paths.append(results_path + "/TRE/");
 
-        run3 = Experiment(paths[2], datasetType, trackerLabel)
-        run3.loadResults()
+            run1 = Experiment(paths[1], datasetType, trackerLabel)
+            run1.loadResults(lookForDefault=True)
 
-        d = dict()
+            run2 = Experiment(paths[0], datasetType, trackerLabel)
+            run2.loadResults()
 
-        d['default'] = run1;
-        d['SRE'] = run2;
-        d['TRE'] = run3;
+            run3 = Experiment(paths[1], datasetType, trackerLabel)
+            run3.loadResults()
 
-        self.data = d;
+            d = dict()
+
+            d['default'] = run1;
+            d['SRE'] = run2;
+            d['TRE'] = run3;
+
+            self.data = d;
+
+        else:
+
+            # if there are three folders do this, otherwise do something else
+
+            paths = list()
+
+            paths.append(results_path + "/default/");
+            paths.append(results_path + "/SRE/");
+            paths.append(results_path + "/TRE/");
+
+            run1 = Experiment(paths[0], datasetType, trackerLabel)
+            run1.loadResults()
+
+            run2 = Experiment(paths[1], datasetType, trackerLabel)
+            run2.loadResults()
+
+
+            run3 = Experiment(paths[2], datasetType, trackerLabel)
+            run3.loadResults()
+
+            d = dict()
+
+            d['default'] = run1;
+            d['SRE'] = run2;
+            d['TRE'] = run3;
+
+            self.data = d;
 
 
     def save(self, trackerLabel, picklePathPrefix='./Runs/'):
@@ -84,6 +119,8 @@ class Dataset(object):
             d["boxes"] = boxes;
             d["images"] = images;
             listDicts.append(d);
+
+
 
         self.data = l;
         self.dictData = listDicts;
@@ -136,7 +173,7 @@ class Experiment(object):
         self.datasetType = datasetType
 
 
-    def loadResults(self):
+    def loadResults(self,lookForDefault=False,oldEvaluation=False):
 
         '''
 
@@ -150,22 +187,35 @@ class Experiment(object):
         # list all the files
         resultFilesNames = glob.glob(self.path_results + "/*.dat")
 
-        f = open(self.path_results + "/tracker_info.txt", 'r')
 
-        trackerInformation = f.read();
+        try:
 
-        f.close();
+            f = open(self.path_results + "/tracker_info.txt", 'r')
 
-        f = open(self.path_results + "/experiment_info.txt", 'r')
+            trackerInformation = f.read();
 
-        experimentInformation = f.read();
+            f.close();
 
-        f.close()
-        self.trackerInformation = trackerInformation
-        self.experimentInformation = experimentInformation;
+            f = open(self.path_results + "/experiment_info.txt", 'r')
 
-        regExpression = re.compile("(.*\/+)(\w+)(?=__.*)")
+            experimentInformation = f.read();
 
+            f.close()
+            self.trackerInformation = trackerInformation
+            self.experimentInformation = experimentInformation;
+        except IOError:
+            self.trackerInformation = "Not avaliable"
+            self.experimentInformation = "Not avaliable"
+
+        # "OPE" or default tracker run is simply the first run of the tracker in TRE
+        #  lookForDefault is a flag which separates OPE from TRE and SRE
+        if lookForDefault:
+            regExpression = re.compile("(.*\/+)([\w|-]+)(_sframe=0)(?=__.*)")
+        else:
+            regExpression = re.compile("(.*\/+)([\w|-]+)(_sframe=\d+)(?=__.*)")
+
+            # for old files
+            #regExpression = re.compile("(.*\/+)([\w|-]+)(?=__.*)")
         # get rid of absolute path and then delete extension
 
         l = list()
@@ -174,9 +224,12 @@ class Experiment(object):
         boxesDict = dict();
         names = set()
 
+
+        resultFilesNames=[x for x in resultFilesNames if regExpression.match(x) is not None];
+
+        # find different videos in the dataset
         for fileNames in resultFilesNames:
             m = regExpression.match(fileNames)
-
             names.add(m.group(2))
 
         for video in names:
@@ -188,7 +241,13 @@ class Experiment(object):
 
             video = m.group(2)
             #sequenceName=os.path.splitext(os.path.basename(fileNames))[0]
-            boxes = np.loadtxt(fileNames, delimiter=',')
+            try:
+                boxes = np.loadtxt(fileNames, delimiter=',')
+            except ValueError:
+                boxes = np.loadtxt(fileNames, delimiter='\t')
+            except:
+                print "Unexpected error:", sys.exc_info()[0]
+                raise
 
             boxesDict[video].append(boxes)
             counts[video] = counts[video] + 1
@@ -232,6 +291,14 @@ class Evaluator(object):
 
         self.dataset = dataset
         self.listOfExperiments = listOfExperiments
+
+
+    @staticmethod
+    def getIntegralValues(x_pr,y_pr,x_s,y_s):
+        p = np.trapz(y_pr, x=x_pr) / 50
+        s = np.trapz(y_s, x=x_s)
+
+        return (p,s)
 
     @staticmethod
     def createPlotData(centerDistance, maxValue=50, n=100):
@@ -388,11 +455,13 @@ class Evaluator(object):
         intersection = lambda x, y: max(min(x[2], y[2]) - max(x[0], y[0]), 0) * max(min(x[3], y[3]) - max(x[1], y[1]),
                                                                                     0)
 
-        area = lambda x: (x[3] - x[1]) * (x[2] - x[0])
+        area = lambda x: ((int)(x[3]) - (int)(x[1])) * ((int)(x[2]) - (int)(x[0]))
 
-        distJaccard = lambda x, y: (intersection(x, y) / (area(x) + area(y) - intersection(x, y)))
+        distJaccard = lambda x, y: (intersection(x, y) / ((float)(area(x) + area(y) - intersection(x, y))))
 
-        distJarrardFull = lambda x, y: distJaccard(get4D(x), get4D(y))
+        distJarrardFull = lambda x, y: distJaccard(get4D((x)), get4D((y)))
+
+
 
         boxes = video[1][experimentNumber]
 
@@ -410,9 +479,12 @@ class Evaluator(object):
         for idx in range(0, nFrames):
 
             # calculate different statistics: overlap over union and euclidean distance of centers
-
-            overlap_over_union[idx] = distJarrardFull(boxes[idx], boxes_gt[idx])
-            centerDistance[idx] = distCenter((boxes[idx]), (boxes_gt[idx]))
+            if np.isnan(np.sum(boxes[idx])):
+                overlap_over_union[idx]=0
+                centerDistance[idx]=np.inf
+            else:
+                overlap_over_union[idx] = distJarrardFull(boxes[idx], boxes_gt[idx])
+                centerDistance[idx] = distCenter((boxes[idx]), (boxes_gt[idx]))
 
 
         (x_pr, y_pr) = Evaluator.createPlotData(centerDistance, maxValue=50, n=n)
@@ -435,9 +507,13 @@ class Evaluator(object):
         success_x = np.zeros(n)
         success_y = np.zeros(n)
 
+
         for video in runs:
+
+
             gt = [x for x in listGT if x[0] == video[0]][0]
             (x_pr, y_pr, x_s, y_s) = Evaluator.evaluateSingleVideo(video, gt, n=n)
+
 
             precision_x = precision_x + x_pr
             precision_y = precision_y + y_pr
@@ -524,7 +600,7 @@ if __name__ == "__main__":
     #
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
-    runsNames = glob.glob('./Runs/' + wildcard + '*.p')
+    runsNames = glob.glob('./Runs/old_default_experiments/' + wildcard + '*.p')
 
 
     experimentType='default'
@@ -534,7 +610,7 @@ if __name__ == "__main__":
     for runName in runsNames:
         run = loadPickle(runName)
 
-        run=run.data[experimentType]
+        #run=run.data[experimentType]
         runs.append(run)
 
     evaluator = Evaluator(dataset, runs)

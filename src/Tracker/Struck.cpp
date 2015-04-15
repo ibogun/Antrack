@@ -39,21 +39,26 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location) {
     // create filter, if chosen
     updateTracker = true;
     if (this->useFilter) {
-        int measurementSize = 10;
+        int measurementSize = 6;
         colvec x_k(measurementSize, fill::zeros);
         x_k(0) = lastLocation.x;
         x_k(1) = lastLocation.y;
         x_k(2) = lastLocation.x + lastLocation.width;
         x_k(3) = lastLocation.y + lastLocation.height;
 
-        int robustConstant_b = 10;
+        int robustConstant_b = this->filter.getGivenB();
 
         int R_cov = 5;
         int Q_cov = 5;
         int P = 3;
 
-        filter = KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(
+        // FIXME: use to be this way
+//        filter = KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(
+//                x_k, n, m, R_cov, Q_cov, P, robustConstant_b);
+        filter = KalmanFilterGenerator::generateConstantVelocityFilter(
                 x_k, n, m, R_cov, Q_cov, P, robustConstant_b);
+
+        filter.setBothB(robustConstant_b);
         lastRectFilterAndDetectorAgreedOn = lastLocation;
 
         // filter.x_kk=x_k;
@@ -266,8 +271,7 @@ cv::Rect Struck::track(cv::Mat &image) {
             // populate boxes with sampled regions from
 
             if (useEdgeDensity) {
-                arma::rowvec edge_measure =
-                        this->edgeDensity.findEdgeObjectness(bboxesWhichFit, min_x, min_y);
+                arma::rowvec edge_measure = this->edgeDensity.findEdgeObjectness(bboxesWhichFit, min_x, min_y);
                 // arma::rowvec
                 // edge_objectness=weightWithEdgeDensity(smallImage,locationsOnaGrid,this->edge_params,min_x,min_y);
 
@@ -448,12 +452,12 @@ cv::Rect Struck::track(cv::Mat &image) {
             updateTracker = true;
 
             lastRectFilterAndDetectorAgreedOn = bestLocationDetector;
-            filter.setB(10);
+            filter.setB(filter.getGivenB());
         } else {
 
             updateTracker = false;
 
-            filter.setB(5);
+            filter.setB(filter.getGivenB()/2.0);
         }
         filter.predictAndCorrect(z_k);
     }
@@ -1367,8 +1371,8 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
         features = new HoG(size);
     } else if (featureSTR == "hist") {
         features = new HistogramFeatures(4, 16);
-    } else if (featureSTR == "rawhog") {
-        features = new HoGandRawFeatures(size, 16);
+    } else if (featureSTR == "haar"){
+        features = new Haar(2);
     } else {
         features = new RawFeatures(16);
     }
@@ -1420,10 +1424,7 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
 
     bool useObjectness = (useEdgeDensity | useStraddling);
 
-    //    bool pretraining   = true;
-    //    bool useFilter     = true;
-    //    bool useObjectness = true;
-    //    bool scalePrior    = true;
+
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     LocationSampler *samplerForUpdate =
@@ -1437,7 +1438,7 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
     tracker.useStraddling = useStraddling;
     tracker.useEdgeDensity = useEdgeDensity;
 
-    int measurementSize = 10;
+    int measurementSize = 6;
     arma::colvec x_k(measurementSize, fill::zeros);
     x_k(0) = 0;
     x_k(1) = 0;
@@ -1451,7 +1452,7 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
     int P = 3;
 
     KalmanFilter_my filter =
-            KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(
+            KalmanFilterGenerator::generateConstantVelocityFilter(
                     x_k, 0, 0, R_cov, Q_cov, P, robustConstant_b);
     // KalmanFilter_my
     // filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);

@@ -15,7 +15,7 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox
                         std::string saveName,
                         bool saveResults,
                         bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
-                        std::string kernel, std::string feature,int display) {
+                        std::string kernel, std::string feature, double b,int display) {
 
 
     // forward run of the tracker
@@ -24,13 +24,14 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox
                                                feature);
 
 
-
+    forwardTracker.setRobustConstantInFilter(b);
     forwardTracker.display=display;
     Struck backwardTracker = Struck::getTracker(pretraining, useFilter, useEdgeDensity, useStraddling, scalePrior,
                                                 kernel,
                                                 feature);
 
     backwardTracker.display=display;
+    backwardTracker.setRobustConstantInFilter(b);
 
     std::string initalFrame = frameNames[startingFrame];
     cv::Mat im = cv::imread(initalFrame);
@@ -97,7 +98,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<int, int, cv::Rect>> &jobs,
                               bool saveResults,
                               bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling,
                               bool scalePrior,
-                              std::string kernel, std::string feature) {
+                              std::string kernel, std::string feature,double b) {
 
     // run jobs from index 'from' to the index 'to', make sure to create proper saveName
 
@@ -125,7 +126,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<int, int, cv::Rect>> &jobs,
 
 
         ExperimentRunner::runOneThreadOneJob(frame, bb, frameNames, finalFilename, saveResults, pretraining, useFilter, useEdgeDensity,
-                           useStraddling, scalePrior, kernel, feature);
+                           useStraddling, scalePrior, kernel, feature,b);
     }
 
 }
@@ -136,7 +137,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<int, int, cv::Rect>> &jobs,
 void ExperimentRunner::run(std::string saveFolder, int n_threads, bool saveResults,
                            bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling,
                            bool scalePrior,
-                           std::string kernel, std::string feature) {
+                           std::string kernel, std::string feature, double b) {
     using namespace std;
 
     // the vector below requires reshuffling
@@ -187,7 +188,7 @@ void ExperimentRunner::run(std::string saveFolder, int n_threads, bool saveResul
                 std::ref(bounds[i]), std::ref(bounds[i + 1]),
                 std::ref(saveResults), std::ref(pretraining),
                 std::ref(useFilter), std::ref(useEdgeDensity),
-                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature)));
+                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),std::ref(b)));
     }
 
     for (auto &t : th) {
@@ -220,7 +221,7 @@ void ExperimentRunner::run(std::string saveFolder, int n_threads, bool saveResul
 void ExperimentRunner::runExample(int video, int startingFrame, std::string saveName, bool saveResults,
                                   bool pretraining,
                                   bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
-                                  std::string kernel, std::string feature, int display) {
+                                  std::string kernel, std::string feature,double b, int display) {
 
 
     vector<pair<string, vector<string>>> video_gt_images =
@@ -236,8 +237,9 @@ void ExperimentRunner::runExample(int video, int startingFrame, std::string save
 
     cv::Rect gt = rects[startingFrame];
 
+
     runOneThreadOneJob(startingFrame, gt, frames, saveName, saveResults, pretraining, useFilter, useEdgeDensity,
-                       useStraddling, scalePrior, kernel, feature,display);
+                       useStraddling, scalePrior, kernel, feature,b,display);
 
 }
 

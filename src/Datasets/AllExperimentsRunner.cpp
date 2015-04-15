@@ -62,7 +62,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::
                               bool scalePrior,
                               std::string
                               kernel,
-                              std::string feature) {
+                              std::string feature, double b) {
 
 // run jobs from index 'from' to the index 'to', make sure to create proper saveName
 
@@ -80,7 +80,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::
 
         std::stringstream ss;
 
-        ss << saveName << "/" << videoName << "__" << std::to_string(i) << ".dat";
+        ss << saveName << "/" << videoName <<"_sframe="<<std::to_string(frame) <<"__" << std::to_string(i) << ".dat";
 
 
         std::string finalFilename = ss.str();
@@ -88,7 +88,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::
 
         ExperimentRunner::runOneThreadOneJob(frame, bb, frameNames, finalFilename, saveResults, pretraining, useFilter,
                                              useEdgeDensity,
-                                             useStraddling, scalePrior, kernel, feature
+                                             useStraddling, scalePrior, kernel, feature,b
         );
     }
 
@@ -96,9 +96,9 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::
 
 void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveResults, bool pretraining, bool useFilter,
                                bool useEdgeDensity, bool useStraddling, bool scalePrior, std::string kernel,
-                               std::string feature) {
+                               std::string feature, double b) {
 
-    ExperimentDefault ed;
+    //ExperimentDefault ed;
     ExperimentSpatialRobustness es;
     ExperimentTemporalRobustness et;
 
@@ -107,7 +107,7 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveRe
 //    ExperimentRunner runner2(&es, this->dataset);
 //    ExperimentRunner runner3(&et, this->dataset);
 
-    std::string saveFolderDefault = saveFolder + "/default/";
+    //std::string saveFolderDefault = saveFolder + "/default/";
     std::string saveFolderSRE = saveFolder + "/SRE/";
     std::string saveFolderTRE = saveFolder + "/TRE/";
 
@@ -116,28 +116,28 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveRe
     //deleteDirectory(saveFolderSRE);
     //deleteDirectory(saveFolderTRE);
 
-    createDirectory(saveFolderDefault);
+    //createDirectory(saveFolderDefault);
     createDirectory(saveFolderSRE);
     createDirectory(saveFolderTRE);
 
 
 
-    std::vector<std::tuple<int, int, cv::Rect>> ed_boxes = ed.generateAllBoxesToEvaluate(this->dataset);
+    //std::vector<std::tuple<int, int, cv::Rect>> ed_boxes = ed.generateAllBoxesToEvaluate(this->dataset);
     std::vector<std::tuple<int, int, cv::Rect>> es_boxes = es.generateAllBoxesToEvaluate(this->dataset);
     std::vector<std::tuple<int, int, cv::Rect>> et_boxes = et.generateAllBoxesToEvaluate(this->dataset);
 
 
     std::vector<std::tuple<std::string, int, int, cv::Rect>> jobs;
 
-    for (int i = 0; i < ed_boxes.size(); ++i) {
-
-        int video = std::get<0>(ed_boxes[i]);
-        int frame = std::get<1>(ed_boxes[i]);
-        cv::Rect box = std::get<2>(ed_boxes[i]);
-        auto t = std::make_tuple(saveFolderDefault, video, frame, box);
-
-        jobs.push_back(t);
-    }
+//    for (int i = 0; i < ed_boxes.size(); ++i) {
+//
+//        int video = std::get<0>(ed_boxes[i]);
+//        int frame = std::get<1>(ed_boxes[i]);
+//        cv::Rect box = std::get<2>(ed_boxes[i]);
+//        auto t = std::make_tuple(saveFolderDefault, video, frame, box);
+//
+//        jobs.push_back(t);
+//    }
 
     for (int i = 0; i < es_boxes.size(); ++i) {
 
@@ -224,7 +224,7 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveRe
                 std::ref(bounds[i]), std::ref(bounds[i + 1]),
                 std::ref(saveResults), std::ref(pretraining),
                 std::ref(useFilter), std::ref(useEdgeDensity),
-                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature)));
+                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),std::ref(b)));
     }
 
     for (auto &t : th) {
@@ -232,9 +232,9 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveRe
     }
 
 
-    saveData(&ed, saveFolderDefault, pretraining, useFilter, useEdgeDensity,
-             useStraddling,
-             scalePrior, kernel, feature);
+//    saveData(&ed, saveFolderDefault, pretraining, useFilter, useEdgeDensity,
+//             useStraddling,
+//             scalePrior, kernel, feature);
 
     saveData(&es, saveFolderSRE, pretraining, useFilter, useEdgeDensity,
              useStraddling,

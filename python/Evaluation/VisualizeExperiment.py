@@ -1,19 +1,16 @@
 __author__ = 'Ivan'
 import sys
-from DatasetEvaluation import Dataset,loadPickle,Evaluator
-from generatePythonFilePickle import AllExperiments
 
-import cPickle
 import cv2
-import copy
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.patches as mpatches
 from matplotlib import gridspec
-
 from matplotlib.widgets import Slider, Button
 
-import seaborn as sns
+from DatasetEvaluation import Dataset,loadPickle,Evaluator
+
+
 class VisualizeExperiment(object):
     """VisualizeExperiment the object here and there"""
 

@@ -8,7 +8,10 @@
 
 #include "KalmanFilterGenerator.h"
 
-KalmanFilter_my KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(arma::colvec x_0,int im_w,int im_h,double q, double r, double p, double b){
+KalmanFilter_my KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(arma::colvec x_0,
+                                                                               int im_w,int im_h,
+                                                                               double q, double r,
+                                                                               double p, double b){
     
     using namespace arma;
     
@@ -71,7 +74,9 @@ KalmanFilter_my KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(a
 }
 
 
-KalmanFilter_my KalmanFilterGenerator::generateConstantVelocityFilter(arma::colvec x_0,int im_w,int im_h,double q, double r, double p, double b){
+KalmanFilter_my KalmanFilterGenerator::generateConstantVelocityFilter(arma::colvec x_0,int im_w,
+                                                                      int im_h,double q, double r,
+                                                                      double p, double b){
     
     using namespace arma;
     
@@ -129,7 +134,10 @@ KalmanFilter_my KalmanFilterGenerator::generateConstantVelocityFilter(arma::colv
 }
 
 
-KalmanFilter_my KalmanFilterGenerator::generateConstantAccelerationFilter(arma::colvec x_0,int im_w,int im_h,double q, double r, double p, double b){
+KalmanFilter_my KalmanFilterGenerator::generateConstantAccelerationFilter(arma::colvec x_0,
+                                                                          int im_w,int im_h,
+                                                                          double q, double r,
+                                                                          double p, double b){
     
     using namespace arma;
     
@@ -201,5 +209,100 @@ KalmanFilter_my KalmanFilterGenerator::generateConstantAccelerationFilter(arma::
     
     KalmanFilter_my filter(F, H, Q, R, P, x_0,im_w,im_h, b);
     
+    return filter;
+}
+
+
+KalmanFilter_my KalmanFilterGenerator::generateFilterCenterTranslation(arma::colvec x_0, int im_w, int im_h, double q,
+                                                                       double r, double p, double b) {
+
+
+    using namespace arma;
+
+    mat F(4,4,fill::zeros);
+    F(0,0)=1;
+    F(1,1)=1;
+    F(2,2)=1;
+    F(3,3)=1;
+    F(0,2)=1;
+    F(1,3)=1;
+
+    mat H(2,4,fill::zeros);
+    H(0,0)=1;
+    H(1,1)=1;
+
+
+    mat Q(4,4,fill::zeros);
+
+    Q(0,0)=1.0/4;
+    Q(1,1)=1.0/4;
+    Q(2,2)=1.0;
+    Q(3,3)=1.0;
+
+    Q(0,2)=1.0/2;
+    Q(1,3)=1.0/2;
+
+    Q(2,0)=1.0/2;
+    Q(3,1)=1.0/2;
+
+    Q=Q*q;
+
+
+    mat R=arma::eye(2, 2);
+    R=R*r;
+
+    mat P=arma::eye(4, 4);
+    P=P*p;
+
+    KalmanFilter_my filter(F, H, Q, R, P,x_0,im_w,im_h, b);
+
+    return filter;
+
+}
+
+
+KalmanFilter_my KalmanFilterGenerator::generateFilterScaleChange(arma::colvec x_0, int im_w, int im_h, double q,
+                                                                 double r, double p, double b) {
+
+
+    using namespace arma;
+
+    mat F(4,4,fill::zeros);
+    F(0,0)=1;
+    F(1,1)=1;
+    F(2,2)=1;
+    F(3,3)=1;
+    F(0,2)=1;
+    F(1,3)=1;
+
+    mat H(2,4,fill::zeros);
+    H(0,0)=1;
+    H(1,1)=1;
+
+
+    mat Q(4,4,fill::zeros);
+
+    Q(0,0)=1.0/4;
+    Q(1,1)=1.0/4;
+    Q(2,2)=1.0;
+    Q(3,3)=1.0;
+
+    Q(0,2)=1.0/2;
+    Q(1,3)=1.0/2;
+
+    Q(2,0)=1.0/2;
+    Q(3,1)=1.0/2;
+
+    Q=Q*q;
+
+
+    mat R=arma::eye(2, 2);
+    R=R*r;
+
+    mat P=arma::eye(4, 4);
+    P=P*p;
+
+    KalmanFilter_my filter(F, H, Q, R, P,x_0,im_w,im_h, b);
+
     return filter;
 }

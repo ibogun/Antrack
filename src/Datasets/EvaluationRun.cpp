@@ -11,8 +11,8 @@
 
 double centerDistance(cv::Rect& r1,cv::Rect& r2){
     
-    double x=abs(r1.x+r1.width/(2.0)-(r2.x+r2.width/(2.0)));
-    double y=abs(r1.y+r1.height/(2.0)-(r2.y+r2.height/(2.0)));
+    double x=std::abs(r1.x+r1.width/(2.0)-(r2.x+r2.width/(2.0)));
+    double y=std::abs(r1.y+r1.height/(2.0)-(r2.y+r2.height/(2.0)));
     
     
     return sqrt(pow(x, 2)+pow(y, 2));

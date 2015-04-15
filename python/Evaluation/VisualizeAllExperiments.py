@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.patches as mpatches
 from matplotlib import gridspec
-
+import glob
 from matplotlib.widgets import Slider, Button
-
+import re
 import seaborn as sns
 
 
@@ -78,7 +78,7 @@ class VisualizeAllExperiments(object):
 
         legendSize = 9;
 
-        plt.figure(figsize=(13,9))
+        plt.figure(figsize=(13,9),)
 
         with plt.style.context('grayscale'):
             i = 2
@@ -160,6 +160,148 @@ class VisualizeAllExperiments(object):
             plt.show()
 
 
+    def barplot(self,n=1000,savefile=''):
+
+
+        plt.figure(figsize=(13,9))
+
+        rotation = 90
+
+        xTicksFontSize = 10;
+
+        index=1;
+        import seaborn as sn
+
+
+        mean_success=0
+        mean_precision=0
+
+        sList=list()
+        pList=list()
+
+        for expName,experiment in self.experiments.data.iteritems():
+
+
+            print expName
+
+            precision = list()
+            success = list()
+            names=list()
+
+
+            for videoData in experiment.data:
+
+                gt=[x for x in self.dataset.data if x[0]==videoData[0]][0]
+
+
+                p=0
+                s=0
+                names.append(videoData[0])
+
+                for expRunIndex in range(0,len(videoData[1])):
+                    (x_pr, y_pr, x_s, y_s)=Evaluator.evaluateSingleVideo(videoData,gt,experimentNumber=expRunIndex, n=n)
+
+                    p1= np.ma.round(np.trapz(y_pr, x=x_pr) / 50, 2)
+                    s1= np.ma.round(np.trapz(y_s, x=x_s), 2)
+
+                    p =p+ p1
+                    s =s+ s1
+
+                    if expName!='default':
+                        sList.append(s1)
+                        pList.append(p1)
+
+
+
+
+                p=p/(float(len(videoData[1])))
+                s = s/ (float(len(videoData[1])))
+
+                precision.append(p)
+                success.append(s)
+
+                #break
+
+            bothMetrics=[x+y for x,y in zip(success,precision)]
+            # barplot precision
+            n_groups = len(self.dataset.data)
+
+            indexPlot = np.arange(n_groups)
+
+            if index == 1:
+                ax1 = plt.subplot(3, 2, index)
+            else:
+                plt.subplot(3, 2, index)
+
+            idx_sorted = [i[0] for i in sorted(enumerate(bothMetrics), key=lambda x: x[1])]
+
+            successTrackerNames = [names[x] for x in idx_sorted]
+            sorted_success = [success[x] for x in idx_sorted]
+
+            precisionTrackerNames = [names[x] for x in idx_sorted]
+            sorted_precision = [precision[x] for x in idx_sorted]
+
+            plt.xticks(indexPlot, successTrackerNames, rotation=rotation, fontsize=xTicksFontSize)
+
+            plt.bar(indexPlot, sorted_success, align="center")
+
+            plt.ylim((0, 1))
+
+            plt.yticks(fontsize=xTicksFontSize)
+
+            if expName!='default':
+                mean_success = mean_success+ np.round(sum(success) / (1.0 * len(success)), 2)
+                mean_precision=mean_precision+ np.round(sum(precision) / (1.0 * len(precision)), 2)
+            #plt.title("Success " + "[" + str(mean_success) + "]", fontsize=xTicksFontSize + 4)
+
+            index = index + 1;
+            plt.subplot(3, 2, index)
+
+            plt.xticks(indexPlot, precisionTrackerNames, rotation=rotation, fontsize=xTicksFontSize)
+            plt.bar(indexPlot, sorted_precision, align="center")
+            plt.ylim((0, 1))
+
+            plt.yticks(fontsize=xTicksFontSize)
+            if index == 2:
+                ax2 = plt.subplot(3, 2, index)
+            else:
+                plt.subplot(3, 2, index)
+
+            ax3 = plt.twinx()
+            ax3.set_ylabel(expName, color='black',fontsize=xTicksFontSize+4)
+            ax3.grid(b=False)
+
+
+            # barplot success
+            index=index+1;
+
+
+        sFinal=np.round(sum(sList) / (float(len(sList))),2)
+        pFinal = np.round(sum(pList) / (float(len(pList))), 2)
+
+        ax1.set_title(
+            "Success " + "[" + str(sFinal) + "] / " + self.experiments.data['default'].trackerLabel,
+            fontsize=xTicksFontSize + 4)
+        ax2.set_title("Precision " + "[" + str(pFinal) + "] / " + self.experiments.data[
+            'default'].trackerLabel, fontsize=xTicksFontSize + 4)
+
+        # ax1.set_title("Success " + "[" + str(mean_success/2.0) + "] / "+ self.experiments.data['default'].trackerLabel, fontsize=xTicksFontSize + 4)
+        # ax2.set_title("Precision " + "[" + str(mean_precision / 2.0) + "] / "+ self.experiments.data[
+        #     'default'].trackerLabel, fontsize=xTicksFontSize + 4)
+
+        plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+        if savefile=='':
+            plt.show()
+        else:
+            plt.savefig(savefile)
+
+
+
+
+
+
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
@@ -169,7 +311,7 @@ def main(argv=None):
     datasetType = 'wu2013'
     experimentType='default'
 
-    runName = './Runs/obj_raw_linear_pre0_filter0_edge0_straddling0_prior0.p'
+    runName = './Runs/ms_hist_int_pre1_f1.p'
 
     run = loadPickle(runName)
 
@@ -181,7 +323,7 @@ def main(argv=None):
 
     viz = VisualizeAllExperiments(dataset, run)
 
-    viz.precisionAndSuccessPlot()
+    #viz.precisionAndSuccessPlot()
     # exp1=run.data['default']
     #
     # vizOne=VisualizeExperiment(dataset,exp1)
@@ -191,11 +333,42 @@ def main(argv=None):
     #viz.show(vidName,experimentRunNumber=0,experiment='default')
     #viz.show(vidName,100)
 
-    #viz.barplot()
+
+    runsNames = glob.glob('./Runs/*.p')
+
+    for r in runsNames:
+        print r
+        #viz.barplot()
     #viz.precisionAndSuccessPlot(vidName)
     #viz.show(vidName)
     # vidData=[x for x in dataset.dictData if x['name']==vidName][0]
 
+def generateAllVizualiations():
+
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
+    folderForGraphs='./Visualizations/'
+    datasetType = 'wu2013'
+    dataset = Dataset(wu2013GroundTruth, datasetType)
+    runsNames = glob.glob('./Runs/*.p')
+
+    formatSave='pdf'
+
+    regexp=re.compile("(.*\/+)(\w+)(.p)")
+
+
+    for runName in runsNames:
+
+
+
+        m=re.match(regexp,runName)
+
+        name=m.group(2)
+        if name == "Kernelized_filter":
+            continue;
+        print name
+        run = loadPickle(runName)
+        viz = VisualizeAllExperiments(dataset, run)
+        viz.barplot(savefile=folderForGraphs+name+"."+ formatSave)
 
 if __name__ == "__main__":
-    main()
+    generateAllVizualiations()

@@ -117,116 +117,110 @@ using boost::uuids::random_generator;
 #include <boost/uuid/uuid_io.hpp>
 
 string make_uuid() {
-    return lexical_cast<string>((random_generator()) ());
+        return lexical_cast<string>((random_generator())());
 }
 
 
-void experimentForFilterAndPretraining(int n_threads, std::string datasetTempSaveLocation,
-                                       std::string savePermamentLocation,
-                                       std::string pythonScriptLocation) {
-    // Now, run everything
-    DataSetWu2013 *wu2013 = new DataSetWu2013;
-
-    std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared = wu2013->prepareDataset(
-            wu2013RootFolder);
-
-    bool useEdgeDensity = false;
-    bool useStraddling = false;
-
-    bool scalePrior = false;
-
-    std::vector<std::string> kernels;
-    std::vector<std::string> features;
-    std::vector<bool> pretraining_flags;
-    std::vector<bool> filter_flags;
-
-    pretraining_flags.push_back(false);
-    pretraining_flags.push_back(true);
-
-    filter_flags.push_back(false);
-    filter_flags.push_back(true);
-
-    kernels.push_back("raw");
-    kernels.push_back("int");           // hist
-    kernels.push_back("linear");        // raw
-    kernels.push_back("gauss");         // hog
-    kernels.push_back("int");           // hog
-    kernels.push_back("linear");        // hog
+void experimentForFilterAndPretraining(int n_threads, std::string datasetTempSaveLocation, int index) {
+        // Now, run everything
 
 
-    features.push_back("linear");
-    features.push_back("hist");
-    features.push_back("raw");
-    features.push_back("hog");
-    features.push_back("hog");
-    features.push_back("hog");
+        bool useEdgeDensity = false;
+        bool useStraddling = false;
 
-    std::string prefix = "ms_";
-    std::string trackerID = "";
+        bool scalePrior = false;
+
+        std::vector<std::string> kernels;
+        std::vector<std::string> features;
+        std::vector<bool> pretraining_flags;
+        std::vector<bool> filter_flags;
+
+        pretraining_flags.push_back(false);
+        pretraining_flags.push_back(true);
+
+        filter_flags.push_back(false);
+        filter_flags.push_back(true);
+
+        kernels.push_back("int");
+        kernels.push_back("gauss");       // hist
+
+        features.push_back("haar");
+        features.push_back("haar");
+        //features.push_back("hog");
+
+        std::string prefix = "ms_";
+        std::string trackerID = "";
 
 
-    for (int i = 0; i < kernels.size(); ++i) {
+        std::string kernel = kernels[index];
+        std::string feature = features[index];
 
-        std::string kernel = kernels[i];
-        std::string feature = features[i];
-
+        double b=10;
         for (int j = 0; j < pretraining_flags.size(); ++j) {
-            for (int k = 0; k < filter_flags.size(); ++k) {
-
-                bool pretraining = pretraining_flags[j];
-                bool useFilter = filter_flags[k];
-
-                std::stringstream s1;
-
-                s1 << prefix  << feature << "_" << kernel << "_" << "pre";
-
-                if (pretraining) {
-                    s1 << "1";
-                } else {
-                    s1 << "0";
-                }
-
-                s1 << "_f";
-
-                if (useFilter) {
-                    s1 << "1";
-                } else {
-                    s1 << "0";
-                }
-                trackerID = s1.str();
-                //std::string folderName = make_uuid();
-
-                std::cout << trackerID << std::endl;
-
-                // remote location
-                std::string datasetSaveLocation = datasetTempSaveLocation;
-
-                //std::string datasetSaveLocation="/Users/Ivan/Code/Tracking/Antrack/tmp";
-                std::string fullFolderName =
-                        datasetSaveLocation + "/" + trackerID;
-
-                std::cout << "Enter tracker identifier: " << std::endl;
-
-                std::string trackerName = trackerID;
-
-                std::cout << "Tracker name entered is: " << trackerName
-                << std::endl;
-
-                if (!(boost::filesystem::exists(fullFolderName))){
-
-                    AllExperimentsRunner::createDirectory(fullFolderName);
-                }
+                for (int k = 0; k < filter_flags.size(); ++k) {
 
 
-                wu2013->setRootFolder(wu2013RootFolder);
-                AllExperimentsRunner run(wu2013);
+                        DataSetWu2013 *wu2013 = new DataSetWu2013;
+
+                        std::vector<std::pair<std::string, std::vector<std::string> > > wuPrepared = wu2013->prepareDataset(
+                                wu2013RootFolder);
+
+                        bool pretraining = pretraining_flags[j];
+                        bool useFilter = filter_flags[k];
+
+                        std::stringstream s1;
+
+                        s1 << prefix << feature << "_" << kernel << "_" << "pre";
+
+                        if (pretraining) {
+                                s1 << "1";
+                        } else {
+                                s1 << "0";
+                        }
+
+                        s1 << "_f";
+
+                        if (useFilter) {
+                                s1 << "1";
+                        } else {
+                                s1 << "0";
+                        }
+                        trackerID = s1.str();
+                        //std::string folderName = make_uuid();
+
+                        std::cout << trackerID << std::endl;
+
+                        // remote location
+                        std::string datasetSaveLocation = datasetTempSaveLocation;
+
+                        //std::string datasetSaveLocation="/Users/Ivan/Code/Tracking/Antrack/tmp";
+                        std::string fullFolderName =
+                                datasetSaveLocation + "/" + trackerID;
+
+                        std::cout << "Enter tracker identifier: " << std::endl;
+
+                        std::string trackerName = trackerID;
+
+                        std::cout << "Tracker name entered is: " << trackerName
+                                  << std::endl;
+
+                        if (!(boost::filesystem::exists(fullFolderName))) {
+
+                                AllExperimentsRunner::createDirectory(fullFolderName);
+                        }
 
 
-                run.run(fullFolderName, n_threads, true, pretraining, useFilter, useEdgeDensity, useStraddling,
-                        scalePrior,
-                        kernel,
-                        feature);
+                        wu2013->setRootFolder(wu2013RootFolder);
+                        AllExperimentsRunner run(wu2013);
 
+
+                        run.run(fullFolderName, n_threads, true, pretraining, useFilter, useEdgeDensity, useStraddling,
+                                scalePrior,
+                                kernel,
+                                feature,b);
+
+
+                        delete wu2013;
 
 //                std::stringstream ss;
 //
@@ -243,78 +237,156 @@ void experimentForFilterAndPretraining(int n_threads, std::string datasetTempSav
 //                std::cout << "Pickel was created" << std::endl;
 
 
-                //AllExperimentsRunner::deleteDirectory(fullFolderName);
-            }
+                        //AllExperimentsRunner::deleteDirectory(fullFolderName);
+                }
         }
-    }
 
 
-    delete wu2013;
+}
+
+void experimentSensitivityToRobustConstant(int n_threads, std::string datasetTempSaveLocation, double b) {
+        // Now, run everything
+
+
+        bool useEdgeDensity = false;
+        bool useStraddling = false;
+
+        bool scalePrior = false;
+
+
+        std::string prefix = "b="+std::to_string(b)+"_";
+        std::string trackerID = "";
+
+
+        std::string kernel = "int";
+        std::string feature = "hist";
+
+        DataSetWu2013 *wu2013 = new DataSetWu2013;
+
+        std::vector<std::pair<std::string, std::vector<std::string> > > wuPrepared = wu2013->prepareDataset(
+                wu2013RootFolder);
+
+        bool pretraining = false;
+        bool useFilter = true;
+
+        std::stringstream s1;
+
+        s1 << prefix << feature << "_" << kernel << "_" << "pre";
+
+        if (pretraining) {
+                s1 << "1";
+        } else {
+                s1 << "0";
+        }
+
+        s1 << "_f";
+
+        if (useFilter) {
+                s1 << "1";
+        } else {
+                s1 << "0";
+        }
+        trackerID = s1.str();
+        //std::string folderName = make_uuid();
+
+        std::cout << trackerID << std::endl;
+
+        // remote location
+        std::string datasetSaveLocation = datasetTempSaveLocation;
+
+        //std::string datasetSaveLocation="/Users/Ivan/Code/Tracking/Antrack/tmp";
+        std::string fullFolderName =
+                datasetSaveLocation + "/" + trackerID;
+
+        std::cout << "Enter tracker identifier: " << std::endl;
+
+        std::string trackerName = trackerID;
+
+        std::cout << "Tracker name entered is: " << trackerName
+                  << std::endl;
+
+        if (!(boost::filesystem::exists(fullFolderName))) {
+
+                AllExperimentsRunner::createDirectory(fullFolderName);
+        }
+
+
+        wu2013->setRootFolder(wu2013RootFolder);
+        AllExperimentsRunner run(wu2013);
+
+
+        run.run(fullFolderName, n_threads, true, pretraining, useFilter, useEdgeDensity, useStraddling,
+                scalePrior,
+                kernel,
+                feature,b);
+
+
+        delete wu2013;
+
+
 }
 
 
 int main(int ac, char *av[]) {
-    using namespace std;
-    namespace po = boost::program_options;
-    try {
+        using namespace std;
+        namespace po = boost::program_options;
+        try {
 
-        po::options_description desc("Allowed options");
-        desc.add_options()("help", "produce help message")(
-                "tmpSaveLocation", po::value<std::string>(), "Location where temporary files will be created.")(
-                "pythonScriptLocation", po::value<std::string>(), "Python script which should generate pickle file.")(
-                "permSaveLocation", po::value<std::string>(),
-                "Location where pickle files with results will be saved to")(
-                "nThreads", po::value<int>(), "Number of threads");
+                po::options_description desc("Allowed options");
+                desc.add_options()("help", "produce help message")(
+                        "tmpSaveLocation", po::value<std::string>(), "Location where temporary files will be created.")(
+                        "index", po::value<int>(),
+                        "index of the experiment (only applicable for filter-pretraining)")(
+                        "nThreads", po::value<int>(), "Number of threads")(
+                        "b",po::value<double>()," Robust constant");
 
-        po::variables_map vm;
-        po::store(po::parse_command_line(ac, av, desc), vm);
-        po::notify(vm);
+                po::variables_map vm;
+                po::store(po::parse_command_line(ac, av, desc), vm);
+                po::notify(vm);
 
-        if (vm.count("help")) {
-            cout << desc << "\n";
-            return 0;
+                if (vm.count("help")) {
+                        cout << desc << "\n";
+                        return 0;
+                }
+
+                std::string datasetSaveLocation = "";
+                std::string permamentSaveLoation = "";
+                int index = 0;
+                int nThreads = 0;
+
+                double b=0;
+
+                if (vm.count("tmpSaveLocation")) {
+                        cout << "Temporary save Location is: " << vm["tmpSaveLocation"].as<std::string>() << ".\n";
+                        datasetSaveLocation = vm["tmpSaveLocation"].as<std::string>();
+                }
+
+                if (vm.count("index")) {
+                        cout << "Index of experiments: " << vm["index"].as<int>() << ".\n";
+                        index = vm["index"].as<int>();
+                }
+
+                if (vm.count("nThreads")) {
+                        cout << "Number of threads is: " << vm["nThreads"].as<int>() << ".\n";
+                        nThreads = vm["nThreads"].as<int>();
+                }
+
+                if (vm.count("b")) {
+                        cout << "Robust constant is is: " << vm["b"].as<double>() << ".\n";
+                        b = vm["b"].as<double>();
+                }
+
+
+                //experimentForFilterAndPretraining(nThreads, datasetSaveLocation, index);
+                experimentSensitivityToRobustConstant(nThreads,datasetSaveLocation,b);
+        }
+        catch (exception &e) {
+                cerr << "error: " << e.what() << "\n";
+                return 1;
+        }
+        catch (...) {
+                cerr << "Exception of unknown type!\n";
         }
 
-        std::string datasetSaveLocation = "";
-        std::string permamentSaveLoation = "";
-        std::string pythonScriptLocation = "";
-        int nThreads = 0;
-
-        if (vm.count("tmpSaveLocation")) {
-            cout << "Temporary save Location is: " << vm["tmpSaveLocation"].as<std::string>() << ".\n";
-            datasetSaveLocation = vm["tmpSaveLocation"].as<std::string>();
-        }
-
-        if (vm.count("pythonScriptLocation")) {
-            cout << "Python script is located at: " << vm["pythonScriptLocation"].as<std::string>() << ".\n";
-            pythonScriptLocation = vm["pythonScriptLocation"].as<std::string>();
-        }
-        if (vm.count("permSaveLocation")) {
-            cout << "Permanent save location is: " << vm["permSaveLocation"].as<std::string>() << ".\n";
-            permamentSaveLoation = vm["permSaveLocation"].as<std::string>();
-        }
-
-        if (vm.count("nThreads")) {
-            cout << "Number of threads is: " << vm["nThreads"].as<int>() << ".\n";
-            nThreads = vm["nThreads"].as<int>();
-        }
-
-
-
-        experimentForFilterAndPretraining(nThreads, datasetSaveLocation, permamentSaveLoation, pythonScriptLocation);
-        // Now, run everything
-        //std::string datasetSaveLocation = "/udrive/student/ibogun2010/Research/Results";
-        //std::string permamentSaveLoation = "/udrive/student/ibogun2010/Research/Code/Antrack/python/Evaluation/Runs/";
-        //std::string pythonSaveLocation = "/udrive/student/ibogun2010/Research/Code/Antrack/python/Evaluation/generatePythonFilePickle.py";
-
-    }
-    catch (exception &e) {
-        cerr << "error: " << e.what() << "\n";
-        return 1;
-    }
-    catch (...) {
-        cerr << "Exception of unknown type!\n";
-    }
-
-    return 0;
+        return 0;
 }

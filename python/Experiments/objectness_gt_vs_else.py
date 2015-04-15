@@ -85,6 +85,7 @@ class VideoResult(object):
         Y.append(int(y))
 
 
+
         for i in range(1,len(nRadialValues)):
             for j in range(1,len(nAngularValues)):
                 bb_x=center_x+(nRadialValues[i]*np.cos(nAngularValues[j]))-halfWidth
@@ -129,11 +130,16 @@ if __name__ == "__main__":
     wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
     datasetType = 'wu2013'
 
-    dataset = Dataset(wu2013GroundTruth, datasetType)
-    d = dataset.dictData
-
-    wholeDataset=DatasetResult(d)
-    wholeDataset.process()
-
+    # dataset = Dataset(wu2013GroundTruth, datasetType)
+    # d = dataset.dictData
+    #
+    # wholeDataset=DatasetResult(d)
+    # wholeDataset.process()
+    #
     saveName='objectness_gt_vs_else_pickle.p'
-    savePickle(wholeDataset,saveName)
+    # savePickle(wholeDataset,saveName)
+
+
+    wholeDataset=loadPickle(saveName)
+
+    # This experiment shows how does objecteness differs as a function of distance from the object center
