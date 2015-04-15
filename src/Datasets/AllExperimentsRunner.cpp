@@ -62,7 +62,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::
                               bool scalePrior,
                               std::string
                               kernel,
-                              std::string feature, double b) {
+                              std::string feature, double b, int P, int R, int Q) {
 
 // run jobs from index 'from' to the index 'to', make sure to create proper saveName
 
@@ -88,7 +88,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::
 
         ExperimentRunner::runOneThreadOneJob(frame, bb, frameNames, finalFilename, saveResults, pretraining, useFilter,
                                              useEdgeDensity,
-                                             useStraddling, scalePrior, kernel, feature,b
+                                             useStraddling, scalePrior, kernel, feature,b,P,R,Q
         );
     }
 
@@ -96,7 +96,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::
 
 void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveResults, bool pretraining, bool useFilter,
                                bool useEdgeDensity, bool useStraddling, bool scalePrior, std::string kernel,
-                               std::string feature, double b) {
+                               std::string feature, double b, int P, int R, int Q) {
 
     //ExperimentDefault ed;
     ExperimentSpatialRobustness es;
@@ -224,7 +224,8 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveRe
                 std::ref(bounds[i]), std::ref(bounds[i + 1]),
                 std::ref(saveResults), std::ref(pretraining),
                 std::ref(useFilter), std::ref(useEdgeDensity),
-                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),std::ref(b)));
+                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),std::ref(b),std::ref(P),
+        std::ref(R),std::ref(Q)));
     }
 
     for (auto &t : th) {

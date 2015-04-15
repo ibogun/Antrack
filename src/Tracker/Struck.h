@@ -173,6 +173,8 @@ public:
 
     void initialize(cv::Mat& image,cv::Rect& location);
 
+    void initialize(cv::Mat& image, cv::Rect& location, double b, int P, int R, int Q);
+
     void allocateCanvas(cv::Mat&);
 
     cv::Rect track(cv::Mat& image);

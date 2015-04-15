@@ -281,7 +281,7 @@ int main(int argc, const char * argv[]) {
 
     int display=2;
 
-    double b=10;
+    double b=4;
 
 
     runner.runExample(vidIndex,0,"test.dat",false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature,b,display);

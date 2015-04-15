@@ -9,8 +9,8 @@
 #include "Struck.h"
 #include <math.h>
 
-void Struck::initialize(cv::Mat &image, cv::Rect &location) {
 
+void Struck::initialize(cv::Mat &image, cv::Rect &location, double b, int P, int R, int Q) {
     srand(this->seed);
     // set dimensions of the sampler
 
@@ -46,11 +46,10 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location) {
         x_k(2) = lastLocation.x + lastLocation.width;
         x_k(3) = lastLocation.y + lastLocation.height;
 
-        int robustConstant_b = this->filter.getGivenB();
+        int robustConstant_b = b;
 
-        int R_cov = 5;
-        int Q_cov = 5;
-        int P = 3;
+        int R_cov = R;
+        int Q_cov = Q;
 
         // FIXME: use to be this way
 //        filter = KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(
@@ -130,6 +129,17 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location) {
     if (pretraining) {
         this->preTraining(image, location);
     }
+
+}
+
+void Struck::initialize(cv::Mat &image, cv::Rect &location) {
+
+    double b=10;
+    int P=3;
+    int Q=5;
+    int R=5;
+
+    this->initialize(image,location,b,P,Q,R);
 }
 
 /*
