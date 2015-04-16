@@ -121,97 +121,8 @@ string make_uuid() {
 }
 
 
-void experimentForFilter(int n_threads, std::string datasetTempSaveLocation,std::string prefix,
-                         std::string kernel, std::string feature) {
-    // Now, run everything
-
-
-    double b=10;
-    int P=3;
-    int R=5;
-    int Q=5;
-    bool useEdgeDensity = false;
-    bool useStraddling = false;
-    bool pretraining = false;
-    bool scalePrior = false;
-
-    std::vector<std::string> kernels;
-    std::vector<std::string> features;
-    std::vector<bool> filter_flags;
-
-
-    filter_flags.push_back(false);
-    filter_flags.push_back(true);
-
-    std::string trackerID = "";
-
-
-    for (int k = 0; k < filter_flags.size(); ++k) {
-
-
-        DataSetWu2013 *wu2013 = new DataSetWu2013;
-
-        std::vector<std::pair<std::string, std::vector<std::string> > > wuPrepared = wu2013->prepareDataset(
-                wu2013RootFolder);
-
-        bool useFilter = filter_flags[k];
-
-        std::stringstream s1;
-
-        s1 << prefix << feature << "_" << kernel;
-
-
-        s1 << "_f";
-
-        if (useFilter) {
-            s1 << "1";
-        } else {
-            s1 << "0";
-        }
-        trackerID = s1.str();
-        //std::string folderName = make_uuid();
-
-        std::cout << trackerID << std::endl;
-
-        // remote location
-        std::string datasetSaveLocation = datasetTempSaveLocation;
-
-        //std::string datasetSaveLocation="/Users/Ivan/Code/Tracking/Antrack/tmp";
-        std::string fullFolderName =
-                datasetSaveLocation + "/" + trackerID;
-
-        std::cout << "Enter tracker identifier: " << std::endl;
-
-        std::string trackerName = trackerID;
-
-        std::cout << "Tracker name entered is: " << trackerName
-        << std::endl;
-
-        if (!(boost::filesystem::exists(fullFolderName))) {
-
-            AllExperimentsRunner::createDirectory(fullFolderName);
-        }
-
-
-        wu2013->setRootFolder(wu2013RootFolder);
-        AllExperimentsRunner run(wu2013);
-
-
-        run.run(fullFolderName, n_threads, true, pretraining, useFilter, useEdgeDensity, useStraddling,
-                scalePrior,
-                kernel,
-                feature, b, P, R, Q);
-
-
-        delete wu2013;
-
-    }
-
-
-}
-
-void experimentSensitivityOtherParams(int n_threads, std::string datasetTempSaveLocation,std::string prefix,
-                                      std::string kernel, std::string feature, double b, int P, int Q, int R) {
+void experiment(int n_threads, std::string datasetTempSaveLocation,std::string prefix,
+                                      std::string kernel, std::string feature,bool useFilter, double b, int P, int Q, int R) {
     // Now, run everything
 
     bool useEdgeDensity = false;
@@ -229,7 +140,7 @@ void experimentSensitivityOtherParams(int n_threads, std::string datasetTempSave
             wu2013RootFolder);
 
     bool pretraining = false;
-    bool useFilter = true;
+
 
     std::stringstream s1;
 
@@ -281,89 +192,6 @@ void experimentSensitivityOtherParams(int n_threads, std::string datasetTempSave
 
 }
 
-void experimentSensitivityToParameters(int n_threads, std::string datasetTempSaveLocation, std::string prefix, double b,
-                                       int P, int R, int Q) {
-    // Now, run everything
-
-
-    bool useEdgeDensity = false;
-    bool useStraddling = false;
-
-    bool scalePrior = false;
-
-
-    //std::string prefix = "b="+std::to_string(b)+"_";
-    std::string trackerID = "";
-
-
-    std::string kernel = "int";
-    std::string feature = "hist";
-
-    DataSetWu2013 *wu2013 = new DataSetWu2013;
-
-    std::vector<std::pair<std::string, std::vector<std::string> > > wuPrepared = wu2013->prepareDataset(
-            wu2013RootFolder);
-
-    bool pretraining = false;
-    bool useFilter = true;
-
-    std::stringstream s1;
-
-    s1 << prefix << feature << "_" << kernel << "_" << "pre";
-
-    if (pretraining) {
-        s1 << "1";
-    } else {
-        s1 << "0";
-    }
-
-    s1 << "_f";
-
-    if (useFilter) {
-        s1 << "1";
-    } else {
-        s1 << "0";
-    }
-    trackerID = s1.str();
-    //std::string folderName = make_uuid();
-
-    std::cout << trackerID << std::endl;
-
-    // remote location
-    std::string datasetSaveLocation = datasetTempSaveLocation;
-
-    //std::string datasetSaveLocation="/Users/Ivan/Code/Tracking/Antrack/tmp";
-    std::string fullFolderName =
-            datasetSaveLocation + "/" + trackerID;
-
-    std::cout << "Enter tracker identifier: " << std::endl;
-
-    std::string trackerName = trackerID;
-
-    std::cout << "Tracker name entered is: " << trackerName
-    << std::endl;
-
-    if (!(boost::filesystem::exists(fullFolderName))) {
-
-        AllExperimentsRunner::createDirectory(fullFolderName);
-    }
-
-
-    wu2013->setRootFolder(wu2013RootFolder);
-    AllExperimentsRunner run(wu2013);
-
-
-    run.run(fullFolderName, n_threads, true, pretraining, useFilter, useEdgeDensity, useStraddling,
-            scalePrior,
-            kernel,
-            feature, b, P, R, Q);
-
-
-    delete wu2013;
-
-
-}
-
 
 int main(int ac, char *av[]) {
     using namespace std;
@@ -376,6 +204,7 @@ int main(int ac, char *av[]) {
                 "feature", po::value<std::string>(), "Feature (e.g. raw, hist, haar, hog)")(
                 "kernel", po::value<std::string>(), "Kernel (e.g. linear, gauss, int)")(
                 "nThreads", po::value<int>(), "Number of threads")(
+                "filter",po::value<bool>()," Filter 1-on, 0-off")(
                 "b", po::value<double>(), " Robust constant")(
                 "P", po::value<int>(), "P")(
                 "Q", po::value<int>(), "Q")(
@@ -401,10 +230,17 @@ int main(int ac, char *av[]) {
         int P = 3;
         int Q = 5;
         int R = 5;
+        bool filter;
 
         std::string feature = "raw";
         std::string kernel = "linear";
         std::string prefix = "ms";
+
+
+        if (vm.count("filter")) {
+            cout << "Filter is: " << vm["filter"].as<bool>() << ".\n";
+            filter = vm["filter"].as<bool>();
+        }
 
         if (vm.count("feature")) {
             cout << "Feature is: " << vm["feature"].as<std::string>() << ".\n";
@@ -451,10 +287,8 @@ int main(int ac, char *av[]) {
             b = vm["b"].as<double>();
         }
 
-
-        experimentForFilter(nThreads,datasetSaveLocation,prefix,kernel,feature);
-        experimentSensitivityOtherParams(nThreads,datasetSaveLocation,prefix,
-                kernel,feature,b,P,Q,R);
+        experiment(nThreads,datasetSaveLocation,prefix,
+                kernel,feature,filter,b,P,Q,R);
     }
     catch (exception &e) {
         cerr << "error: " << e.what() << "\n";

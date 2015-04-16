@@ -98,7 +98,20 @@
 int main( int argc, char** argv)
 {
 
-    Struck tracker=Struck::getTracker();
+    bool pretraining=false;
+    bool useFilter=true;
+    bool useEdgeDensity=false;
+    bool useStraddling=false;
+    bool scalePrior=false;
+
+    std::string kernelSTR="int";
+    std::string featureSTR="hist";
+    std::string note_="";
+
+    Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernelSTR,featureSTR,note_);
+    cv::Mat image = cv::imread(trax_image_get_path(img));
+
+    
     trax_image* img = NULL;
     trax_region* reg = NULL;
     trax_region* mem = NULL;
@@ -124,6 +137,17 @@ int main( int argc, char** argv)
             trax_region_get_rectangle(reg, &x, &y, &width, &height);
             rect.x = round(x); rect.y = round(y); rect.width = round(x + width) - rect.x; rect.height = round(y + height) - rect.y;
 
+            bool pretraining=false;
+            bool useFilter=true;
+            bool useEdgeDensity=false;
+            bool useStraddling=false;
+            bool scalePrior=false;
+
+            std::string kernelSTR="int";
+            std::string featureSTR="hist";
+            std::string note_="";
+
+            Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernelSTR,featureSTR,note_);
             cv::Mat image = cv::imread(trax_image_get_path(img));
 
             tracker.initialize(image, rect);
