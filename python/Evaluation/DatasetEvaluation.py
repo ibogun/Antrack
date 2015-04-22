@@ -241,6 +241,8 @@ class Experiment(object):
 
             video = m.group(2)
             #sequenceName=os.path.splitext(os.path.basename(fileNames))[0]
+
+            #print fileNames
             try:
                 boxes = np.loadtxt(fileNames, delimiter=',')
             except ValueError:

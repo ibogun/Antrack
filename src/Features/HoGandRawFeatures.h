@@ -29,6 +29,11 @@ public:
     int calculateFeatureDimension();
     
     std::string getInfo();
+
+    ~HoGandRawFeatures(){
+        delete rawFeatures;
+        delete d;
+    };
     
 };
 

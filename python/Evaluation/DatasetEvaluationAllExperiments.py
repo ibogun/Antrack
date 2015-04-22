@@ -28,6 +28,7 @@ class EvaluatorAllExperiments(object):
 
         for n in names:
 
+            print n
             m=r.match(n)
 
 
@@ -63,18 +64,18 @@ class EvaluatorAllExperiments(object):
         cm = plt.get_cmap('gist_rainbow')
 
         titleFontSize = 16;
-        headerFontSize = 14;
+        headerFontSize = 13;
         axisFontSize = 12;
         lineWidth = 1.8;
 
-        legendSize = 6;
+        legendSize = 9;
         names = list()
         plt.figure(figsize=(13, 9))
 
         evaluationTypes = ['default', 'SRE', 'TRE']
 
         trackerNames = self.experimentNames
-        labelsFontSize = 7
+        labelsFontSize = 11
         idx = 1
 
         import seaborn as sn
@@ -186,7 +187,7 @@ class EvaluatorAllExperiments(object):
         if savefilename == '':
             plt.show()
         else:
-            plt.savefig(savefilename)
+            plt.savefig(savefilename, dpi=1000)
 
 
 
@@ -283,7 +284,7 @@ class EvaluatorAllExperiments(object):
         axisFontSize = 12;
         lineWidth = 1.8;
 
-        legendSize = 6;
+        legendSize = 9;
 
         plt.figure(figsize=(13, 9))
 
@@ -414,11 +415,11 @@ class EvaluatorAllExperiments(object):
             for expName, experiment in run.data.iteritems():
 
 
-                x_p_var = np.zeros((n, 1))
-                y_p_var = np.zeros((n, 1))
+                x_p_var = np.zeros(n)
+                y_p_var = np.zeros(n)
 
-                x_s_var = np.zeros((n, 1))
-                y_s_var = np.zeros((n, 1))
+                x_s_var = np.zeros(n)
+                y_s_var = np.zeros(n)
 
                 averageP = 0
                 averageS = 0
@@ -434,11 +435,11 @@ class EvaluatorAllExperiments(object):
                                                                                experimentNumber=expRunIndex,
                                                                                n=n)
 
-                        x_p_var = x_p_var + x_pr
-                        y_p_var = y_p_var + y_pr
+                        x_p_var =np.add(x_p_var, x_pr)
+                        y_p_var = np.add(y_p_var,y_pr)
 
-                        x_s_var = x_s_var + x_s
-                        y_s_var = y_s_var + y_s
+                        x_s_var = np.add(x_s_var,x_s)
+                        y_s_var = np.add(y_s_var,y_s)
 
                         l = l + 1
 
@@ -623,7 +624,7 @@ class Evaluated(object):
 
 
 
-def createSavedEvaluations():
+def createSavedEvaluations(wildcard):
     wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
     wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
 
@@ -632,7 +633,6 @@ def createSavedEvaluations():
 
     datasetType = 'wu2013'
 
-    wildcard = "b"
 
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
@@ -645,18 +645,11 @@ def createSavedEvaluations():
         run = loadPickle(runName)
         names.append(runName)
         print runName
-        # run = run.data[experimentType]
         runs.append(run)
-
 
 
     evaluator = EvaluatorAllExperiments(dataset, runs, names)
 
-    saveFigureToFolder = '/Users/Ivan/Code/personal-website/Projects/Object_aware_tracking/images/multiScale/'
-
-    saveFormat = ['pdf']
-    successAndPrecision = 'SuccessAndPrecision_wu2013'
-    histograms = 'histogram_wu2013'
 
     strSave = './Results/'
 
@@ -667,7 +660,10 @@ if __name__ == "__main__":
 
     # if you want to evaluate and save evaluations ( do this first)
 
-    createSavedEvaluations();
+
+    wildcard = "r"
+    #createSavedEvaluations(wildcard);
+
 
     wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
     wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
@@ -681,16 +677,18 @@ if __name__ == "__main__":
     # trackerLabel="STR+f_hog"
 
     # wildcard = sys.argv[1]
-    wildcard = "ms_haar"
 
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
     runsNames = glob.glob('./Results/' + wildcard + '*.p')
 
+    #runsNames = ['SAMF', 'Kernelized_filter', 'fk_hist_int_f0', 'fk_hist_int_f1']
     runs = list()
     #
     names=list()
     for runName in runsNames:
+
+        #runName= './Results/' + runName + '.p'
         run = loadPickle(runName)
         names.append(runName)
         print runName
@@ -717,4 +715,4 @@ if __name__ == "__main__":
     #                                                    i,histogramPlot=saveFigureToFolder+histograms+'.'+
     #                                                                                i)
 
-    #evaluator.evaluateFromSave(runs)
+    evaluator.evaluateFromSave(runs)

@@ -349,11 +349,11 @@ def generateAllVizualiations():
     folderForGraphs='./Visualizations/'
     datasetType = 'wu2013'
     dataset = Dataset(wu2013GroundTruth, datasetType)
-    runsNames = glob.glob('./Runs/*.p')
+    runsNames = glob.glob('./Runs/SAMF.p')
 
     formatSave='pdf'
 
-    regexp=re.compile("(.*\/+)(\w+)(.p)")
+    regexp= re.compile("(.*\/)(.+)(.p)")
 
 
     for runName in runsNames:
@@ -363,8 +363,6 @@ def generateAllVizualiations():
         m=re.match(regexp,runName)
 
         name=m.group(2)
-        if name == "Kernelized_filter":
-            continue;
         print name
         run = loadPickle(runName)
         viz = VisualizeAllExperiments(dataset, run)

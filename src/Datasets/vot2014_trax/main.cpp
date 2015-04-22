@@ -91,96 +91,165 @@
 // POSIX
 #endif
 
+#include <boost/program_options.hpp>
 
+namespace po = boost::program_options;
 
 
 //#ifdef TRAX
-int main( int argc, char** argv)
+int main( int ac, char** av)
 {
 
-    bool pretraining=false;
-    bool useFilter=true;
-    bool useEdgeDensity=false;
-    bool useStraddling=false;
-    bool scalePrior=false;
 
-    std::string kernelSTR="int";
-    std::string featureSTR="hist";
-    std::string note_="";
 
-    Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernelSTR,featureSTR,note_);
-    cv::Mat image = cv::imread(trax_image_get_path(img));
+    namespace po = boost::program_options;
+    try {
 
-    
-    trax_image* img = NULL;
-    trax_region* reg = NULL;
-    trax_region* mem = NULL;
+        po::options_description desc("Allowed options");
+        desc.add_options()("help", "produce help message")(
+                "feature", po::value<std::string>(), "Feature (e.g. raw, hist, haar, hog)")(
+                "kernel", po::value<std::string>(), "Kernel (e.g. linear, gauss, int)")(
+                "filter",po::value<bool>()," Filter 1-on, 0-off")(
+                "b", po::value<double>(), " Robust constant")(
+                "P", po::value<int>(), "P")(
+                "Q", po::value<int>(), "Q")(
+                "R", po::value<int>(), "R");
 
-    trax_handle* trax;
-    trax_configuration config;
-    config.format_region = TRAX_REGION_RECTANGLE;
-    config.format_image = TRAX_IMAGE_PATH;
+        po::variables_map vm;
+        po::store(po::parse_command_line(ac, av, desc), vm);
+        po::notify(vm);
 
-    trax = trax_server_setup_standard(config, NULL);
+        if (vm.count("help")) {
+            cout << desc << "\n";
+            return 0;
+        }
 
-    bool run = true;
 
-    while(run)
-    {
+        double b = 10;
+        int P = 3;
+        int Q = 5;
+        int R = 5;
+        bool useFilter;
 
-        int tr = trax_server_wait(trax, &img, &reg, NULL);
+        std::string feature = "raw";
+        std::string kernel = "linear";
 
-        if (tr == TRAX_INITIALIZE) {
+        if (vm.count("filter")) {
+            cout << "Filter is: " << vm["filter"].as<bool>() << ".\n";
+            useFilter = vm["filter"].as<bool>();
+        }
 
-            cv::Rect rect;
-            float x, y, width, height;
-            trax_region_get_rectangle(reg, &x, &y, &width, &height);
-            rect.x = round(x); rect.y = round(y); rect.width = round(x + width) - rect.x; rect.height = round(y + height) - rect.y;
+        if (vm.count("feature")) {
+            cout << "Feature is: " << vm["feature"].as<std::string>() << ".\n";
+            feature = vm["feature"].as<std::string>();
+        }
 
-            bool pretraining=false;
-            bool useFilter=true;
-            bool useEdgeDensity=false;
-            bool useStraddling=false;
-            bool scalePrior=false;
+        if (vm.count("kernel")) {
+            cout << "Kernel is: " << vm["kernel"].as<std::string>() << ".\n";
+            kernel = vm["kernel"].as<std::string>();
+        }
 
-            std::string kernelSTR="int";
-            std::string featureSTR="hist";
-            std::string note_="";
+        if (vm.count("P")) {
+            cout << "P: " << vm["P"].as<int>() << ".\n";
+            P = vm["P"].as<int>();
+        }
 
-            Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernelSTR,featureSTR,note_);
-            cv::Mat image = cv::imread(trax_image_get_path(img));
+        if (vm.count("Q")) {
+            cout << "Q: " << vm["Q"].as<int>() << ".\n";
+            Q = vm["Q"].as<int>();
+        }
 
-            tracker.initialize(image, rect);
+        if (vm.count("R")) {
+            cout << "R: " << vm["R"].as<int>() << ".\n";
+            R = vm["R"].as<int>();
+        }
 
-            trax_server_reply(trax, reg, NULL);
+        if (vm.count("b")) {
+            cout << "Robust constant is is: " << vm["b"].as<double>() << ".\n";
+            b = vm["b"].as<double>();
+        }
 
-        } else if (tr == TRAX_FRAME) {
 
-            cv::Mat image = cv::imread(trax_image_get_path(img));
+        bool pretraining=false;
+        bool useEdgeDensity=false;
+        bool useStraddling=false;
+        bool scalePrior=false;
 
-            cv::Rect rect = tracker.track(image);
+        std::string note_="";
 
-            trax_region* result = trax_region_create_rectangle(rect.x, rect.y, rect.width, rect.height);
+        Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernel,feature,note_);
 
-            trax_server_reply(trax, result, NULL);
+        trax_image* img = NULL;
+        trax_region* reg = NULL;
+        trax_region* mem = NULL;
 
-            trax_region_release(&result);
+        trax_handle* trax;
+        trax_configuration config;
+        config.format_region = TRAX_REGION_RECTANGLE;
+        config.format_image = TRAX_IMAGE_PATH;
 
-        } else {
+        trax = trax_server_setup_standard(config, NULL);
 
-            run = false;
+        bool run = true;
+
+        while(run)
+        {
+
+            int tr = trax_server_wait(trax, &img, &reg, NULL);
+
+            if (tr == TRAX_INITIALIZE) {
+
+                cv::Rect rect;
+                float x, y, width, height;
+                trax_region_get_rectangle(reg, &x, &y, &width, &height);
+                rect.x = round(x); rect.y = round(y); rect.width = round(x + width) - rect.x; rect.height = round(y + height) - rect.y;
+
+//            Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernelSTR,featureSTR,note_);
+                cv::Mat image = cv::imread(trax_image_get_path(img));
+
+                tracker.initialize(image, rect,b,P,R,Q);
+
+                trax_server_reply(trax, reg, NULL);
+
+            } else if (tr == TRAX_FRAME) {
+
+                cv::Mat image = cv::imread(trax_image_get_path(img));
+
+                cv::Rect rect = tracker.track(image);
+
+                trax_region* result = trax_region_create_rectangle(rect.x, rect.y, rect.width, rect.height);
+
+                trax_server_reply(trax, result, NULL);
+
+                trax_region_release(&result);
+
+            } else {
+
+                run = false;
+
+            }
+
+            if (img) trax_image_release(&img);
+            if (reg) trax_region_release(&reg);
 
         }
 
-        if (img) trax_image_release(&img);
-        if (reg) trax_region_release(&reg);
+        if (mem) trax_region_release(&mem);
+
+        trax_cleanup(&trax);
+
+        return 0;
 
     }
+    catch (exception &e) {
+        cerr << "error: " << e.what() << "\n";
+        return 1;
+    }
+    catch (...) {
+        cerr << "Exception of unknown type!\n";
+    }
 
-    if (mem) trax_region_release(&mem);
 
-    trax_cleanup(&trax);
 
-    return 0;
 
 }

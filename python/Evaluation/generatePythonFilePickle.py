@@ -1,5 +1,5 @@
 __author__ = 'Ivan'
-
+import traceback
 import sys, getopt,os
 from DatasetEvaluation import Experiment,savePickle,AllExperiments
 
@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     resultsPath="/Users/Ivan/Files/Results/Tracking/wu2013/Results/"
 
-    folderNameStarsWith='b='
+    folderNameStarsWith='r'
 
 
 
@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
 
     subfolders = [x for x in subfolders if (((not (x.startswith('.'))) and (x.startswith(folderNameStarsWith))))]
-    #subfolders=['Kernelized_filter']
+    #subfolders=['SAMF']
     for subfolder in subfolders:
         path= "/Users/Ivan/Files/Results/Tracking/wu2013/Results/"+subfolder+"/"
         type='wu2013'
@@ -58,4 +58,5 @@ if __name__ == "__main__":
             print path
             generatePickleFromCommandLine(path,type,label, outputPath)
         except Exception:
+            traceback.print_exc()
             print " Result for "+subfolder+" are not ready"

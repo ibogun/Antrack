@@ -12,6 +12,8 @@
 #include <algorithm>
 
 
+#include "Features/HoG.h"
+
 #include "Tracker/LocationSampler.h"
 #include "Tracker/OLaRank_old.h"
 #include "Tracker/Struck.h"
@@ -33,13 +35,13 @@
 #include <fstream>
 
 
-
 #ifdef _WIN32
 //define something for Windows (32-bit and 64-bit, this part is common)
 #ifdef _WIN64
 //define something for Windows (64-bit only)
 #endif
 #elif __APPLE__
+
 #include "TargetConditionals.h"
 
 #define NUM_THREADS         16
@@ -86,49 +88,42 @@
 #endif
 
 
-
-
-
-void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_images,Dataset* dataset,
-                             int from, int to,std::string saveFolder, bool saveResults, int nFrames){
-
-
-
+void runTrackerOnDatasetPart(vector<pair<string, vector<string>>> &video_gt_images, Dataset *dataset,
+                             int from, int to, std::string saveFolder, bool saveResults, int nFrames) {
 
 
     std::time_t t1 = std::time(0);
 
     int frameNumber = 0;
     // paralelize this loop
-    for (int videoNumber=from; videoNumber<to; videoNumber++) {
-        Struck tracker=Struck::getTracker();
-         tracker.display=0;
-        pair<string, vector<string>> gt_images=video_gt_images[videoNumber];
-        
-        std::cout<<gt_images.first<<std::endl;
+    for (int videoNumber = from; videoNumber < to; videoNumber++) {
+        Struck tracker = Struck::getTracker();
+        tracker.display = 0;
+        pair<string, vector<string>> gt_images = video_gt_images[videoNumber];
 
-        vector<cv::Rect> groundTruth=dataset->readGroundTruth(gt_images.first);
+        std::cout << gt_images.first << std::endl;
 
-        frameNumber+=gt_images.second.size();
-        cv::Mat image=cv::imread(gt_images.second[0]);
+        vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
+
+        frameNumber += gt_images.second.size();
+        cv::Mat image = cv::imread(gt_images.second[0]);
 
 
         tracker.initialize(image, groundTruth[0]);
 
 
-        nFrames=MIN(nFrames,gt_images.second.size());
+        nFrames = MIN(nFrames, gt_images.second.size());
 
-        for (int i=1; i<nFrames; i++) {
+        for (int i = 1; i < nFrames; i++) {
 
-            cv::Mat image=cv::imread(gt_images.second[i]);
+            cv::Mat image = cv::imread(gt_images.second[i]);
 
 
             tracker.track(image);
         }
 
         if (saveResults) {
-            std::string saveFileName=saveFolder+"/"+dataset->videos[videoNumber]+".dat";
-
+            std::string saveFileName = saveFolder + "/" + dataset->videos[videoNumber] + ".dat";
 
 
             tracker.saveResults(saveFileName);
@@ -138,8 +133,8 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
 
         r.evaluate(groundTruth, tracker.boundingBoxes);
 
-        std::cout<<dataset->videos[videoNumber]<<std::endl;
-        std::cout<<r<<std::endl;
+        std::cout << dataset->videos[videoNumber] << std::endl;
+        std::cout << r << std::endl;
 
         //tracker.reset();
 
@@ -147,73 +142,75 @@ void runTrackerOnDatasetPart(vector<pair<string, vector<string>>>& video_gt_imag
     }
 
     std::time_t t2 = std::time(0);
-    std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
+    std::cout << "Frames per second: " << frameNumber / (1.0 * (t2 - t1)) << std::endl;
     //std::cout<<"No threads: "<<(t2-t1)<<std::endl;
 }
 
 
-vector<EvaluationRun> applyTrackerOnDataset(Dataset* dataset, std::string rootFolder,
-                                             std::string saveFolder,int frames=10){
+vector<EvaluationRun> applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
+                                            std::string saveFolder, int frames = 10) {
 
     vector<EvaluationRun> results;
 
-    vector<pair<string, vector<string>>> video_gt_images=dataset->prepareDataset(rootFolder);
+    vector<pair<string, vector<string>>> video_gt_images = dataset->prepareDataset(rootFolder);
 
     std::time_t t1 = std::time(0);
 
-    #pragma omp parallel for
-    for (int i=0; i<video_gt_images.size(); i++) {
-        std::string feature="hist";
-        std::string kernel="int";
-        
-        Struck tracker=Struck::getTracker(true,true,true,true,false,kernel,feature);
-        
-        tracker.display=0;
-        int n=MIN(frames,video_gt_images[i].second.size());
-        EvaluationRun r= tracker.applyTrackerOnVideoWithinRange(dataset, rootFolder,saveFolder, i, 0, n);
+#pragma omp parallel for
+    for (int i = 0; i < video_gt_images.size(); i++) {
+        std::string feature = "hist";
+        std::string kernel = "int";
+
+        Struck tracker = Struck::getTracker(true, true, true, true, false, kernel, feature);
+
+        tracker.display = 0;
+        int n = MIN(frames, video_gt_images[i].second.size());
+        EvaluationRun r = tracker.applyTrackerOnVideoWithinRange(dataset, rootFolder, saveFolder, i, 0, n);
 
         results.push_back(r);
     }
 
     std::time_t t2 = std::time(0);
     //std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
-    std::cout<<"Time with threads: "<<(t2-t1)<<std::endl;
+    std::cout << "Time with threads: " << (t2 - t1) << std::endl;
 
 
     return results;
 }
 
 
-
-void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string saveFolder, bool saveResults,int n_threads, int nFrames=5000){
+void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string saveFolder, bool saveResults,
+                           int n_threads, int nFrames = 5000) {
 
     using namespace std;
 
-    vector<pair<string, vector<string>>> video_gt_images=dataset->prepareDataset(rootFolder);
+    vector<pair<string, vector<string>>> video_gt_images = dataset->prepareDataset(rootFolder);
 
     std::time_t t1 = std::time(0);
 
 
     std::vector<std::thread> th;
 
-    arma::rowvec bounds=arma::linspace<rowvec>(0, video_gt_images.size(),MIN(n_threads,video_gt_images.size()));
+    arma::rowvec bounds = arma::linspace<rowvec>(0, video_gt_images.size(), MIN(n_threads, video_gt_images.size()));
 
-    bounds=arma::round(bounds);
+    bounds = arma::round(bounds);
 
-    for (int i=0; i<n_threads; i++) {
-        th.push_back(std::thread(runTrackerOnDatasetPart,std::ref(video_gt_images),std::ref(dataset),std::ref(bounds[i]),std::ref(bounds[i+1]),std::ref(saveFolder),std::ref(saveResults),std::ref(nFrames)));
+    for (int i = 0; i < n_threads; i++) {
+        th.push_back(
+                std::thread(runTrackerOnDatasetPart, std::ref(video_gt_images), std::ref(dataset), std::ref(bounds[i]),
+                            std::ref(bounds[i + 1]), std::ref(saveFolder), std::ref(saveResults), std::ref(nFrames)));
     }
 
-    for(auto &t : th){
+    for (auto &t : th) {
         t.join();
     }
 
 
     std::time_t t2 = std::time(0);
     //std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
-    std::cout<<"Time with threads: "<<(t2-t1)<<std::endl;
+    std::cout << "Time with threads: " << (t2 - t1) << std::endl;
 
-    std::ofstream out(saveFolder+"/"+"tracker_info.txt");
+    std::ofstream out(saveFolder + "/" + "tracker_info.txt");
     out << Struck::getTracker();
     out.close();
 
@@ -221,9 +218,9 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string
 }
 
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char *argv[]) {
 
-    DataSetWu2013* wu2013=new DataSetWu2013;
+    DataSetWu2013 *wu2013 = new DataSetWu2013;
 
     wu2013->setRootFolder(wu2013RootFolder);
 
@@ -231,38 +228,35 @@ int main(int argc, const char * argv[]) {
     //
     //DatasetVOT2014* vot2014=new DatasetVOT2014;
 
-   // std::string wuName="/udrive/student/ibogun2010/Research/Data/Tracking_benchmark/";
+    // std::string wuName="/udrive/student/ibogun2010/Research/Data/Tracking_benchmark/";
 
 
 
     //std::vector<std::pair<std::string, std::vector<std::string>>> votPrepared=vot2014->prepareDataset(vot2014RootFolder);
-    std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared=wu2013->prepareDataset(wu2013RootFolder);
-    
-    
-    std::string feature="hist";
-    std::string kernel="int";
-    
-    bool pretraining=false;
-    bool filter= true;
-    bool straddling=false;
-    bool edgeness=false;
-    bool spatialPrior=false;
-
-    Struck tracker=Struck::getTracker(pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
+    std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared = wu2013->prepareDataset(wu2013RootFolder);
 
 
-    //vot2014->showVideo(vot2014RootFolder,0);
-    int frames=100;
+    std::string feature = "hog";
+    std::string kernel = "linear";
+
+    bool pretraining = false;
+    bool filter = true;
+    bool straddling = false;
+    bool edgeness = false;
+    bool spatialPrior = false;
+
+    Struck tracker = Struck::getTracker(pretraining, filter, edgeness, straddling, spatialPrior, kernel, feature);
 
 
-    //applyTrackerOnDataset(wu2013, wu2013RootFolder, wu2013SaveFolder,true,n_threads,frames);
+    int frames = 100;
 
-    std::string vidName="basketball";
-    int vidIndex=wu2013->vidToIndex.at(vidName);
+
+    std::string vidName = "basketball";
+    int vidIndex = wu2013->vidToIndex.at(vidName);
     //tracker.display=0;
 
-    
-    tracker.display=3;
+
+    tracker.display = 3;
 
     vector<pair<string, vector<string>>> video_gt_images =
             wu2013->prepareDataset(wu2013RootFolder);
@@ -272,19 +266,80 @@ int main(int argc, const char * argv[]) {
     vector<cv::Rect> groundTruth = wu2013->readGroundTruth(gt_images.first);
 
 
-    ExperimentTemporalRobustness* et=new ExperimentTemporalRobustness;
-    ExperimentSpatialRobustness* es=new ExperimentSpatialRobustness;
-    ExperimentRunner runner(es,wu2013);
+    ExperimentTemporalRobustness *et = new ExperimentTemporalRobustness;
+    ExperimentSpatialRobustness *es = new ExperimentSpatialRobustness;
+    ExperimentRunner runner(es, wu2013);
 
     AllExperimentsRunner run(wu2013);
 
 
-    int display=2;
+    int display = 2;
 
-    double b=4;
+    double b = 10;
 
 
-    runner.runExample(vidIndex,0,"test.dat",false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature,b,display);
+    HoG hog(cv::Size(64, 64));
+
+
+    cv::Size winSize(64,64);
+    cv::Size blockSize(32, 32);
+    cv::Size cellSize(8, 8);
+    cv::Size blockStride(16, 16);
+    int nBins = 6;
+
+    cv::HOGDescriptor hogg(winSize, blockSize, blockStride, cellSize, nBins);
+
+
+    std::cout << " HoG feature size: " <<
+    nBins * (blockSize.width / cellSize.width) * (blockSize.height / cellSize.height) *
+    ((winSize.width - blockSize.width) / blockStride.width + 1) *
+    ((winSize.height - blockSize.height) / blockStride.height + 1)<<std::endl;
+
+
+
+    std::vector<float> descriptorsValues;
+    std::vector<cv::Point> points;
+
+    clock_t t1,t2;
+    t1=clock();
+
+    for (int j = 0; j < 25; ++j) {
+        cv::Mat im = cv::imread(gt_images.second[j]);
+
+        cv::resize(im,im,cv::Size(200,200));
+
+        //hogg.compute(im,descriptorsValues);
+
+
+
+
+        std::cout<<"Image sizes: "<<im.rows<<" "<<im.cols<<std::endl;
+        hogg.compute(im, descriptorsValues,cv::Size(2,2),cv::Size(0,0),points);
+
+        //hogg.compute(im,descriptorsValues,)
+        std::cout<<cv::Size()<<std::endl;
+
+        std::cout<<"Descriptor size: "<<descriptorsValues.size()<<std::endl;
+
+        std::cout<<"Points length: "<<points.size()<<std::endl;
+        //std::cout<<points[0].x<<" "<<points[1]<<std::endl;
+
+//        hog.prepareImage(&im);
+//
+//        cv::Mat hogvizual = hog.get_hogdescriptor_visual_image(im, descriptorsValues, winSize, cellSize, 1, 2.0);
+//
+//        cv::imshow("test", hogvizual);
+//        cv::waitKey();
+//        cv::destroyAllWindows();
+    }
+
+
+    t2=clock();
+    double timeSec = (t2 - t1) / static_cast<double>( CLOCKS_PER_SEC );
+
+    std::cout<<"Time difference: "<<timeSec<<std::endl;
+
+    //runner.runExample(vidIndex,0,"test.dat",false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature,b,display);
     //run.run(wu2013SaveFolder,3,true,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
     //runner.run(wu2013SaveFolder,1,false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
 
@@ -294,7 +349,7 @@ int main(int argc, const char * argv[]) {
     delete wu2013;
 
 
-     //   e_s.showBoxes(wu2013,2);
+    //   e_s.showBoxes(wu2013,2);
 
     //EvaluationRun run= tracker.applyTrackerOnVideoWithinRange(wu2013, wu2013RootFolder,wu2013SaveFolder, vidIndex, 0, 900);
 

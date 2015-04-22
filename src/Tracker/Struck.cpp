@@ -51,7 +51,7 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location, double b, int P, int
         int R_cov = R;
         int Q_cov = Q;
 
-        // FIXME: use to be this way
+        // FIXME: used to be this way
 //        filter = KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(
 //                x_k, n, m, R_cov, Q_cov, P, robustConstant_b);
         filter = KalmanFilterGenerator::generateConstantVelocityFilter(

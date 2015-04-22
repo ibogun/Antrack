@@ -1,0 +1,1 @@
+rm struck_filter.*
