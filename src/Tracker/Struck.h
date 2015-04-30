@@ -30,6 +30,7 @@
 #include "../Features/Haar.h"
 #include "../Features/Histogram.h"
 #include "../Features/HoG.h"
+#include "../Features/HoG_PCA.h"
 #include "../Features/HoGandRawFeatures.h"
 #include "../Features/MultiFeature.h"
 

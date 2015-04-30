@@ -59,7 +59,15 @@ std::vector<cv::Rect> DatasetVOT2014::readGroundTruth(std::string fileName){
     
     for (int i=0; i<rotatedRects.size(); i++) {
         
-        cv::Rect r=rotatedRects[i].boundingRect();
+        //cv::Rect r=rotatedRects[i].boundingRect();
+
+        cv::Point2f center=rotatedRects[i].center;
+
+        cv::Point2f size=rotatedRects[i].size;
+
+        cv::Rect r(center.x-size.x/2.0,center.y-size.y/2,size.x,size.y);
+        //cv::Rect r(center.x-size.y/2.0,center.y-size.x/2,size.y,size.x);
+        //r=rotatedRects[i].boundingRect();
         gtRect.push_back(r);
         
     }

@@ -14,11 +14,30 @@
 
 class HoG : public Feature {
 
-    cv::Size size;
+    cv::Size winSize;
+    cv::Size blockSize;
+    cv::Size cellSize;
+    cv::Size blockStride;
+    int nBins;
 
     cv::HOGDescriptor *d;
 public:
-    HoG(cv::Size size_);
+
+
+    HoG(cv::Size winSize_,cv::Size blockSize_,
+        cv::Size cellSize_, cv::Size blockStride_, int nBins_){
+
+        this->winSize=winSize_;
+        this->blockSize=blockSize_;
+        this->cellSize=cellSize_;
+        this->blockStride=blockStride_;
+        this->nBins=nBins_;
+        cv::HOGDescriptor *d_ = new cv::HOGDescriptor(winSize, blockSize, blockStride, cellSize, nBins);
+
+        this->d = d_;
+    };
+
+    HoG();
 
     cv::Mat prepareImage(cv::Mat *imageIn);
 

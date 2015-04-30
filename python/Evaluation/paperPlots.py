@@ -282,7 +282,7 @@ def plotComparisonToOtherTrackers(dataset, saveFigureToFolders,save):
 
 
     # TODO: Add TLD tracker and, perhaps, SCM
-    runsNames = ['SAMF', 'Kernelized_filter', 'fk_hist_int_f0', 'fk_hist_int_f1']
+    runsNames = ['SAMF', 'Kernelized_filter', 'fk_hist_int_f0', 'fk_hist_int_f1','TLD']
     runs = list()
     #
     names = list()
@@ -302,7 +302,7 @@ def plotComparisonToOtherTrackers(dataset, saveFigureToFolders,save):
     evaluator = EvaluatorAllExperiments(dataset, list(), names)
 
     # saveFormat = ['png', 'pdf']
-    saveFormat = ['pdf']
+    saveFormat = ['eps']
     successAndPrecision = 'SuccessAndPrecision_wu2013'
     histograms = 'histogram_wu2013'
 
@@ -385,9 +385,9 @@ def main():
 
     paperPlot=PaperPlots(dataset,folder)
 
-    #plotComparisonToOtherTrackers(dataset,saveResultsFolder,save)
+    plotComparisonToOtherTrackers(dataset,saveResultsFolder,save)
     #plotFeatureKernel(paperPlot,saveResultsFolder,save)
-    plotSensitivity(paperPlot, baseLineRun,saveResultsFolder,save)
+    #plotSensitivity(paperPlot, baseLineRun,saveResultsFolder,save)
 
 
 if __name__ == "__main__":

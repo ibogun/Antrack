@@ -40,10 +40,10 @@ void ApproximateKernel::preprocess(std::vector<supportData *> &S,int B){
     }
     //FIXME: approximate kernel not working. Needs rework.
     //TODO: Needs testing. Behavior of the approximate kernel is not satisfactory. There are bugs
-    this->threshold=idx;
-    if (idx<=B/2) {
-        return;
-    }
+//    this->threshold=idx;
+//    if (idx<=B/2) {
+//        return;
+//    }
     
     preprocessMatrices(X, beta);
 }
@@ -93,9 +93,9 @@ arma::rowvec ApproximateKernel::predictAll(arma::mat &newX, std::vector<supportD
   
     this->preprocess(S,B);
     
-    if (this->threshold<=B/2) {
-        return this->intKernelFast->predictAll(newX, S, B);
-    }
+//    if (this->threshold<=B/2) {
+//        return this->kernel->predictAll(newX, S, B);
+//    }
     
     int nRows=newX.n_rows;
     arma::rowvec c(nRows,arma::fill::zeros);

@@ -20,7 +20,7 @@ class VisualizeExperiment(object):
         self.run=run
         # what for do we need the dataset?
 
-    def show(self,vidName,experimentRunNumber=0,delay=1):
+    def show(self,vidName,experimentType='SRE',experimentRunNumber=0,delay=1):
         """Show the movie
 
         Args:
@@ -31,7 +31,7 @@ class VisualizeExperiment(object):
         """
 
 
-        movie=self.getMovie(vidName, experimentRunNumber)
+        movie=self.getMovie(vidName, experimentType, experimentRunNumber)
 
         fig = plt.figure(figsize=(14, 9))
         gs = gridspec.GridSpec(1, 2, width_ratios=[3, 1])
@@ -49,7 +49,7 @@ class VisualizeExperiment(object):
 
         plt.subplot(gs[1])
 
-        (x_pr, y_pr, x_s, y_s) = self.precisionAndSuccessPlotData(vidName, n=1000)
+        (x_pr, y_pr, x_s, y_s) = self.precisionAndSuccessPlotData(vidName, experimentType, n=1000)
 
         cm = plt.get_cmap('gist_rainbow')
         NUM_COLORS = 2
@@ -72,9 +72,9 @@ class VisualizeExperiment(object):
             s = np.ma.round(s, 2)
 
             color = cm(1. * i / NUM_COLORS)
-            red_patch = mpatches.Patch(label=self.run.trackerLabel+'/precision' + ' [' + str(p) + ']',
+            red_patch = mpatches.Patch(label='precision' + ' [' + str(p) + ']',
                                        color=cm(1. * 2 / NUM_COLORS))
-            blue_path = mpatches.Patch(label=self.run.trackerLabel+'/success' + ' [' + str(s) + ']',
+            blue_path = mpatches.Patch(label='success' + ' [' + str(s) + ']',
                                        color=cm(1. * 1 / NUM_COLORS))
             handlesLegend.append(red_patch)
             handlesLegend.append(blue_path)
@@ -162,7 +162,7 @@ class VisualizeExperiment(object):
         # cv2.destroyAllWindows()
 
 
-    def precisionAndSuccessPlotData(self, vidName,experimentNumber=0,n=1000):
+    def precisionAndSuccessPlotData(self, vidName, experimentType,experimentNumber=0,n=1000):
         """Get the data necessary for plotting precision and recall
 
         Args:
@@ -174,10 +174,25 @@ class VisualizeExperiment(object):
 
         gt_data = [x for x in self.dataset.data if x[0] == vidName][0]
 
-        tracker_data = [x for x in self.run.data if x[0] == vidName][0]
+        tracker_data = [x for x in self.run.data[experimentType].data if x[0] == vidName][0]
 
         (x_pr, y_pr, x_s, y_s) = Evaluator.evaluateSingleVideo(tracker_data, gt_data,
                                                                experimentNumber=0)
+
+        for index in range(1,len(tracker_data[1])):
+            (x_pr1, y_pr1, x_s1, y_s1) = Evaluator.evaluateSingleVideo(tracker_data, gt_data,
+                                                                   experimentNumber=index)
+            x_pr= x_pr+x_pr1
+            y_pr=y_pr+y_pr1
+            x_s=x_s+x_s1
+            y_s=y_s+y_s1
+
+
+        x_pr=x_pr/float(len(tracker_data[1]))
+        y_pr = y_pr / float(len(tracker_data[1]))
+        x_s = x_s / float(len(tracker_data[1]))
+        y_s = y_s / float(len(tracker_data[1]))
+
 
         return (x_pr, y_pr, x_s, y_s)
 
@@ -379,7 +394,7 @@ class VisualizeExperiment(object):
 
         plt.show()
 
-    def getMovie(self,vidName,experimentRunNumber=0):
+    def getMovie(self,vidName, experimentType,experimentRunNumber=0):
         """ Creates a movie based on the tracking results
 
         Args:
@@ -399,7 +414,9 @@ class VisualizeExperiment(object):
         vidData_gt = [x for x in self.dataset.dictData if x['name'] == vidName][0]
 
 
-        vidData_tracker= [x for x in self.run.data if x[0]==vidName][0]
+        runData=self.run.data[experimentType]
+
+        vidData_tracker= [x for x in runData.data if x[0]==vidName][0]
 
         def getPointsFromRectangle(rect):
 
@@ -409,10 +426,47 @@ class VisualizeExperiment(object):
 
         boxes_gt=vidData_gt['boxes']
 
-        boxes_tracker=vidData_tracker[1][experimentRunNumber]
+        #boxes_tracker=vidData_tracker[1][experimentRunNumber]
 
+
+        if experimentType=='SRE':
+            colors= [[198, 151, 103],
+                     [181, 98, 208],
+                     [114, 209, 87],
+                     [156, 165, 202],
+                     [141, 206, 175],
+                     [69, 78, 79],
+                     [199, 86, 133],
+                     [209, 82, 57],
+                     [205, 196, 69],
+                     [91, 69, 127],
+                     [86, 112, 53],
+                     [106, 49, 43]];
+        else:
+            colors= [[59, 43, 47],
+                     [114, 217, 85],
+                     [202, 81, 205],
+                     [217, 133, 50],
+                     [106, 172, 201],
+                     [192, 210, 145],
+                     [202, 137, 125],
+                     [213, 73, 134],
+                     [201, 150, 200],
+                     [208, 68, 59],
+                     [207, 214, 70],
+                     [86, 139, 58],
+                     [117, 109, 203],
+                     [78, 84, 123],
+                     [103, 213, 175],
+                     [117, 61, 35],
+                     [77, 99, 71],
+                     [123, 52, 96],
+                     [171, 147, 66],
+                     [192, 197, 192]]
 
         movie=list()
+        cm = plt.get_cmap('gist_rainbow')
+        NUM_COLORS=len(vidData_tracker[1])
 
         for image,idx in zip(vidData_gt['images'],range(0,len(vidData_gt['images']))):
 
@@ -421,8 +475,9 @@ class VisualizeExperiment(object):
             (pt1,pt2)=getPointsFromRectangle(boxes_gt[idx])
             cv2.rectangle(I,pt1,pt2,color_GT,thickness=thickness_gt)
 
-            (pt1, pt2) = getPointsFromRectangle(boxes_tracker[idx])
-            cv2.rectangle(I, pt1, pt2, color_tracker,thickness=thickness_tracker)
+            for boxes_tracker,index in zip(vidData_tracker[1],range(0,len(vidData_tracker[1]))):
+                (pt1, pt2) = getPointsFromRectangle(boxes_tracker[idx])
+                cv2.rectangle(I, pt1, pt2, tuple(colors[index]),thickness=thickness_tracker)
 
 
             movie.append(I)
@@ -438,20 +493,25 @@ def main(argv=None):
 
     datasetType = 'wu2013'
 
-    runName='./Runs/raw_test.p'
+
+
+    runName = './Runs/fk_hist_int_f1.p'
 
     run=loadPickle(runName)
 
     #print run
 
-    vidName='basketball'
+    experimenType='SRE'
+
+    #
+    vidName='jogging-2'
 
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
 
     viz=VisualizeExperiment(dataset,run)
 
-    #viz.show(vidName,100)
+    viz.show(vidName, experimenType)
 
     viz.barplot()
     #viz.precisionAndSuccessPlot(vidName)

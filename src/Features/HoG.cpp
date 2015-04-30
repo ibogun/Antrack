@@ -9,17 +9,22 @@
 #include "HoG.h"
 
 
-HoG::HoG(cv::Size size_) {
+HoG::HoG() {
 
     cv::Size winSize(64, 64);
     cv::Size blockSize(32, 32);
-    cv::Size cellSize(8, 8);
+    cv::Size cellSize(16, 8); // was 8
     cv::Size blockStride(16, 16);
-    int nBins = 6;
+    int nBins = 5;          // was 5
+
+    this->winSize=winSize;
+    this->blockSize=blockSize;
+    this->cellSize=cellSize;
+    this->blockStride=blockStride;
+    this->nBins=nBins;
 
     cv::HOGDescriptor *d_ = new cv::HOGDescriptor(winSize, blockSize, blockStride, cellSize, nBins);
 
-    this->size = size_;
     this->d = d_;
 }
 
@@ -43,8 +48,8 @@ cv::Mat HoG::prepareImage(cv::Mat *imageIn) {
 
 std::string HoG::getInfo() {
 
-    std::string r = "HoG feature with\nwidth/height      : " + std::to_string(this->size.width) + ", " +
-                    std::to_string(this->size.height) + "\n" + "Feature dimension : " +
+    std::string r = "HoG feature with\nwidth/height      : " + std::to_string(this->winSize.width) + ", " +
+                    std::to_string(this->winSize.height) + "\n" + "Feature dimension : " +
                     std::to_string(this->d->getDescriptorSize()) + "\n";
     return r;
 }
@@ -53,29 +58,150 @@ arma::mat HoG::calculateFeature(cv::Mat &processedImage, std::vector<cv::Rect> &
 
     using namespace cv;
 
-    //FIXME: Inefficient extraction of the HoG features - there should be a way to do it faster
-
     int m = this->calculateFeatureDimension();
     int n = (int) locationsInCropped.size();
 
+
+    // find maximum and minimum x and y values from cropped
+
     arma::mat x(n, m, arma::fill::zeros);
 
-    for (int i = 0; i < n; i++) {
 
-        cv::Mat cropped(processedImage, locationsInCropped[i]);
+    int max_x = locationsInCropped[0].x + locationsInCropped[0].width;
+    int max_y = locationsInCropped[0].y + locationsInCropped[0].height;
 
-        //std::cout<<i<<" "<<locationsInCropped[i]<<std::endl;
-        cv::resize(cropped, cropped, this->size);
+    int min_x = locationsInCropped[0].x;
+    int min_y = locationsInCropped[0].y;
 
-        vector<float> descriptorsValues;
+    for (int i = 1; i < locationsInCropped.size(); i++) {
 
-        this->d->compute(cropped, descriptorsValues);
+        min_x = MIN(min_x, locationsInCropped[i].x);
+        min_y = MIN(min_y, locationsInCropped[i].y);
+        max_x = MAX(max_x, locationsInCropped[i].x + locationsInCropped[i].width);
+        max_y = MAX(max_y, locationsInCropped[i].y + locationsInCropped[i].height);
+    }
+
+
+
+    cv::Rect cropped_rect(min_x,min_y,max_x-min_x,max_y-min_y);
+    cv::Mat cropped(processedImage,cropped_rect);
+
+//    cv::imshow("cropped",cropped);
+//    cv::waitKey();
+//    cv::destroyAllWindows();
+
+    // resize cropped image so that bounding box is the same size as the winSize of the hog
+
+    int from=0;
+    int to=0;
+
+    int width=locationsInCropped[from].width;
+    int height=locationsInCropped[from].height;
+
+    // TODO: this code has bugs
+    // FIXME: right some tests here
+    // for all boxes whose width is the same as width, height do
+
+    for (int k = 0; k < locationsInCropped.size(); ++k) {
+
+        if (locationsInCropped[k].width!=width || locationsInCropped[k].height!=height){
+
+            width=locationsInCropped[from].width;
+            height=locationsInCropped[from].height;
+
+            to=k-1;
+            // after everything is done
+
+
+            double alpha_x=((double)this->winSize.width)/(double)width;
+            double alpha_y=((double)this->winSize.height)/(double)height;
+
+
+            cv::Mat cropped_scale;
+
+            cv::resize(cropped,cropped_scale,cv::Size(),alpha_x,alpha_y);
+
+
+            std::vector<cv::Point> pts;
+            for (int j = from; j <=to; ++j) {
+
+                int x=locationsInCropped[j].x-min_x;
+                int y=locationsInCropped[j].y-min_y;
+
+                // resize
+
+                x= round(x*alpha_x);
+                y=round(y*alpha_y);
+
+                cv:Point pt(x,y);
+                pts.push_back(pt);
+            }
+
+            // now calculate HoG features
+            vector<float> descriptorValues;
+            this->d->compute(cropped_scale,descriptorValues,cv::Size(0,0),cv::Size(0,0),pts);
+
+
+
+            for (int i = from; i <=to; i++) {
+
+                for (int j = 0; j < m; j++) {
+                    x(i, j) = descriptorValues[j+(i-from)*m];
+                }
+
+            }
+
+            from=k;
+        }
+    }
+
+
+
+
+    width=locationsInCropped[from].width;
+    height=locationsInCropped[from].height;
+
+    // after everything is done
+
+
+    double alpha_x=((double)this->winSize.width)/(double)width;
+    double alpha_y=((double)this->winSize.height)/(double)height;
+
+
+    cv::Mat cropped_scale;
+
+    cv::resize(cropped,cropped_scale,cv::Size(),alpha_x,alpha_y);
+
+
+    std::vector<cv::Point> pts;
+    for (int j = from; j <=locationsInCropped.size(); ++j) {
+
+        int x=locationsInCropped[j].x-min_x;
+        int y=locationsInCropped[j].y-min_y;
+
+        // resize
+
+        x= round(x*alpha_x);
+        y=round(y*alpha_y);
+
+        cv::Point pt(x,y);
+        pts.push_back(pt);
+    }
+
+    // now calculate HoG features
+    vector<float> descriptorValues;
+    this->d->compute(cropped_scale,descriptorValues,cv::Size(0,0),cv::Size(0,0),pts);
+
+
+
+    for (int i = from; i <locationsInCropped.size(); i++) {
 
         for (int j = 0; j < m; j++) {
-            x(i, j) = descriptorsValues[j];
+            x(i, j) = descriptorValues[j+(i-from)*m];
         }
 
     }
+
 
 
     return x;

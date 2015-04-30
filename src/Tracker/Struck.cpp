@@ -160,11 +160,31 @@ cv::Rect Struck::track(cv::Mat &image) {
 
     this->samplerForSearch->sampleEquiDistantMultiScale(lastLocation,
                                                         locationsOnaGrid);
+
     // this->samplerForSearch->sampleEquiDistant(lastLocation, locationsOnaGrid);
     if (useFilter && !updateTracker) {
         this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn,
                                               locationsOnaGrid, this->R, 2);
     }
+
+    // if there are not enough support vectors -> do not sample on multiple scales
+
+//    if (this->olarank->S.size()!=this->olarank->B){
+//        int width=lastLocation.width;
+//        int height=lastLocation.height;
+//
+//        int cutOff=0;
+//        for (int k = 0; k < locationsOnaGrid.size(); ++k) {
+//            if (locationsOnaGrid[k].width!= width || locationsOnaGrid[k].height!=height){
+//                cutOff=k;
+//                break;
+//            }
+//        }
+//
+//        locationsOnaGrid.erase(locationsOnaGrid.begin()+cutOff,locationsOnaGrid
+//        .end());
+//    }
+
 
     cv::Mat processedImage = this->feature->prepareImage(&image);
 
@@ -484,7 +504,7 @@ cv::Rect Struck::track(cv::Mat &image) {
      Tracker Update
      **/
 
-    if (updateTracker) {
+    if (updateTracker && this->boundingBoxes.size() % 5==0) {
 
         // sample for updating the tracker
         std::vector<cv::Rect> locationsOnPolarPlane;
@@ -1223,10 +1243,10 @@ void Struck::preTraining(cv::Mat &image, const cv::Rect &location) {
     }
 
     int scales = 3;
-    double downsample = 1.04;
+    double downsample = 1.05;
 
-    int minScale = -5;
-    int maxScale = 7;
+    int minScale = -2;
+    int maxScale = 2;
 
     cv::Rect imageBox(0, 0, image.cols, image.rows);
 
@@ -1266,8 +1286,8 @@ void Struck::preTraining(cv::Mat &image, const cv::Rect &location) {
         }
     }
 
-    int maxTranslation = 10;
-    int translationStep = 5;
+    int maxTranslation = 4;
+    int translationStep = 2;
 
     // translation variations
     for (int dx = -maxTranslation; dx <= maxTranslation;
@@ -1275,18 +1295,20 @@ void Struck::preTraining(cv::Mat &image, const cv::Rect &location) {
         for (int dy = -maxTranslation; dy <= maxTranslation;
              dy = dy + translationStep) {
 
-            continue;
+            //continue;
 
             if (dx == 0 && dy == 0) {
                 continue;
             }
 
-            // continue;
 
-            // cout<<"Current (dx,dy): "<<dx<<" "<<dy<<endl;
             // get the bounding box
-            groundTruth.x = location.x + dx;
-            groundTruth.y = location.y + dy;
+
+            double center_dx=centerX+dx;
+            double center_dy=centerY+dy;
+
+            groundTruth.x = std::round(center_dx-(location.width/2.0));
+            groundTruth.y = std::round(center_dy-(location.height/2.0));
             groundTruth.width = location.width;
             groundTruth.height = location.height;
 
@@ -1372,18 +1394,51 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
     int nAngular_search = 30;
 
     // RawFeatures* features=new RawFeatures(16);
-    cv::Size size(64, 64);
+
 
     Feature *features;
     Kernel *kernel;
 
     if (featureSTR == "hog") {
-        features = new HoG(size);
+        features = new HoG();
     } else if (featureSTR == "hist") {
         features = new HistogramFeatures(4, 16);
     } else if (featureSTR == "haar"){
         features = new Haar(2);
-    } else {
+    } else if (featureSTR == "hogANDhist"){
+
+
+
+        Feature* f1;
+        Feature* f2;
+        f1=new HistogramFeatures(4,16);
+        std::cout<<f1->calculateFeatureDimension()<<std::endl;
+
+        cv::Size winSize(32, 32);
+        cv::Size blockSize(16, 16);
+        cv::Size cellSize(4, 4); // was 8
+        cv::Size blockStride(16, 16);
+        int nBins = 8;          // was 5
+
+        f2= new HoG(winSize,blockSize,cellSize,blockSize,nBins);
+
+        std::cout<<f2->calculateFeatureDimension()<<std::endl;
+
+
+        std::vector<Feature*> mf;
+        mf.push_back(f1);
+        mf.push_back(f2);
+
+
+
+
+        features = new MultiFeature(mf);
+    }
+
+
+
+
+    else {
         features = new RawFeatures(16);
     }
 
@@ -1391,6 +1446,11 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
         kernel = new IntersectionKernel_fast;
     } else if (kernelSTR == "gauss") {
         kernel = new RBFKernel(0.2);
+    }else if (kernelSTR == "approxGauss") {
+
+        RBFKernel* rbf=new RBFKernel(0.2);
+        int pts=25;
+        kernel = new ApproximateKernel(pts,rbf);
     } else {
         kernel = new LinearKernel;
     }
@@ -1429,7 +1489,7 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
     OLaRank_old *olarank = new OLaRank_old(kernel);
     olarank->setParameters(p, B, m, verbose);
 
-    int r_search = 30;
+    int r_search = 45;
     int r_update = 60;
 
     bool useObjectness = (useEdgeDensity | useStraddling);

@@ -17,21 +17,21 @@
 #include "armadillo"
 #include "Spline.h"
 class ApproximateKernel: public Kernel{
-    
-    IntersectionKernel* intKernelFast=new IntersectionKernel;
+
+    Kernel* kernel;
     int nPts;
     
     std::vector<Spline> splines;
     int threshold;
     
 public:
-    ApproximateKernel(int nPts_){ nPts=nPts_;};
+    ApproximateKernel(int nPts_,Kernel* k_){ nPts=nPts_;kernel=k_;};
     
     void preprocess(std::vector<supportData*>& S,int B);
     void preprocessMatrices(arma::mat& X, arma::colvec& beta);
 
     double calculate(arma::mat& x,int r1,arma::mat& x2,int r2){
-        return intKernelFast->calculate(x, r1, x2, r2);
+        return kernel->calculate(x, r1, x2, r2);
     };
     
     std::string getInfo(){
@@ -44,6 +44,11 @@ public:
     
     double predictOne(arma::rowvec& x);
     arma::rowvec predictAll(arma::mat& newX,std::vector<supportData*>& S,int B);
+
+
+    ~ApproximateKernel(){
+        delete kernel;
+    }
     
 };
 

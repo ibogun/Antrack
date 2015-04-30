@@ -1,1 +1,1 @@
-make -j30 -C ../
+make -j30 -C ../build

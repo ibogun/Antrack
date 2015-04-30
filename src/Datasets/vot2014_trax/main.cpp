@@ -47,49 +47,7 @@
 //#endif
 
 
-#ifdef _WIN32
-//define something for Windows (32-bit and 64-bit, this part is common)
-#ifdef _WIN64
-//define something for Windows (64-bit only)
-#endif
-#elif __APPLE__
-#include "TargetConditionals.h"
 
-#define NUM_THREADS         8
-
-#define wu2013RootFolder    "/Users/Ivan/Files/Data/Tracking_benchmark/"
-#define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
-#define vot2014RootFolder   "/Users/Ivan/Files/Data/vot2014/"
-
-#define wu2013SaveFolder    "/Users/Ivan/Files/Results/Tracking/wu2013"
-#define alovSaveFolder      "/Users/Ivan/Files/Results/Tracking/alov300"
-#define vot2014SaveFolder    "/Users/Ivan/Files/Results/Tracking/vot2014"
-
-#if TARGET_IPHONE_SIMULATOR
-// iOS Simulator
-#elif TARGET_OS_IPHONE
-// iOS device
-#elif TARGET_OS_MAC
-// Other kinds of Mac OS
-#else
-// Unsupported platform
-#endif
-#elif __linux
-// linux
-#define NUM_THREADS         8
-
-#define wu2013RootFolder    "/Users/Ivan/Files/Data/Tracking_benchmark/"
-#define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
-#define vot2014RootFolder   "/media/drive/UbuntuFiles/Datasets/Tracking/vot2014"
-
-#define wu2013SaveFolder    "/media/drive/UbuntuFiles/Results/wu2013"
-#define alovSaveFolder      "/media/drive/UbuntuFiles/Results/alov300"
-#define vot2014SaveFolder    "/media/drive/UbuntuFiles/Results/vot2014"
-#elif __unix // all unices not caught above
-// Unix
-#elif __posix
-// POSIX
-#endif
 
 #include <boost/program_options.hpp>
 
@@ -185,7 +143,8 @@ int main( int ac, char** av)
 
         trax_handle* trax;
         trax_configuration config;
-        config.format_region = TRAX_REGION_RECTANGLE;
+        config.format_region = TRAX_REGION_POLYGON;
+                //TRAX_REGION_RECTANGLE;
         config.format_image = TRAX_IMAGE_PATH;
 
         trax = trax_server_setup_standard(config, NULL);
@@ -201,12 +160,49 @@ int main( int ac, char** av)
 
                 cv::Rect rect;
                 float x, y, width, height;
-                trax_region_get_rectangle(reg, &x, &y, &width, &height);
-                rect.x = round(x); rect.y = round(y); rect.width = round(x + width) - rect.x; rect.height = round(y + height) - rect.y;
+                //trax_region_get_rectangle(reg, &x, &y, &width, &height);
+
+
+                float center_x=0;
+                float center_y=0;
+
+                float left_x,right_x,bottom_y,top_y;
+                for (int j = 0; j < 4; ++j) {
+                    float x,y;
+
+                    trax_region_get_polygon_point(reg,j,&x,&y);
+
+                    center_x+=x;
+                    center_y+=y;
+
+                    if (j==0){
+                        left_x=x;
+                        top_y=y;
+                    }
+
+                    if (j==3){
+                        right_x=x;
+                    }
+
+                    if (j==2){
+                        bottom_y=y;
+                    }
+                }
+
+                center_x=center_x/4;
+                center_y=center_y/4;
+
+                width=abs(right_x-left_x);
+                height=abs(bottom_y-top_y);
+
+                rect.x=round(center_x-width/2);
+                rect.y=round(center_y-height/2);
+                rect.width=round(width);
+                rect.height=round(height);
+                //rect.x = round(x); rect.y = round(y); rect.width = round(x + width) - rect.x; rect.height = round(y + height) - rect.y;
 
 //            Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernelSTR,featureSTR,note_);
                 cv::Mat image = cv::imread(trax_image_get_path(img));
-
                 tracker.initialize(image, rect,b,P,R,Q);
 
                 trax_server_reply(trax, reg, NULL);

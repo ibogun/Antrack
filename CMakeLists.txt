@@ -7,6 +7,12 @@ option(experiments "Build all experiments." OFF) # Makes boolean 'test' availabl
 
 option(python "Build python wrappers." OFF)
 
+
+
+
+
+
+
 option(parallel "Build parallel dataset evaluation." OFF)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)

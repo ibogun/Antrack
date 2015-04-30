@@ -23,7 +23,7 @@ public:
              bool scalePrior,
              std::string kernel, std::string feature, double b,int P, int R, int Q);
 
-    void runExample(int video,int startingFrame,
+    void runExample(int video,int startingFrame, int endingFrame,
                     std::string saveName,
                     bool saveResults,
                     bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,

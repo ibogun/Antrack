@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     resultsPath="/Users/Ivan/Files/Results/Tracking/wu2013/Results/"
 
-    folderNameStarsWith='r'
+    folderNameStarsWith='a28'
 
 
 
@@ -33,24 +33,6 @@ if __name__ == "__main__":
         path= "/Users/Ivan/Files/Results/Tracking/wu2013/Results/"+subfolder+"/"
         type='wu2013'
 
-
-        # p=['SRE','TRE']
-        #
-        # for pp in p:
-        #     fullPath=path+pp;
-        #
-        #     datFiles=glob.glob(fullPath+"/*.dat")
-        #
-        #     for file in datFiles:
-        #         print file
-        #
-        #         box= np.loadtxt(file, delimiter='\t')
-        #
-        #         box[:,0]=box[:,0]-box[:,2]/2.0
-        #         box[:, 1] = box[:, 1] - box[:, 3] / 2.0
-        #         box[:,[0,1,2,3]]=box[:,[1,0,3,2]]
-        #         box=np.round(box)
-        #         np.savetxt(file, box, delimiter=',')
         label= subfolder
         outputPath='/Users/Ivan/Code/Tracking/Antrack/python/Evaluation/Runs/'
         # #

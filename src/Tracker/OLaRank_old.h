@@ -69,7 +69,6 @@ private:
     Kernel* svm_kernel;
 
 
-    int B;
 
     // if true,
     int verbose;
@@ -77,13 +76,13 @@ private:
     // frameNumber - list of <frameNumber,value> pairs
     unordered_map<Key,arma::mat,KeyHash, KeyEqual> kern;
 
-    double decayFactor=0.5;
-    bool useVelocity=false;
 
     friend std::ostream& operator<<(std::ostream&, const OLaRank_old&);
 
 public:
     // size of the pattern
+
+    int B;
     int m;
     vector<supportData*> S;
 

@@ -15,7 +15,6 @@ import re
 from DatasetEvaluation import Dataset,loadPickle,AllExperiments,Evaluator,savePickle
 
 
-
 class EvaluatorAllExperiments(object):
     def __init__(self, dataset, listOfExperiments,names):
 
@@ -281,7 +280,7 @@ class EvaluatorAllExperiments(object):
 
         titleFontSize = 16;
         headerFontSize = 14;
-        axisFontSize = 12;
+        axisFontSize = 13;
         lineWidth = 1.8;
 
         legendSize = 9;
@@ -347,32 +346,32 @@ class EvaluatorAllExperiments(object):
                     handlesLegendSuccess.append(blue_path)
 
                 # plt.suptitle(expName, fontsize=titleFontSize)
-                plt.subplot(3, 2, idx)
+                ax = plt.subplot(3, 2, idx)
 
                 for i in range(0, len(self.experimentNames)):
-                    plt.plot(x_s[i], y_s[i], linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
+                    ax.plot(x_s[i], y_s[i], linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
 
-                if idx == 1:
-                    plt.title('success', fontsize=headerFontSize)
+                # if idx == 1:
+                #     plt.title('success', fontsize=headerFontSize)
 
-                plt.ylim([0, 1])
-                plt.xlim([0, 1])
+                ax.set_ylim([0, 1])
+                ax.set_xlim([0, 1])
 
                 if idx == 5:
-                    plt.xlabel('Overlap threshold', fontsize=axisFontSize)
+                    ax.set_xlabel('Overlap threshold', fontsize=axisFontSize)
 
-                plt.ylabel('Success rate', fontsize=axisFontSize)
+                ax.set_ylabel('Success rate', fontsize=axisFontSize)
 
                 idx = idx + 1
-                plt.legend(handles=handlesLegendSuccess, prop={'size': legendSize})
+                ax.legend(handles=handlesLegendSuccess, prop={'size': legendSize})
                 plt.grid(b=False)
-                plt.subplot(3, 2, idx)
+                ax = plt.subplot(3, 2, idx)
 
                 for i in range(0, len(self.experimentNames)):
-                    plt.plot(x_pr[i], y_pr[i], linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
+                    ax.plot(x_pr[i], y_pr[i], linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
                 # plt.plot(x_pr, y_pr, linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
-                plt.ylim([0, 1])
-                plt.xlim([-0.5, 51])
+                ax.set_ylim([0, 1])
+                ax.set_xlim([-0.5, 51])
 
                 if idx == 2:
                     plt.title("precision", fontsize=headerFontSize)
@@ -381,16 +380,16 @@ class EvaluatorAllExperiments(object):
                 if idx == 6:
                     plt.xlabel('Location error threshold', fontsize=axisFontSize)
 
-                plt.ylabel('Precision', fontsize=axisFontSize)
+                ax.set_ylabel('Precision', fontsize=axisFontSize)
 
                 ax2 = plt.twinx()
                 ax2.set_ylabel(evaluationTypes[index], color='black')
                 ax2.grid(b=False)
                 idx = idx + 1
-                plt.legend(handles=handlesLegendPrecision, prop={'size': legendSize}, loc=2)
+                ax.legend(handles=handlesLegendPrecision, prop={'size': legendSize}, loc=2)
 
-            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-
+            #plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+            #plt.set_tight_layout(True)
         if savefilename == '':
             plt.show()
         else:
@@ -606,6 +605,8 @@ class EvaluatorAllExperiments(object):
             completeMetricDict[r.name]=r.completeMetricDictEntry
 
         self.createPlot(plotMetricsDict, completeMetricDict, savefilename=successAndPrecisionPlotName)
+
+        print "Generating histogram plot..."
         self.createHistogramPlot(plotMetricsDict, completeMetricDict, savefilename=histogramPlot)
 
 class Evaluated(object):
@@ -661,8 +662,8 @@ if __name__ == "__main__":
     # if you want to evaluate and save evaluations ( do this first)
 
 
-    wildcard = "r"
-    #createSavedEvaluations(wildcard);
+    wildcard = "a28"
+    createSavedEvaluations(wildcard);
 
 
     wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
@@ -682,7 +683,7 @@ if __name__ == "__main__":
 
     runsNames = glob.glob('./Results/' + wildcard + '*.p')
 
-    #runsNames = ['SAMF', 'Kernelized_filter', 'fk_hist_int_f0', 'fk_hist_int_f1']
+    #runsNames = ['SAMF', 'Kernelized_filter', 'fk_hist_int_f0', 'fk_hist_int_f1','TLD']
     runs = list()
     #
     names=list()

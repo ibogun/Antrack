@@ -34,16 +34,26 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox
     std::string initalFrame = frameNames[startingFrame];
     cv::Mat im = cv::imread(initalFrame);
 
+
+
     if (startingFrame > 0) {
         backwardTracker.initialize(im, initialBox,b,P,R,Q);
+
+
+
 
         for (int i = startingFrame - 1; i >= 0; i--) {
             cv::Mat image = cv::imread(frameNames[i]);
             backwardTracker.track(image);
 
+
         }
     }
 
+    clock_t t1;
+    if (display!=0){
+        t1=clock();
+    }
     if (startingFrame <= frameNames.size() - 1) {
         forwardTracker.initialize(im, initialBox,b,P,R,Q);
 
@@ -51,6 +61,14 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox
             cv::Mat image = cv::imread(frameNames[i]);
             forwardTracker.track(image);
 
+            if (display!=0){
+                clock_t t2=clock();
+
+                double timeSec = (t2 - t1) / static_cast<double>( CLOCKS_PER_SEC );
+                timeSec=(i+1)/timeSec;
+
+                std::cout<<"FPS: "<<timeSec<<" frame "<<i<<" / "<<frameNames.size() <<std::endl;
+            }
         }
 
     }
@@ -217,7 +235,7 @@ void ExperimentRunner::run(std::string saveFolder, int n_threads, bool saveResul
 }
 
 
-void ExperimentRunner::runExample(int video, int startingFrame, std::string saveName, bool saveResults,
+void ExperimentRunner::runExample(int video, int startingFrame,int endingFrame, std::string saveName, bool saveResults,
                                   bool pretraining,
                                   bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
                                   std::string kernel, std::string feature,double b, int display) {
@@ -231,6 +249,8 @@ void ExperimentRunner::runExample(int video, int startingFrame, std::string save
 
 
     vector<string> frames = p.second;
+
+    frames.resize(endingFrame);
 
     std::vector<cv::Rect> rects = this->dataset->readGroundTruth(p.first);
 

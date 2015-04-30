@@ -311,7 +311,7 @@ def main(argv=None):
     datasetType = 'wu2013'
     experimentType='default'
 
-    runName = './Runs/ms_hist_int_pre1_f1.p'
+    runName = './Runs/a28_hist_int_f1.p'
 
     run = loadPickle(runName)
 
@@ -349,7 +349,7 @@ def generateAllVizualiations():
     folderForGraphs='./Visualizations/'
     datasetType = 'wu2013'
     dataset = Dataset(wu2013GroundTruth, datasetType)
-    runsNames = glob.glob('./Runs/SAMF.p')
+    runsNames = glob.glob('./Runs/a28_hist_int_f1.p')
 
     formatSave='pdf'
 
