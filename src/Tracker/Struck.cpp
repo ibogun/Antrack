@@ -10,10 +10,11 @@
 #include <math.h>
 
 
-void Struck::initialize(cv::Mat &image, cv::Rect &location, double b, int P, int R, int Q) {
+void Struck::initialize(cv::Mat &image, cv::Rect &location,int updateEveryNFrames, double b, int P, int R, int Q) {
     srand(this->seed);
     // set dimensions of the sampler
 
+    this->updateEveryNframes=updateEveryNFrames;
     // NOW
     int m = image.rows;
     int n = image.cols;
@@ -134,12 +135,14 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location, double b, int P, int
 
 void Struck::initialize(cv::Mat &image, cv::Rect &location) {
 
-    double b=10;
-    int P=3;
-    int Q=5;
-    int R=5;
+    double b=7;
+    int P=7;
+    int Q=13;
+    int R=13;
 
-    this->initialize(image,location,b,P,Q,R);
+    int updateEveryNFrames=3;
+
+    this->initialize(image,location,updateEveryNFrames,b,P,Q,R);
 }
 
 /*
@@ -504,7 +507,7 @@ cv::Rect Struck::track(cv::Mat &image) {
      Tracker Update
      **/
 
-    if (updateTracker && this->boundingBoxes.size() % 5==0) {
+    if (updateTracker && this->boundingBoxes.size() % this->updateEveryNframes==0) {
 
         // sample for updating the tracker
         std::vector<cv::Rect> locationsOnPolarPlane;

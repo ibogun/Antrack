@@ -662,7 +662,7 @@ if __name__ == "__main__":
     # if you want to evaluate and save evaluations ( do this first)
 
 
-    wildcard = "a28"
+    wildcard = "p"
     createSavedEvaluations(wildcard);
 
 

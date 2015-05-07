@@ -15,7 +15,7 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox
                         std::string saveName,
                         bool saveResults,
                         bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
-                        std::string kernel, std::string feature, double b,int P, int R, int Q,int display) {
+                        std::string kernel, std::string feature,int updateEveryNFrames, double b,int P, int R, int Q,int display) {
 
 
     // forward run of the tracker
@@ -37,7 +37,7 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox
 
 
     if (startingFrame > 0) {
-        backwardTracker.initialize(im, initialBox,b,P,R,Q);
+        backwardTracker.initialize(im, initialBox,updateEveryNFrames,b,P,R,Q);
 
 
 
@@ -55,7 +55,7 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame, cv::Rect initialBox
         t1=clock();
     }
     if (startingFrame <= frameNames.size() - 1) {
-        forwardTracker.initialize(im, initialBox,b,P,R,Q);
+        forwardTracker.initialize(im, initialBox,updateEveryNFrames,b,P,R,Q);
 
         for (int i = startingFrame + 1; i < frameNames.size(); i++) {
             cv::Mat image = cv::imread(frameNames[i]);
@@ -114,7 +114,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<int, int, cv::Rect>> &jobs,
                               bool saveResults,
                               bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling,
                               bool scalePrior,
-                              std::string kernel, std::string feature,double b, int P,int R, int Q) {
+                              std::string kernel, std::string feature,int updateEveryNFrames,double b, int P,int R, int Q) {
 
     // run jobs from index 'from' to the index 'to', make sure to create proper saveName
 
@@ -142,7 +142,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<int, int, cv::Rect>> &jobs,
 
 
         ExperimentRunner::runOneThreadOneJob(frame, bb, frameNames, finalFilename, saveResults, pretraining, useFilter, useEdgeDensity,
-                           useStraddling, scalePrior, kernel, feature,b,P, R,Q);
+                           useStraddling, scalePrior, kernel, feature,updateEveryNFrames,b,P, R,Q);
     }
 
 }
@@ -153,7 +153,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<int, int, cv::Rect>> &jobs,
 void ExperimentRunner::run(std::string saveFolder, int n_threads, bool saveResults,
                            bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling,
                            bool scalePrior,
-                           std::string kernel, std::string feature, double b,int P, int R, int Q) {
+                           std::string kernel, std::string feature,int updateEveryNFrames, double b,int P, int R, int Q) {
     using namespace std;
 
     // the vector below requires reshuffling
@@ -204,7 +204,8 @@ void ExperimentRunner::run(std::string saveFolder, int n_threads, bool saveResul
                 std::ref(bounds[i]), std::ref(bounds[i + 1]),
                 std::ref(saveResults), std::ref(pretraining),
                 std::ref(useFilter), std::ref(useEdgeDensity),
-                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),std::ref(b),std::ref(P),
+                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),std::ref(updateEveryNFrames),
+                std::ref(b),std::ref(P),
         std::ref(R),std::ref(Q)));
     }
 
@@ -259,10 +260,10 @@ void ExperimentRunner::runExample(int video, int startingFrame,int endingFrame, 
     int P=3;
     int R=5;
     int Q=5;
-
+    int updateEveryNFrames=5;
 
     runOneThreadOneJob(startingFrame, gt, frames, saveName, saveResults, pretraining, useFilter, useEdgeDensity,
-                       useStraddling, scalePrior, kernel, feature,b,P,R,Q,display);
+                       useStraddling, scalePrior, kernel, feature,updateEveryNFrames,b,P,R,Q,display);
 
 }
 

@@ -13,22 +13,26 @@
 #include "Dataset.h"
 #include <unordered_map>
 
+#include "armadillo"
 
 
 class DatasetVOT2014:public Dataset {
-        
-    
+
+
 public:
-    
+
     //hashtable vidToIndexHashTable;
     std::vector<std::pair<std::string, std::vector<std::string>>> prepareDataset(std::string rootFolder);
     std::vector<cv::RotatedRect> readComplete(std::string);
     std::vector<cv::Rect> readGroundTruth(std::string);
-    
-    
-    static float findAngle(float,float,float,float);
-    
-    
+
+
+    static cv::RotatedRect constructRotatedRect(std::vector<float> v);
+
+
+    static float findAngle(cv::Point2f[]);
+
+
     void showVideo(std::string rootFolder, int vidNumber);
 
     std::string getInfo(){

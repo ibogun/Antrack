@@ -282,7 +282,7 @@ def plotComparisonToOtherTrackers(dataset, saveFigureToFolders,save):
 
 
     # TODO: Add TLD tracker and, perhaps, SCM
-    runsNames = ['SAMF', 'Kernelized_filter', 'fk_hist_int_f0', 'fk_hist_int_f1','TLD']
+    runsNames = ['SAMF', 'Kernelized_filter', 'upd=3_hogANDhist_int_f1','a30_hogANDhist_int_f1']
     runs = list()
     #
     names = list()
@@ -337,11 +337,11 @@ def plotSensitivity(paperPlot,baselineRun, saveResultsFolders, save):
 
     wildcards = list()
 
-    wildcards.append('r')
+    #wildcards.append('r')
     wildcards.append('b')
-    wildcards.append('q')
-    wildcards.append('p')
-
+    #wildcards.append('q')
+    #wildcards.append('p')
+    wildcards.append('upd')
     if save:
         for i in saveResultsFolders:
 
@@ -380,14 +380,14 @@ def main():
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
 
-    baseLineRun= folder+'fk_hist_int_f0'+".p"
+    baseLineRun= folder+'upd=1_hogANDhist_int_f1'+".p"
 
 
     paperPlot=PaperPlots(dataset,folder)
 
     plotComparisonToOtherTrackers(dataset,saveResultsFolder,save)
     #plotFeatureKernel(paperPlot,saveResultsFolder,save)
-    #plotSensitivity(paperPlot, baseLineRun,saveResultsFolder,save)
+    plotSensitivity(paperPlot, baseLineRun,saveResultsFolder,save)
 
 
 if __name__ == "__main__":

@@ -83,7 +83,7 @@ arma::mat HoGandRawFeatures::calculateFeature(cv::Mat &processedImage, std::vect
         }
         
         
-        vector<float> descriptorsValues;
+        std::vector<float> descriptorsValues;
         
         this->d->compute(cropped, descriptorsValues);
         

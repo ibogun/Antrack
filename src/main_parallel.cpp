@@ -390,6 +390,7 @@ int main(int ac, char *av[]) {
 
         std::string createFolderCommand = "mkdir " + fullFolderName;
 
+
         AllExperimentsRunner::createDirectory(fullFolderName);
 
         wu2013->setRootFolder(wu2013RootFolder);
@@ -417,6 +418,7 @@ int main(int ac, char *av[]) {
         << "Code/Antrack/python/Evaluation/Runs/";
 
         std::string createPickleCommand = ss.str();
+
 
         system(createPickleCommand.c_str());
         std::cout << "Pickel was created" << std::endl;

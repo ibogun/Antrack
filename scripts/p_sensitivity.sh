@@ -1,12 +1,15 @@
 #!/bin/bash
 
-R=5
-Q=5
-feature=hist
+b=10
+Q=13
+R=13
+feature=hogANDhist
 kernel=int
 
+updateEveryNFrames=5
+
 filter=true
-b=10
+
 
 P[0]=1
 P[1]=2
@@ -30,7 +33,7 @@ do
 	# do not forget to change b in qsub...
 		prefix="p="${P[idx]}"_"
 		#echo $prefix
-		echo "Running experiment with kernel=${kernel}, feature=${feature}, filter=${filter}, b=${b}, prefix=${prefix}, Q=${Q}, P=${P[idx]}, R=${R}."
-		qsub -v b=${b},P_param=${P[idx]},Q=${Q},R=${R},filter=${filter},prefix=${prefix},feature=${feature},kernel=${kernel},datasetSaveLocation="/udrive/student/ibogun2010/Research/Results",nThreads=24 filter_experiments.sh
+		echo "Running experiment with kernel=${kernel}, feature=${feature}, filter=${filter}, b=${b}, updateEveryNthFrames=${updateEveryNFrames}, prefix=${prefix}, Q=${Q}, P=${P[idx]}, R=${R}."
+		qsub -v b=${b},updateEveryNFrames=${updateEveryNFrames},P_param=${P[idx]},Q=${Q},R=${R},filter=${filter},prefix=${prefix},feature=${feature},kernel=${kernel},datasetSaveLocation="/udrive/student/ibogun2010/Research/Results",nThreads=24 filter_experiments.sh
 
 done
