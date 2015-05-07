@@ -349,7 +349,7 @@ def generateAllVizualiations():
     folderForGraphs='./Visualizations/'
     datasetType = 'wu2013'
     dataset = Dataset(wu2013GroundTruth, datasetType)
-    runsNames = glob.glob('./Runs/a28_hist_int_f1.p')
+    runsNames = glob.glob('./Runs/upd*.p')
 
     formatSave='pdf'
 

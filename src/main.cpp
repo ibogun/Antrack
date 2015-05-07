@@ -27,6 +27,7 @@
 #include "Datasets/ExperimentRunner.h"
 #include "Datasets/AllExperimentsRunner.h"
 
+
 #include "Superpixels/SuperPixels.h"
 
 #include <pthread.h>
@@ -252,7 +253,7 @@ int main(int argc, const char *argv[]) {
     int frames = 10;
 
 
-    std::string vidName = "basketball";
+    std::string vidName = "skating";
     int vidIndex = dataset->vidToIndex.at(vidName);
     //tracker.display=0;
 
@@ -273,6 +274,8 @@ int main(int argc, const char *argv[]) {
     ExperimentRunner runner(es, dataset);
 
     AllExperimentsRunner run(dataset);
+    
+    
 
 
     int display =2;

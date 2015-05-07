@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#PBS -l nodes=10:ppn=24,walltime=24:00:00
+#PBS -l nodes=1:ppn=24,walltime=24:00:00
 #PBS -N tracker_run
 
 cd /udrive/student/ibogun2010/Research/Code/Antrack/build/bin/

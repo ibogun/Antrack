@@ -55,9 +55,7 @@ namespace po = boost::program_options;
 
 
 //#ifdef TRAX
-int main( int ac, char** av)
-{
-
+int main(int ac, char **av) {
 
 
     namespace po = boost::program_options;
@@ -65,13 +63,18 @@ int main( int ac, char** av)
 
         po::options_description desc("Allowed options");
         desc.add_options()("help", "produce help message")(
+                "tmpSaveLocation", po::value<std::string>(), "Location where temporary files will be created.")(
                 "feature", po::value<std::string>(), "Feature (e.g. raw, hist, haar, hog)")(
                 "kernel", po::value<std::string>(), "Kernel (e.g. linear, gauss, int)")(
-                "filter",po::value<bool>()," Filter 1-on, 0-off")(
+                "nThreads", po::value<int>(), "Number of threads")(
+                "filter", po::value<bool>(), " Filter 1-on, 0-off")(
+                "updateEveryNframes", po::value<int>(), "Update tracker every Nth frames")(
                 "b", po::value<double>(), " Robust constant")(
                 "P", po::value<int>(), "P")(
                 "Q", po::value<int>(), "Q")(
-                "R", po::value<int>(), "R");
+                "R", po::value<int>(), "R")(
+                "prefix", po::value<std::string>(),
+                "Experiment prefix (i.g. b=${b} for sensitivity to b, Q=${Q} for sensitivity to Q)");
 
         po::variables_map vm;
         po::store(po::parse_command_line(ac, av, desc), vm);
@@ -82,19 +85,26 @@ int main( int ac, char** av)
             return 0;
         }
 
+        std::string datasetSaveLocation = "";
+        std::string permamentSaveLoation = "";
+        int index = 0;
+        int nThreads = 1;
 
+        int updateEveryNthFrames = 5;
         double b = 10;
         int P = 3;
         int Q = 5;
         int R = 5;
-        bool useFilter;
+        bool filter;
 
         std::string feature = "raw";
         std::string kernel = "linear";
+        std::string prefix = "ms";
+
 
         if (vm.count("filter")) {
             cout << "Filter is: " << vm["filter"].as<bool>() << ".\n";
-            useFilter = vm["filter"].as<bool>();
+            filter = vm["filter"].as<bool>();
         }
 
         if (vm.count("feature")) {
@@ -105,6 +115,22 @@ int main( int ac, char** av)
         if (vm.count("kernel")) {
             cout << "Kernel is: " << vm["kernel"].as<std::string>() << ".\n";
             kernel = vm["kernel"].as<std::string>();
+        }
+
+        if (vm.count("prefix")) {
+            cout << "Prefix is: " << vm["prefix"].as<std::string>() << ".\n";
+            prefix = vm["prefix"].as<std::string>();
+        }
+
+        if (vm.count("tmpSaveLocation")) {
+            cout << "Temporary save Location is: " << vm["tmpSaveLocation"].as<std::string>() << ".\n";
+            datasetSaveLocation = vm["tmpSaveLocation"].as<std::string>();
+        }
+
+
+        if (vm.count("updateEveryNframes")) {
+            cout << "Tracker will be updated every frames: " << vm["updateEveryNframes"].as<int>() << ".\n";
+            updateEveryNthFrames = vm["updateEveryNframes"].as<int>();
         }
 
         if (vm.count("P")) {
@@ -122,88 +148,74 @@ int main( int ac, char** av)
             R = vm["R"].as<int>();
         }
 
+        if (vm.count("nThreads")) {
+            cout << "Number of threads is: " << vm["nThreads"].as<int>() << ".\n";
+            nThreads = vm["nThreads"].as<int>();
+        }
+
         if (vm.count("b")) {
             cout << "Robust constant is is: " << vm["b"].as<double>() << ".\n";
             b = vm["b"].as<double>();
         }
 
 
-        bool pretraining=false;
-        bool useEdgeDensity=false;
-        bool useStraddling=false;
-        bool scalePrior=false;
+        bool pretraining = false;
+        bool useEdgeDensity = false;
+        bool useStraddling = false;
+        bool scalePrior = false;
 
-        std::string note_="";
+        std::string note_ = "";
 
-        Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernel,feature,note_);
+        Struck tracker = Struck::getTracker(pretraining, filter, useEdgeDensity, useStraddling, scalePrior, kernel,
+                                            feature, note_);
 
-        trax_image* img = NULL;
-        trax_region* reg = NULL;
-        trax_region* mem = NULL;
+        trax_image *img = NULL;
+        trax_region *reg = NULL;
+        trax_region *mem = NULL;
 
-        trax_handle* trax;
+        trax_handle *trax;
         trax_configuration config;
         config.format_region = TRAX_REGION_POLYGON;
-                //TRAX_REGION_RECTANGLE;
+        //TRAX_REGION_RECTANGLE;
         config.format_image = TRAX_IMAGE_PATH;
 
         trax = trax_server_setup_standard(config, NULL);
 
         bool run = true;
 
-        while(run)
-        {
+        while (run) {
 
             int tr = trax_server_wait(trax, &img, &reg, NULL);
 
             if (tr == TRAX_INITIALIZE) {
 
-                cv::Rect rect;
+
                 float x, y, width, height;
                 //trax_region_get_rectangle(reg, &x, &y, &width, &height);
 
 
-                float center_x=0;
-                float center_y=0;
 
-                float left_x,right_x,bottom_y,top_y;
+                std::vector<float> record;
                 for (int j = 0; j < 4; ++j) {
-                    float x,y;
+                    float x, y;
 
-                    trax_region_get_polygon_point(reg,j,&x,&y);
+                    trax_region_get_polygon_point(reg, j, &x, &y);
 
-                    center_x+=x;
-                    center_y+=y;
-
-                    if (j==0){
-                        left_x=x;
-                        top_y=y;
-                    }
-
-                    if (j==3){
-                        right_x=x;
-                    }
-
-                    if (j==2){
-                        bottom_y=y;
-                    }
+                    record.push_back(x);
+                    record.push_back(y);
                 }
 
-                center_x=center_x/4;
-                center_y=center_y/4;
 
-                width=abs(right_x-left_x);
-                height=abs(bottom_y-top_y);
+                cv::RotatedRect rectRotated = DatasetVOT2014::constructRotatedRect(record);
 
-                rect.x=round(center_x-width/2);
-                rect.y=round(center_y-height/2);
-                rect.width=round(width);
-                rect.height=round(height);
+                cv::Rect rect(rectRotated.center.x - rectRotated.size.width / 2.0,
+                              rectRotated.center.y - rectRotated.size.height / 2.0,
+                              rectRotated.size.width, rectRotated.size.height);
                 //rect.x = round(x); rect.y = round(y); rect.width = round(x + width) - rect.x; rect.height = round(y + height) - rect.y;
 
 //            Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernelSTR,featureSTR,note_);
                 cv::Mat image = cv::imread(trax_image_get_path(img));
-                tracker.initialize(image, rect,b,P,R,Q);
+                tracker.initialize(image, rect, updateEveryNthFrames, b, P, R, Q);
 
                 trax_server_reply(trax, reg, NULL);
 
@@ -213,7 +225,7 @@ int main( int ac, char** av)
 
                 cv::Rect rect = tracker.track(image);
 
-                trax_region* result = trax_region_create_rectangle(rect.x, rect.y, rect.width, rect.height);
+                trax_region *result = trax_region_create_rectangle(rect.x, rect.y, rect.width, rect.height);
 
                 trax_server_reply(trax, result, NULL);
 
@@ -244,8 +256,6 @@ int main( int ac, char** av)
     catch (...) {
         cerr << "Exception of unknown type!\n";
     }
-
-
 
 
 }

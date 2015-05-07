@@ -138,7 +138,7 @@ arma::mat HoG::calculateFeature(cv::Mat &processedImage, std::vector<cv::Rect> &
             }
 
             // now calculate HoG features
-            vector<float> descriptorValues;
+            std::vector<float> descriptorValues;
             this->d->compute(cropped_scale,descriptorValues,cv::Size(0,0),cv::Size(0,0),pts);
 
 
@@ -189,7 +189,7 @@ arma::mat HoG::calculateFeature(cv::Mat &processedImage, std::vector<cv::Rect> &
     }
 
     // now calculate HoG features
-    vector<float> descriptorValues;
+    std::vector<float> descriptorValues;
     this->d->compute(cropped_scale,descriptorValues,cv::Size(0,0),cv::Size(0,0),pts);
 
 

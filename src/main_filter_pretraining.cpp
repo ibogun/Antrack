@@ -122,7 +122,8 @@ string make_uuid() {
 
 
 void experiment(int n_threads, std::string datasetTempSaveLocation,std::string prefix,
-                                      std::string kernel, std::string feature,bool useFilter, double b, int P, int Q, int R) {
+                                      std::string kernel, std::string feature,bool useFilter,int updateEveryNthFrames,
+                double b, int P, int Q, int R) {
     // Now, run everything
 
     bool useEdgeDensity = false;
@@ -184,7 +185,7 @@ void experiment(int n_threads, std::string datasetTempSaveLocation,std::string p
     run.run(fullFolderName, n_threads, true, pretraining, useFilter, useEdgeDensity, useStraddling,
             scalePrior,
             kernel,
-            feature, b, P, R, Q);
+            feature,updateEveryNthFrames, b, P, R, Q);
 
 
     delete wu2013;
@@ -205,6 +206,7 @@ int main(int ac, char *av[]) {
                 "kernel", po::value<std::string>(), "Kernel (e.g. linear, gauss, int)")(
                 "nThreads", po::value<int>(), "Number of threads")(
                 "filter",po::value<bool>()," Filter 1-on, 0-off")(
+                "updateEveryNframes",po::value<int>(), "Update tracker every Nth frames")(
                 "b", po::value<double>(), " Robust constant")(
                 "P", po::value<int>(), "P")(
                 "Q", po::value<int>(), "Q")(
@@ -226,6 +228,7 @@ int main(int ac, char *av[]) {
         int index = 0;
         int nThreads = 1;
 
+        int updateEveryNthFrames=5;
         double b = 10;
         int P = 3;
         int Q = 5;
@@ -253,13 +256,19 @@ int main(int ac, char *av[]) {
         }
 
         if (vm.count("prefix")) {
-            cout << "Temporary save Location is: " << vm["prefix"].as<std::string>() << ".\n";
+            cout << "Prefix is: " << vm["prefix"].as<std::string>() << ".\n";
             prefix = vm["prefix"].as<std::string>();
         }
 
         if (vm.count("tmpSaveLocation")) {
             cout << "Temporary save Location is: " << vm["tmpSaveLocation"].as<std::string>() << ".\n";
             datasetSaveLocation = vm["tmpSaveLocation"].as<std::string>();
+        }
+
+
+        if (vm.count("updateEveryNframes")){
+            cout << "Tracker will be updated every frames: " << vm["updateEveryNframes"].as<int>() << ".\n";
+            updateEveryNthFrames = vm["updateEveryNframes"].as<int>();
         }
 
         if (vm.count("P")) {
@@ -288,7 +297,7 @@ int main(int ac, char *av[]) {
         }
 
         experiment(nThreads,datasetSaveLocation,prefix,
-                kernel,feature,filter,b,P,Q,R);
+                kernel,feature,filter,updateEveryNthFrames,b,P,Q,R);
     }
     catch (exception &e) {
         cerr << "error: " << e.what() << "\n";

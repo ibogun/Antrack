@@ -90,6 +90,9 @@ class Struck {
     bool updateTracker=true;
 
 
+    int updateEveryNframes=1;
+
+
     int seed=1;
 
     std::string note="Objectness measures which add top 10 bounding boxes on each scale (boxes addition)";
@@ -174,7 +177,7 @@ public:
 
     void initialize(cv::Mat& image,cv::Rect& location);
 
-    void initialize(cv::Mat& image, cv::Rect& location, double b, int P, int R, int Q);
+    void initialize(cv::Mat& image, cv::Rect& location, int updateEveryNFrames,double b, int P, int R, int Q);
 
     void allocateCanvas(cv::Mat&);
 
