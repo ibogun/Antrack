@@ -2,16 +2,10 @@ cmake_minimum_required(VERSION 2.8.4)
 
 # Options. Turn on with 'cmake -Dmyvarname=ON'.
 option(test "Build all tests." OFF) # Makes boolean 'test' available.
-option(VOT2014 "Build VOT2014-friendly" OFF)
+option(VOT2015 "Build VOT2015-friendly" OFF)
 option(experiments "Build all experiments." OFF) # Makes boolean 'test' available.
 
 option(python "Build python wrappers." OFF)
-
-
-
-
-
-
 
 option(parallel "Build parallel dataset evaluation." OFF)
 
@@ -43,7 +37,7 @@ find_package (Threads REQUIRED)
 # used elsewhere.
 
 set(PYTHON_FILES
-	src/python_wrappers/objectness_topy.cpp
+	src/python_wrappers/tracker_python.cpp
 )
 
 
@@ -145,12 +139,16 @@ if (experiments)
 	target_link_libraries(experiment_01_fast_intersection_kernels ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
-if(VOT2014)
+if(VOT2015)
+	set(VOT2015_DESTINATION "../matlab/build/bin/")
 	find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
 
 	include_directories( ${Boost_INCLUDE_DIR} )
 	add_executable(struck_vot2014 ${Superpixels} ${SOURCE_FILES} ${TRAX_FILES})
 	target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})
+
+	set_target_properties(struck_vot2014 PROPERTIES
+				RUNTIME_OUTPUT_DIRECTORY ${VOT2015_DESTINATION})
 endif()
 
 
@@ -158,32 +156,31 @@ endif()
 
 
 if(python)
-	set(PYTHON_DESTINATION "../python/Experiments/")
-
-
+	set(PYTHON_DESTINATION "../python/Tracker_wrapper/")
 
 	find_package(PythonLibs)
 
-	set(PYTHON_INCLUDE_DIRS /usr/local/Cellar/python/2.7.9/Frameworks/Python.framework/Versions/2.7/Headers)
+	set(PYTHON_INCLUDE_DIRS /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/Headers)
+	set(pyconfig /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/include/python2.7)
+	set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
 
-	set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.9/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
+	find_package( Boost COMPONENTS python program_options filesystem system)
+	include_directories (${Boost_INCLUDE_DIRS} ${pyconfig})
 
-	find_package( Boost COMPONENTS python)
-	include_directories (${Boost_INCLUDE_DIRS})
-
-	PYTHON_ADD_MODULE(objectness ${SOURCE_FILES} ${PYTHON_FILES} ${Superpixels})
-target_link_libraries(objectness
+	PYTHON_ADD_MODULE(struck_tracker ${SOURCE_FILES} ${PYTHON_FILES} ${Superpixels})
+target_link_libraries(struck_tracker
     boost_python
     ${PYTHON_LIBRARIES}
     ${Boost_LIBRARIES}
 	${OpenCV_LIBS}
 	${ARMADILLO_LIBRARIES}
 	${CMAKE_THREAD_LIBS_INIT}
+
 	)
-	set_target_properties(objectness PROPERTIES
+	set_target_properties(struck_tracker PROPERTIES
 				LIBRARY_OUTPUT_DIRECTORY ${PYTHON_DESTINATION})
 
-	#FILE(COPY objectness.so DESTINATION ${PYTHON_DESTINATION})
+	#FILE(COPY Antrack.so DESTINATION ${PYTHON_DESTINATION})
 endif()
 
 
@@ -196,7 +193,8 @@ add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJE
 include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 include_directories (${Boost_INCLUDE_DIRS})
-target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
+  ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES} )
 
 

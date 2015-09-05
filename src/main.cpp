@@ -11,7 +11,6 @@
 #include <ctime>
 #include <algorithm>
 
-
 #include "Features/HoG.h"
 
 #include "Tracker/LocationSampler.h"
@@ -21,6 +20,7 @@
 #include "Datasets/DataSetWu2013.h"
 #include "Datasets/DatasetALOV300.h"
 #include "Datasets/DatasetVOT2014.h"
+#include "Datasets/DatasetVOT2015.h"
 #include "Datasets/EvaluationRun.h"
 #include "Datasets/ExperimentTemporalRobustness.h"
 #include "Datasets/ExperimentSpatialRobustness.h"
@@ -34,7 +34,6 @@
 #include <thread>
 
 #include <fstream>
-
 
 #ifdef _WIN32
 //define something for Windows (32-bit and 64-bit, this part is common)
@@ -50,10 +49,12 @@
 #define wu2013RootFolder    "/Users/Ivan/Files/Data/Tracking_benchmark/"
 #define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
 #define vot2014RootFolder   "/Users/Ivan/Files/Data/vot2014/"
+#define vot2015RootFolder   "/Users/Ivan/Files/Data/vot2015/"
 
 #define wu2013SaveFolder    "/Users/Ivan/Files/Results/Tracking/wu2013"
 #define alovSaveFolder      "/Users/Ivan/Files/Results/Tracking/alov300"
 #define vot2014SaveFolder    "/Users/Ivan/Files/Results/Tracking/vot2014"
+#define vot2015SaveFolder    "/Users/Ivan/Files/Results/Tracking/vot2015"
 
 
 #if TARGET_IPHONE_SIMULATOR
@@ -75,13 +76,14 @@
 
 #define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
 #define vot2014RootFolder   "/media/drive/UbuntuFiles/Datasets/Tracking/vot2014"
-
+#define vot2015RootFolder   "/Users/Ivan/Files/Data/vot2015/"       // incorrect
 // OPTLEX machine
 // #define wu2013SaveFolder    "/media/drive/UbuntuFiles/Results/wu2013"
 
 #define wu2013SaveFolder  "/udrive/student/ibogun2010/Research/Results/wu2013/"
 #define alovSaveFolder      "/media/drive/UbuntuFiles/Results/alov300"
 #define vot2014SaveFolder    "/media/drive/UbuntuFiles/Results/vot2014"
+#define vot2015SaveFolder    "/Users/Ivan/Files/Results/Tracking/vot2015"
 #elif __unix // all unices not caught above
 // Unix
 #elif __posix
@@ -89,8 +91,9 @@
 #endif
 
 
-void runTrackerOnDatasetPart(vector<pair<string, vector<string>>> &video_gt_images, Dataset *dataset,
-                             int from, int to, std::string saveFolder, bool saveResults, int nFrames) {
+void runTrackerOnDatasetPart(vector<pair<string,
+                             vector<string>>> &video_gt_images, Dataset *dataset, int from, int to, std::string saveFolder,
+                             bool saveResults, int nFrames) {
 
 
     std::time_t t1 = std::time(0);
@@ -228,12 +231,15 @@ int main(int argc, const char *argv[]) {
     //DatasetALOV300* alov300=new DatasetALOV300;
     //
     DatasetVOT2014* vot2014=new DatasetVOT2014;
-    Dataset* dataset=new DatasetVOT2014;
+    //Dataset* dataset=new DatasetVOT2014;
+
+    DatasetVOT2015* dataset = new DatasetVOT2015;
     // std::string wuName="/udrive/student/ibogun2010/Research/Data/Tracking_benchmark/";
-    dataset->setRootFolder(vot2014RootFolder);
+    dataset->setRootFolder(vot2015RootFolder);
 
 
-    std::vector<std::pair<std::string, std::vector<std::string>>> votPrepared=dataset->prepareDataset(vot2014RootFolder);
+    std::vector<std::pair<std::string, std::vector<std::string>>> votPrepared=
+        dataset->prepareDataset(vot2015RootFolder);
     //std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared = wu2013->prepareDataset(wu2013RootFolder);
 
 
@@ -247,24 +253,24 @@ int main(int argc, const char *argv[]) {
     bool edgeness = false;
     bool spatialPrior = false;
 
-    Struck tracker = Struck::getTracker(pretraining, filter, edgeness, straddling, spatialPrior, kernel, feature);
-
+    Struck tracker = Struck::getTracker(pretraining, filter, edgeness,
+                                        straddling, spatialPrior, kernel,
+                                        feature);
 
     int frames = 10;
 
 
-    std::string vidName = "skating";
+    std::string vidName = "bolt2";
     int vidIndex = dataset->vidToIndex.at(vidName);
     //tracker.display=0;
 
-
-    tracker.display = 3;
+    tracker.display = 1;
 
 
     vector<pair<string, vector<string>>> video_gt_images =
-            dataset->prepareDataset(vot2014RootFolder);
+        dataset->prepareDataset(vot2015RootFolder);
 
-    pair<string, vector<string>> gt_images = video_gt_images[0];
+    pair<string, vector<string>> gt_images = video_gt_images[vidIndex];
 
     vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
 
@@ -274,33 +280,56 @@ int main(int argc, const char *argv[]) {
     ExperimentRunner runner(es, dataset);
 
     AllExperimentsRunner run(dataset);
-    
-    
-
 
     int display =2;
 
     double b = 10;
 
-    int startingFrame=0;
-    int endingFrame=300;
+    int startingFrame= 0;
+    int endingFrame=700;
 
-//    t2=clock();
+
+    //    t2=clock();
 //    double timeSec = (t2 - t1) / static_cast<double>( CLOCKS_PER_SEC );
 //
 //    std::cout<<"Time difference: "<<timeSec<<std::endl;
 
     //for (int vidIndex= 4; vidIndex <=25; ++vidIndex) {
-        runner.runExample(vidIndex,startingFrame,endingFrame,"test.dat",false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature,b,display);
-    //}
+    //runner.runExample(vidIndex,startingFrame,endingFrame,"test.dat",
+    //                  false,pretraining,filter,edgeness,straddling,
+    //                  spatialPrior,kernel,feature,b,display);
+    //
+    //run.runner.run(wu2013SaveFolder,1,false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
 
-    //run.run(wu2013SaveFolder,3,true,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
-    //runner.run(wu2013SaveFolder,1,false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
+    cv::Mat image = cv::imread(gt_images.second[startingFrame]);
 
+    std::cout<<" Rect: " << groundTruth[startingFrame] << std::endl;
+    std::cout<< gt_images.second[startingFrame] << std::endl;
+    cv::Rect rect = groundTruth[startingFrame];
+    if (rect.x + rect.width >= image.cols) {
+        rect.width = image.cols - rect.x - 1;
+    }
+
+
+    if (rect.y + rect.height >= image.rows) {
+        rect.height = image.rows - rect.y - 1;
+    }
+
+    std::cout<< rect << std::endl;
+    std::cout<< image.rows << " " << image.cols << std::endl;
+    tracker.initialize(image, rect);
+
+    for (int i = startingFrame; i < endingFrame; i++) {
+        tracker.track(gt_images.second[i]);
+    }
+
+    //dataset->showVideo(vot2015RootFolder, vidIndex);
 
     delete et;
     delete es;
     delete wu2013;
 
+
     return 0;
+
 }

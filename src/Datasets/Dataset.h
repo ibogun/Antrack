@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 #include <opencv2/opencv.hpp>
-
 #include <unordered_map>
 
 typedef std::unordered_map<std::string, int> hashtable;
@@ -41,7 +40,7 @@ public:
     std::vector<std::pair<std::string, std::vector<std::string>>> prepareDataset(){
         return this->prepareDataset(this->root_folder);
     }
-    
+
     virtual std::vector<cv::Rect> readGroundTruth(std::string)=0;
     virtual std::string getInfo()=0;
 };

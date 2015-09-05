@@ -262,6 +262,8 @@ void ExperimentRunner::runExample(int video, int startingFrame,int endingFrame, 
     int Q=5;
     int updateEveryNFrames=5;
 
+
+
     runOneThreadOneJob(startingFrame, gt, frames, saveName, saveResults, pretraining, useFilter, useEdgeDensity,
                        useStraddling, scalePrior, kernel, feature,updateEveryNFrames,b,P,R,Q,display);
 

@@ -30,7 +30,7 @@ public:
         if (x + width >= image.cols) {
           width = image.cols - x - 1;
         }
-
+        output.append(r.x);
         if (y + height >= image.rows) {
           height = image.rows - y - 1;
         }

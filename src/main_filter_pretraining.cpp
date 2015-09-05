@@ -298,6 +298,7 @@ int main(int ac, char *av[]) {
 
         experiment(nThreads,datasetSaveLocation,prefix,
                 kernel,feature,filter,updateEveryNthFrames,b,P,Q,R);
+
     }
     catch (exception &e) {
         cerr << "error: " << e.what() << "\n";

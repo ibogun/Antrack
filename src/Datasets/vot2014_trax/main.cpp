@@ -28,6 +28,7 @@
 #include "../../Datasets/DataSetWu2013.h"
 #include "../../Datasets/DatasetALOV300.h"
 #include "../../Datasets/DatasetVOT2014.h"
+#include "../../Datasets/DatasetVOT2015.h"
 
 #include <pthread.h>
 #include <thread>
@@ -63,18 +64,14 @@ int main(int ac, char **av) {
 
         po::options_description desc("Allowed options");
         desc.add_options()("help", "produce help message")(
-                "tmpSaveLocation", po::value<std::string>(), "Location where temporary files will be created.")(
                 "feature", po::value<std::string>(), "Feature (e.g. raw, hist, haar, hog)")(
                 "kernel", po::value<std::string>(), "Kernel (e.g. linear, gauss, int)")(
-                "nThreads", po::value<int>(), "Number of threads")(
                 "filter", po::value<bool>(), " Filter 1-on, 0-off")(
                 "updateEveryNframes", po::value<int>(), "Update tracker every Nth frames")(
                 "b", po::value<double>(), " Robust constant")(
                 "P", po::value<int>(), "P")(
                 "Q", po::value<int>(), "Q")(
-                "R", po::value<int>(), "R")(
-                "prefix", po::value<std::string>(),
-                "Experiment prefix (i.g. b=${b} for sensitivity to b, Q=${Q} for sensitivity to Q)");
+                "R", po::value<int>(), "R");
 
         po::variables_map vm;
         po::store(po::parse_command_line(ac, av, desc), vm);
@@ -85,21 +82,16 @@ int main(int ac, char **av) {
             return 0;
         }
 
-        std::string datasetSaveLocation = "";
-        std::string permamentSaveLoation = "";
-        int index = 0;
-        int nThreads = 1;
 
-        int updateEveryNthFrames = 5;
+        int updateEveryNthFrames = 3;
         double b = 10;
-        int P = 3;
-        int Q = 5;
-        int R = 5;
+        int P = 10;
+        int Q = 13;
+        int R = 13;
         bool filter;
 
-        std::string feature = "raw";
-        std::string kernel = "linear";
-        std::string prefix = "ms";
+        std::string feature = "hogANDhist";
+        std::string kernel = "int";
 
 
         if (vm.count("filter")) {
@@ -117,15 +109,6 @@ int main(int ac, char **av) {
             kernel = vm["kernel"].as<std::string>();
         }
 
-        if (vm.count("prefix")) {
-            cout << "Prefix is: " << vm["prefix"].as<std::string>() << ".\n";
-            prefix = vm["prefix"].as<std::string>();
-        }
-
-        if (vm.count("tmpSaveLocation")) {
-            cout << "Temporary save Location is: " << vm["tmpSaveLocation"].as<std::string>() << ".\n";
-            datasetSaveLocation = vm["tmpSaveLocation"].as<std::string>();
-        }
 
 
         if (vm.count("updateEveryNframes")) {
@@ -148,10 +131,6 @@ int main(int ac, char **av) {
             R = vm["R"].as<int>();
         }
 
-        if (vm.count("nThreads")) {
-            cout << "Number of threads is: " << vm["nThreads"].as<int>() << ".\n";
-            nThreads = vm["nThreads"].as<int>();
-        }
 
         if (vm.count("b")) {
             cout << "Robust constant is is: " << vm["b"].as<double>() << ".\n";
@@ -205,18 +184,20 @@ int main(int ac, char **av) {
                     record.push_back(y);
                 }
 
-
-                cv::RotatedRect rectRotated = DatasetVOT2014::constructRotatedRect(record);
-
-                cv::Rect rect(rectRotated.center.x - rectRotated.size.width / 2.0,
-                              rectRotated.center.y - rectRotated.size.height / 2.0,
-                              rectRotated.size.width, rectRotated.size.height);
-                //rect.x = round(x); rect.y = round(y); rect.width = round(x + width) - rect.x; rect.height = round(y + height) - rect.y;
-
-//            Struck tracker=Struck::getTracker(pretraining,useFilter,useEdgeDensity,useStraddling,scalePrior,kernelSTR,featureSTR,note_);
+                cv::Rect rect = DatasetVOT2015::constructRectangle(record);
                 cv::Mat image = cv::imread(trax_image_get_path(img));
-                tracker.initialize(image, rect, updateEveryNthFrames, b, P, R, Q);
 
+                    if (rect.x + rect.width >= image.cols) {
+                        rect.width = image.cols - rect.x - 1;
+                    }
+
+
+                if (rect.y + rect.height >= image.rows) {
+                    rect.height = image.rows - rect.y - 1;
+                }
+
+                tracker.initialize(image, rect, updateEveryNthFrames, b,
+                                   P, R, Q);
                 trax_server_reply(trax, reg, NULL);
 
             } else if (tr == TRAX_FRAME) {

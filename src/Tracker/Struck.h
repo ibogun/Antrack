@@ -169,11 +169,15 @@ public:
 
     std::vector<cv::Rect> getBoundingBoxes(){
         return this->boundingBoxes;
-
-
     };
 
     void videoCapture();
+
+    void initialize(std::string image_name, int x, int y, int width, int height){
+        cv::Rect b(x, y, width, height);
+        cv::Mat image = cv::imread(image_name, 0);
+        this->initialize(image, b);
+    }
 
     void initialize(cv::Mat& image,cv::Rect& location);
 
@@ -182,6 +186,11 @@ public:
     void allocateCanvas(cv::Mat&);
 
     cv::Rect track(cv::Mat& image);
+
+    cv::Rect track(std::string image_name) {
+        cv::Mat image = cv::imread(image_name);
+        return this->track(image);
+    }
 
     void updateDebugImage(cv::Mat* canvas,cv::Mat& img, cv::Rect &bestLocation,cv::Scalar colorOfBox);
 

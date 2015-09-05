@@ -10,7 +10,8 @@
 #include <math.h>
 
 
-void Struck::initialize(cv::Mat &image, cv::Rect &location,int updateEveryNFrames, double b, int P, int R, int Q) {
+void Struck::initialize(cv::Mat &image, cv::Rect &location,
+                        int updateEveryNFrames, double b, int P, int R, int Q) {
     srand(this->seed);
     // set dimensions of the sampler
 
