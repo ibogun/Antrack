@@ -24,6 +24,12 @@ xcode/*
 *.dylib
 *.dll
 
+#Tags etc.
+TAGS
+GPATH
+GRTAGS
+GTAGS
+
 # Compiled Static libraries
 *.lai
 *.la

@@ -56,6 +56,13 @@ public:
     double findStraddlingMeasure(arma::mat& labels, cv::Rect& rectangle);
     
     arma::rowvec findStraddlng_fast(arma::mat& labels,std::vector<cv::Rect>& rects, int translate_x,int translate_y);
+
+    void preprocessIntegral(cv::Mat& mat);
+
+    void straddlingOnCube(arma::mat& labels, int translate_x,
+                          int translate_y, std::vector<int>& R,
+                          std::vector<int>& w, std::vector<int>& h,
+                          std::vector<arma::mat>* s);
     
     void computeIntegralImages(arma::mat& labels);
     

@@ -116,8 +116,8 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect &currentLocation,
     //halfHeight=cvRound(currentLocation.height/2.0);
 
     double downsample = 1.05;
-    radialValues = arma::linspace<arma::vec>(0, scaleR, nRadial / 4 + 1);
-    angularValues = arma::linspace<arma::vec>(0, 2 * M_PI, nAngular / 5 + 1);
+    radialValues = arma::linspace<arma::vec>(0, scaleR, nRadial / 3 + 1);
+    angularValues = arma::linspace<arma::vec>(0, 2 * M_PI, nAngular / 3 + 1);
     //radialValues=arma::linspace<arma::vec>(0,scaleR,3);
     //angularValues=arma::linspace<arma::vec>(0,2*M_PI, 3);
 
@@ -374,6 +374,82 @@ inline cv::Rect LocationSampler::fromCenterToBoundingBox(const double &x, const 
     cv::Rect result(newX, newY, length_r, height_r);
 
     return result;
+}
+
+
+std::vector<arma::mat> LocationSampler::generateBoxesTensor(
+    const cv::Rect& rect,
+    std::vector<int>* radiuses,
+    std::vector<int>* heights,
+    std::vector<int>* widths){
+
+    std::vector<arma::mat> objness_canvas;
+    using namespace cv;
+
+    // current height and width
+    arma::mat current(2*this->radius + 1, 2*this->radius);
+    objness_canvas.push_back(current);
+    radiuses->push_back(this->radius);
+    heights->push_back(rect.height);
+    widths->push_back(rect.width);
+
+    int R = this->radius / 3;
+
+    // fixed aspect ratio
+    for (int s = this->min_scales; i <= this->max_scales; i++) {
+        if (s == 0) {
+            continue;
+        }
+        int halfWidth_scale = cvRound((rect.width/2.0) *
+                                      pow(downsample, s));
+        int halfHeight_scale = cvRound((rect.height/2.0) *
+                                       pow(downsample, s));
+
+        if (halfWidth_scale <= this->min_size_half ||
+            halfHeight_scale <= this->min_size_half ) {
+            continue;
+        }
+
+        arma::mat c(2*R + 1, 2*R + 1);
+        objness_canvas.push_back(c);
+        radiuses->push_back(R);
+        heights->push_back(halfHeight_scale*2);
+        widths->push_back(halfWidth_scale * 2);
+
+    }
+
+    int halfWidth = rect.width/2;
+    int halfHeight = rect.height/2;
+
+    for (int scale_h = -shrink_one_side_scale+1; scale_h <= shrink_one_side_scale; scale_h++) {
+        int scale_w = scale_h;
+
+        for (int scale_w = -shrink_one_side_scale+1; scale_w <= shrink_one_side_scale; scale_w++) {
+
+
+            //continue;
+            if ((scale_w == 0 && scale_h == 0)) {
+                continue;
+            }
+
+            int halfWidth_scale = cvRound(halfWidth * pow(downsample, scale_w));
+            int halfHeight_scale = cvRound(halfHeight * pow(downsample, scale_h));
+
+            if (halfWidth_scale <= this->min_size_half ||
+                halfHeight_scale <= this->min_size_half) {
+                continue;
+            }
+
+            arma::mat c(2*R + 1, 2*R + 1);
+            objness_canvas.push_back(c);
+            radiuses->push_back(R);
+            heights->push_back(halfHeight_scale*2);
+            widths->push_back(halfWidth_scale * 2);
+        }
+    }
+
+
+    return objness_canvas;
 }
 
 

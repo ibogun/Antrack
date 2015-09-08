@@ -125,21 +125,11 @@ void Straddling::computeIntegralImages(arma::mat &labels){
 }
 
 
-arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::Rect> &rects, int translate_x, int translate_y){
-    
-    // get unique labels
-    arma::mat uniqueLabels=arma::unique(labels);
-    
-    // allocate matrices for each superpixel
-    // assume labels are labelled from 0 to max(labels)
+arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels,
+                                            std::vector<cv::Rect> &rects,
+                                            int translate_x, int translate_y){
 
-    
-
-    
-    
-    // resulting scores
     arma::rowvec measures(rects.size(),arma::fill::zeros);
-    
     for (int i=0; i<rects.size(); i++) {
 
         cv::Rect rect_big(rects[i].x-translate_x,rects[i].y-
@@ -147,29 +137,40 @@ arma::rowvec Straddling::findStraddlng_fast(arma::mat &labels, std::vector<cv::R
 
         measures(i)=computeStraddling(rect_big);
     }
-    
-    
     return measures;
-    
-    
+}
+
+
+void Straddling::preprocessIntegral(cv::Mat& image){
+
+    arma::mat labels = this->getLabels(image);
+    this->computeIntegralImages(labels);
+}
+
+void Straddling::straddlingOnCube(int translate_x,
+                                  int translate_y, std::vector<int> &R,
+                                  std::vector<int> &w, std::vector<int> &h,
+                                  std::vector<arma::mat> *s){
+
+    for (int slice=0; slice < s->size(); s++) {
+        for (int x=0; x<s->at(slice).n_cols; x++) {
+            for (int y=0; y<s->at(slice).n_rows; y++) {
+
+            }
+        }
+    }
 }
 
 double Straddling::computeStraddling(cv::Rect &rect_big){
-    
-    
     double measure=0;
     // for each superpixel
     // find area of the overlap between superpixel and window
-    
     cv::Rect rect=getInnerRect(rect_big,this->inner_threshold);
-    
     int n=this->integrals.n_rows-1;
     int m=this->integrals.n_cols-1;
-    
-    
+
     for (int superpixel=0; superpixel<this->integrals.n_slices; superpixel++) {
-        
-        
+
         //            int A=integrals(rect.x+rect.width,
         //                            rect.y+rect.height,superpixel);
         //

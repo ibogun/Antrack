@@ -165,30 +165,10 @@ cv::Rect Struck::track(cv::Mat &image) {
     this->samplerForSearch->sampleEquiDistantMultiScale(lastLocation,
                                                         locationsOnaGrid);
 
-    // this->samplerForSearch->sampleEquiDistant(lastLocation, locationsOnaGrid);
     if (useFilter && !updateTracker) {
         this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn,
                                               locationsOnaGrid, this->R, 2);
     }
-
-    // if there are not enough support vectors -> do not sample on multiple scales
-
-//    if (this->olarank->S.size()!=this->olarank->B){
-//        int width=lastLocation.width;
-//        int height=lastLocation.height;
-//
-//        int cutOff=0;
-//        for (int k = 0; k < locationsOnaGrid.size(); ++k) {
-//            if (locationsOnaGrid[k].width!= width || locationsOnaGrid[k].height!=height){
-//                cutOff=k;
-//                break;
-//            }
-//        }
-//
-//        locationsOnaGrid.erase(locationsOnaGrid.begin()+cutOff,locationsOnaGrid
-//        .end());
-//    }
-
 
     cv::Mat processedImage = this->feature->prepareImage(&image);
 
@@ -248,147 +228,93 @@ cv::Rect Struck::track(cv::Mat &image) {
             this->straddle.computeIntegralImages(labels);
         }
 
-        int topNBoxesKeep = 10;
-
-        int smallestScale = -5;
-        int largestScale = 15;
-
-        double downsample = 1.03;
-
-        for (int s = smallestScale; s <= largestScale; s++) {
-
-            std::vector<cv::Rect> bboxes;
-            std::vector<cv::Rect> bboxesWhichFit;
-
-            int width = (int) (this->samplerForSearch->objectWidth * pow(downsample, s));
-            int height = (int) (this->samplerForSearch->objectHeight * pow(downsample, s));
-
-            if (width < 10 || height < 10) {
-                break;
-            }
-
-            int x = (int) (lastLocation.x + lastLocation.width / 2.0 - width / 2.0);
-            int y = (int) (lastLocation.y + lastLocation.height / 2.0 - height / 2.0);
-
-            cv::Rect newLocation(x, y, width, height);
-
-            cv::Rect imageBox(0, 0, smallImage.cols - 1, smallImage.rows - 1);
-
-            cv::Point topLeft(x - min_x, y - min_y);
-            cv::Point bottomRight(x - min_x + width, y - min_y + height);
-
-            if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
-                bboxes.push_back(newLocation);
-
-            }
 
 
-            this->samplerForSearch->sampleEquiDistant(newLocation, bboxes);
+        if (useEdgeDensity) {
+            arma::rowvec edge_measure = this->edgeDensity.findEdgeObjectness(bboxesWhichFit, min_x, min_y);
+            // arma::rowvec
+            // edge_objectness=weightWithEdgeDensity(smallImage,locationsOnaGrid,this->edge_params,min_x,min_y);
 
-            for (int j = 0; j < bboxes.size(); ++j) {
-
-                cv::Rect b(bboxes[j]);
-
-                cv::Point topLeft(b.x - min_x, b.y - min_y);
-                cv::Point bottomRight(b.x - min_x + b.width, b.y - min_y + b.height);
-                if ((imageBox.contains(topLeft) && imageBox.contains(bottomRight))) {
-                    //bboxes.erase(bboxes.begin()+j);
-                    bboxesWhichFit.push_back(b);
-                }
-            }
-
-            if (bboxes.size() == 0) {
-                //std::cout<<"For scale: "<<s<<" coudn't generated any boxes "<<newLocation<<std::endl;
-                continue;
-            }
-
-            // populate boxes with sampled regions from
-
-            if (useEdgeDensity) {
-                arma::rowvec edge_measure = this->edgeDensity.findEdgeObjectness(bboxesWhichFit, min_x, min_y);
-                // arma::rowvec
-                // edge_objectness=weightWithEdgeDensity(smallImage,locationsOnaGrid,this->edge_params,min_x,min_y);
-
-                std::vector<std::pair<double, int>> list;
-                for (int i = 0; i < edge_measure.size(); i++) {
-                    std::pair<double, int> p = std::make_pair(edge_measure[i], i);
+            std::vector<std::pair<double, int>> list;
+            for (int i = 0; i < edge_measure.size(); i++) {
+                std::pair<double, int> p = std::make_pair(edge_measure[i], i);
 
                     list.push_back(p);
-                }
-
-                std::sort(list.begin(), list.end(), comparator);
-
-                // choose max topNBoxesKeep from the array and add them to the
-                // locationsOnaGrid
-                for (int i = 0; i < MIN(topNBoxesKeep, list.size()); i++) {
-                    // std::cout<<"Edges: "<<list[i].first<<" "<<list[i].second<<std::endl;
-                    locationsOnaGrid.push_back(bboxesWhichFit[list[i].second]);
-                }
-
-                if (this->display == 3 && s == 0) {
-
-
-                    uword maxBoxEdges;
-
-                    edge_measure.max(maxBoxEdges);
-
-                    this->edgeDensity.addToHistory(edge_measure[maxBoxEdges]);
-
-                    this->objPlot->addPoint(edge_measure[maxBoxEdges], 0);
-
-                    cv::Rect r = bboxesWhichFit[maxBoxEdges];
-
-                    cv::Rect bestEdgesRect(r.x - min_x, r.y - min_y, r.width, r.height);
-
-                    // convert gray to rgb
-                    cv::cvtColor(edges, edges, cv::COLOR_GRAY2RGB);
-
-                    // extract rectangle in the edge image
-                    cv::rectangle(edges, bestEdgesRect, cv::Scalar(100, 255, 0), 2);
-
-                    // find dimensions
-                    int separation = 10;
-
-                    cv::Rect r3(smallImage.rows, image.cols + separation, smallImage.rows,
-                                smallImage.cols);
-
-                    this->copyFromRectangleToImage(this->objectnessCanvas, edges, r3, 2,
-                                                   cv::Vec3b(144, 144, 144));
-                    // add objectness into the this->objectness canvas
-                }
-                // predictions=predictions % edge_objectness;
             }
 
-            if (useStraddling) {
-                arma::rowvec straddling_objectness =
-                        this->straddle.findStraddlng_fast(labels, bboxesWhichFit, min_x, min_y);
+            std::sort(list.begin(), list.end(), comparator);
 
-                // std::cout<<straddling_objectness<<std::endl;
-                std::vector<std::pair<double, int>> list;
+            // choose max topNBoxesKeep from the array and add them to the
+            // locationsOnaGrid
+            for (int i = 0; i < MIN(topNBoxesKeep, list.size()); i++) {
+                // std::cout<<"Edges: "<<list[i].first<<" "<<list[i].second<<std::endl;
+                locationsOnaGrid.push_back(bboxesWhichFit[list[i].second]);
+            }
 
-                for (int i = 0; i < straddling_objectness.size(); i++) {
-                    std::pair<double, int> p =
-                            std::make_pair(straddling_objectness[i], i);
-
-                    list.push_back(p);
+            if (this->display == 3 && s == 0) {
 
 
-                }
+                uword maxBoxEdges;
 
-                std::sort(list.begin(), list.end(), comparator);
+                edge_measure.max(maxBoxEdges);
 
-                // choose max topNBoxesKeep from the array and add them to the
-                // locationsOnaGrid
+                this->edgeDensity.addToHistory(edge_measure[maxBoxEdges]);
+
+                this->objPlot->addPoint(edge_measure[maxBoxEdges], 0);
+
+                cv::Rect r = bboxesWhichFit[maxBoxEdges];
+
+                cv::Rect bestEdgesRect(r.x - min_x, r.y - min_y, r.width, r.height);
+
+                // convert gray to rgb
+                cv::cvtColor(edges, edges, cv::COLOR_GRAY2RGB);
+
+                // extract rectangle in the edge image
+                cv::rectangle(edges, bestEdgesRect, cv::Scalar(100, 255, 0), 2);
+
+                // find dimensions
+                int separation = 10;
+
+                cv::Rect r3(smallImage.rows, image.cols + separation, smallImage.rows,
+                            smallImage.cols);
+
+                this->copyFromRectangleToImage(this->objectnessCanvas, edges, r3, 2,
+                                               cv::Vec3b(144, 144, 144));
+                // add objectness into the this->objectness canvas
+            }
+            // predictions=predictions % edge_objectness;
+        }
+
+        if (useStraddling) {
+            arma::rowvec straddling_objectness =
+                this->straddle.findStraddlng_fast(labels, bboxesWhichFit, min_x, min_y);
+
+            // std::cout<<straddling_objectness<<std::endl;
+            std::vector<std::pair<double, int>> list;
+
+            for (int i = 0; i < straddling_objectness.size(); i++) {
+                std::pair<double, int> p =
+                    std::make_pair(straddling_objectness[i], i);
+
+                list.push_back(p);
 
 
-                for (int i = 0; i < MIN(topNBoxesKeep, list.size()); i++) {
-                    //r std::cout<<"Straddling: "<<list[i].first<<" "<<list[i].second<<std::endl;
-                    locationsOnaGrid.push_back(bboxesWhichFit[list[i].second]);
-                }
+            }
+
+            std::sort(list.begin(), list.end(), comparator);
+
+            // choose max topNBoxesKeep from the array and add them to the
+            // locationsOnaGrid
 
 
-                if (this->display == 3 && s == 0) {
-                    uword maxBoxStraddling;
+            for (int i = 0; i < MIN(topNBoxesKeep, list.size()); i++) {
+                //r std::cout<<"Straddling: "<<list[i].first<<" "<<list[i].second<<std::endl;
+                locationsOnaGrid.push_back(bboxesWhichFit[list[i].second]);
+            }
+
+
+            if (this->display == 3 && s == 0) {
+                uword maxBoxStraddling;
 
                     straddling_objectness.max(maxBoxStraddling);
 
@@ -429,29 +355,6 @@ cv::Rect Struck::track(cv::Mat &image) {
             this->feature->calculateFeature(processedImage, locationsOnaGrid);
 
     arma::rowvec predictions = this->olarank->predictAll(x);
-
-    if (this->scalePrior) {
-        int sigma = 10;
-
-        int two_sigma_squared = 2 * pow(sigma, 2);
-
-        arma::rowvec scalePriors(locationsOnaGrid.size(), arma::fill::zeros);
-
-        for (int i = 0; i < locationsOnaGrid.size(); i++) {
-            scalePriors[i] =
-                    (1 / (2 * M_PI)) *
-                    expf(
-                            -(sqrt(pow(locationsOnaGrid[i].width - this->lastLocation.width,
-                                       2) +
-                                   pow(locationsOnaGrid[i].height - this->lastLocation.height,
-                                       2)) /
-                              two_sigma_squared));
-
-            // expf(-(pow(locationsOnaGrid[i].height-this->lastLocation.height,2)/two_sigma_squared));
-        }
-
-        predictions = predictions % scalePriors;
-    }
 
     uword groundTruth;
     predictions.max(groundTruth);
