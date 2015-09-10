@@ -3,20 +3,11 @@ language: cpp
 compiler:
   - clang
 
-before_install:
-  - echo $LANG
-  - echo $LC_ALL
-  - if [ $TRAVIS_OS_NAME == osx ]; then brew update && brew install glog &&
-  brew tap homebrew/science && brew install opencv && brew install armadillo && brew install boost; fi
-  
+install: ./install_dependencies.sh
+
 before_script:
   - travis_retry bundle
-   - if [ $TRAVIS_OS_NAME == osx ]; then travis_retry cmake -Dtest=on .; fi
-
-script: rake ci
-
-after_success:
-  - if [ $TRAVIS_BRANCH == $TRAVIS_TAG ]; then rake deploy; fi
+   -  travis_retry cmake -Dtest=on .
 
 branches:
   only:
@@ -24,9 +15,3 @@ branches:
     
 notifications:
   email: true
-
-env:
-  - RVM=2.0.0 LANG="en_US.UTF-8"
-
-os:
-  - osx
