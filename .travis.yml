@@ -3,6 +3,8 @@ language: cpp
 compiler:
   - clang
 
+sudo: required
+
 install: ./install_dependencies.sh
 
 before_script:
