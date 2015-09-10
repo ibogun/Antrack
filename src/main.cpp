@@ -11,11 +11,14 @@
 #include <ctime>
 #include <algorithm>
 
+#include <glog/logging.h>
+
 #include "Features/HoG.h"
 
 #include "Tracker/LocationSampler.h"
 #include "Tracker/OLaRank_old.h"
 #include "Tracker/Struck.h"
+#include "Tracker/ObjStruck.h"
 
 #include "Datasets/DataSetWu2013.h"
 #include "Datasets/DatasetALOV300.h"
@@ -26,7 +29,6 @@
 #include "Datasets/ExperimentSpatialRobustness.h"
 #include "Datasets/ExperimentRunner.h"
 #include "Datasets/AllExperimentsRunner.h"
-
 
 #include "Superpixels/SuperPixels.h"
 
@@ -223,7 +225,7 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string
 
 
 int main(int argc, const char *argv[]) {
-
+    google::InitGoogleLogging(argv[0]);
     DataSetWu2013 *wu2013 = new DataSetWu2013;
 
     wu2013->setRootFolder(wu2013RootFolder);
@@ -252,11 +254,14 @@ int main(int argc, const char *argv[]) {
     bool straddling = false;
     bool edgeness = false;
     bool spatialPrior = false;
+    std::string note =" Object Struck tracker";
 
-    Struck tracker = Struck::getTracker(pretraining, filter, edgeness,
-                                        straddling, spatialPrior, kernel,
-                                        feature);
+    ObjectStruck tracker = ObjectStruck::getTracker(pretraining, filter, edgeness,
+                                                    straddling, spatialPrior, kernel,
+                                                    feature, note);
 
+   
+    //ObjectStruck tracker(tracker_s);
     int frames = 10;
 
 
@@ -317,10 +322,14 @@ int main(int argc, const char *argv[]) {
 
     std::cout<< rect << std::endl;
     std::cout<< image.rows << " " << image.cols << std::endl;
+
+
     tracker.initialize(image, rect);
 
     for (int i = startingFrame; i < endingFrame; i++) {
+
         tracker.track(gt_images.second[i]);
+
     }
 
     //dataset->showVideo(vot2015RootFolder, vidIndex);

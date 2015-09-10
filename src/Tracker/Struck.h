@@ -46,8 +46,7 @@
 
 class Struck {
 
-
-
+protected:
     OLaRank_old* olarank;
     Feature* feature;
     LocationSampler* samplerForUpdate;
@@ -68,8 +67,6 @@ class Struck {
     cv::Rect lastLocationObjectness;
     cv::Rect lastRectFilterAndDetectorAgreedOn;
     cv::Rect gtBox;
-
-
 
     std::unordered_map<int,cv::Mat> frames;
 
@@ -95,9 +92,8 @@ class Struck {
 
     int seed=1;
 
-    std::string note="Objectness measures which add top 10 bounding boxes on each scale (boxes addition)";
-
-
+    std::string note="Objectness measures which add top\
+10 bounding boxes on each scale (boxes addition)";
     friend std::ostream& operator<<(std::ostream&, const Struck&);
 
 public:
@@ -116,12 +112,9 @@ public:
 
     std::vector<cv::Rect> boundingBoxes;
 
-    Struck();
-    
+    Struck(){};
     void setGroundTruthBox(cv::Rect box){
         this->gtBox=box;
-
-
     }
 
     void setRobustConstantInFilter(double b){
@@ -136,7 +129,10 @@ public:
         this->objectnessCanvas=c;
     }
 
-    Struck(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useObjectness_,bool scalePrior_,bool useFilter_,int usePretraining_,int display_){
+    Struck(OLaRank_old* olarank_,Feature* feature_,
+           LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,
+           bool useObjectness_,bool scalePrior_,bool useFilter_,
+           int usePretraining_,int display_){
         olarank = olarank_;
         feature = feature_;
         samplerForSearch=samplerSearch_;
@@ -150,7 +146,10 @@ public:
 
     };
 
-    void setParameters(OLaRank_old* olarank_,Feature* feature_,LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,bool useFilter_,int display_){
+    void setParameters(OLaRank_old* olarank_,Feature* feature_,
+                       LocationSampler* samplerSearch_,
+                       LocationSampler* samplerUpdate_,bool useFilter_,
+                       int display_){
 
         this->olarank=olarank_;
         this->feature=feature_;
@@ -165,7 +164,8 @@ public:
     static Struck getTracker(bool,bool,bool,bool,bool);
     static Struck getTracker(bool,bool,bool,bool,bool,std::string,std::string);
 
-    static Struck getTracker(bool,bool,bool,bool,bool,std::string,std::string,std::string);
+    static Struck getTracker(bool,bool,bool,bool,bool,std::string,
+                             std::string,std::string);
 
     std::vector<cv::Rect> getBoundingBoxes(){
         return this->boundingBoxes;
@@ -181,7 +181,8 @@ public:
 
     void initialize(cv::Mat& image,cv::Rect& location);
 
-    void initialize(cv::Mat& image, cv::Rect& location, int updateEveryNFrames,double b, int P, int R, int Q);
+    void initialize(cv::Mat& image, cv::Rect& location,
+                    int updateEveryNFrames,double b, int P, int R, int Q);
 
     void allocateCanvas(cv::Mat&);
 
@@ -192,24 +193,41 @@ public:
         return this->track(image);
     }
 
-    void updateDebugImage(cv::Mat* canvas,cv::Mat& img, cv::Rect &bestLocation,cv::Scalar colorOfBox);
+    void updateDebugImage(cv::Mat* canvas,cv::Mat& img,
+                          cv::Rect &bestLocation,cv::Scalar colorOfBox);
 
-    void applyTrackerOnDataset(Dataset* dataset,std::string rootFolder,std::string saveFolder, bool saveResults);
+    void applyTrackerOnDataset(Dataset* dataset,std::string rootFolder,
+                               std::string saveFolder, bool saveResults);
 
-    void applyTrackerOnVideo(Dataset* dataset, std::string rootFolder, int videoNumber);
+    void applyTrackerOnVideo(Dataset* dataset, std::string rootFolder,
+                             int videoNumber);
 
-    EvaluationRun applyTrackerOnVideoWithinRange(Dataset* dataset,std::string rootFolder,std::string saveFolder,int videoNumber, int frameFrom, int frameTo, bool saveResults=false);
+    EvaluationRun applyTrackerOnVideoWithinRange(Dataset* dataset,
+                                                 std::string rootFolder,
+                                                 std::string saveFolder,
+                                                 int videoNumber,
+                                                 int frameFrom,
+                                                 int frameTo,
+                                                 bool saveResults=false);
 
     void saveResults(string fileName);
 
     void setFilter(const KalmanFilter_my& var){filter=var;};
 
 
-    arma::rowvec weightWithEdgeDensity(cv::Mat& image,std::vector<cv::Rect>& rects,std::vector<double> params, int min_x,int min_y);
+    arma::rowvec weightWithEdgeDensity(cv::Mat& image,
+                                       std::vector<cv::Rect>& rects,
+                                       std::vector<double> params,
+                                       int min_x,int min_y);
 
-    arma::rowvec weightWithStraddling(cv::Mat& image,std::vector<cv::Rect>& rects,std::vector<double> params, int min_x,int min_y);
+    arma::rowvec weightWithStraddling(cv::Mat& image,
+                                      std::vector<cv::Rect>& rects,
+                                      std::vector<double> params,
+                                      int min_x,int min_y);
 
-    void copyFromRectangleToImage(cv::Mat& canvas,cv::Mat& image,cv::Rect rect,int step,cv::Vec3b color);
+    void copyFromRectangleToImage(cv::Mat& canvas,
+                                  cv::Mat& image,cv::Rect rect,
+                                  int step,cv::Vec3b color);
 
 
     void preTraining(cv::Mat&,const cv::Rect& location);
@@ -220,8 +238,6 @@ public:
         this->boundingBoxes.clear();
         this->frames.clear();
         this->framesTracked=0;
-
-
     };
 
     ~Struck(){

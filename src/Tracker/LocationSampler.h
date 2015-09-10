@@ -45,6 +45,10 @@ LocationSampler(int r,int nRad, int nAng)
     void sampleOnAGrid(cv::Rect& currentRect,std::vector<cv::Rect>& rects,
                        int R,int distance=1);
 
+    int getRadius(){
+        return this->radius;
+    }
+
     void sampleEquiDistant(cv::Rect& currentRect,std::vector<cv::Rect>& rects);
 
     void sampleEquiDistantMultiScale(cv::Rect& currentRect,
@@ -60,9 +64,9 @@ LocationSampler(int r,int nRad, int nAng)
     }
 
     std::vector<arma::mat> generateBoxesTensor(const cv::Rect& rect,
-                                           std::vector<int>* radiuses,
-                                           std::vector<int>* heights,
-                                           std::vector<int>* widths);
+                                               std::vector<int>* radiuses,
+                                               std::vector<int>* widths,
+                                               std::vector<int>* heights);
 };
 
 #endif /* defined(__Robust_Struck__LocationSampler__) */

@@ -94,7 +94,7 @@ void Straddling::computeIntegralImages(arma::mat &labels){
     this->integrals.set_size(n+1, m+1, uniqueLabels.size());
     
     this->integrals.fill(0);
-    
+
     for (int i=0; i<uniqueLabels.size(); i++) {
         
         int label=uniqueLabels(i);
@@ -147,25 +147,114 @@ void Straddling::preprocessIntegral(cv::Mat& image){
     this->computeIntegralImages(labels);
 }
 
-void Straddling::straddlingOnCube(int translate_x,
-                                  int translate_y, std::vector<int> &R,
-                                  std::vector<int> &w, std::vector<int> &h,
-                                  std::vector<arma::mat> *s){
 
-    for (int slice=0; slice < s->size(); s++) {
-        for (int x=0; x<s->at(slice).n_cols; x++) {
-            for (int y=0; y<s->at(slice).n_rows; y++) {
+void Straddling::straddlingOnCube(int n,
+                                  int m,
+                                  const std::vector<int> &R,
+                                  const std::vector<int> &w, const std::vector<int> &h,
+                                  std::vector<arma::mat>& s){
 
+    cv::Rect image_box(0,0, n, m);
+
+
+    for (int slice=0; slice < s.size(); slice++) {
+
+        int r = R[slice];
+        int width = w[slice];
+        int height = h[slice];
+        for (int x=0; x<s.at(slice).n_cols; x++) {
+            for (int y=0; y<s.at(slice).n_rows; y++) {
+
+                cv::Point top_left(x,y);
+                cv::Point bottom_right(x+width, y+height);
+                if (image_box.contains(top_left) &&
+                    image_box.contains(bottom_right)) {
+
+                    cv::Rect rect(x,y, width, height);
+                    double straddle = this->computeStraddling(rect);
+                    s[slice](x,y) = straddle;
+
+                }
             }
         }
     }
+}
+
+std::pair<std::vector<cv::Rect>, std::vector<double>> Straddling::
+    nonMaxSuppression(std::vector<arma::mat> &s,
+                      int n,
+                      std::vector<int> &w,
+                      std::vector<int> &h){
+
+    std::vector<cv::Rect> boxes;
+    std::vector<double> boxes_objness;
+
+    for (int slice = 0; slice < s.size(); slice++) {
+        int W = s[slice].n_cols - 1;
+        int H = s[slice].n_rows - 1;
+        arma::vec w_vec = arma::linspace<arma::vec>(n, W - n, n + 1);
+        arma::vec h_vec = arma::linspace<arma::vec>(n, H - n, n + 1);
+
+        for (int i = 0; i < w_vec.size(); i++) {
+            for (int j = 0; j < h_vec.size(); j++) {
+
+                // initialize maximum
+                int mi = i;
+                int mj = j;
+
+                // search within the block
+                for (int i2 = i; i2<= i + n; i2++) {
+                    for (int j2 = j; j2 <= j + n; j2++) {
+                        if (s[slice](i2,j2) > s[slice](mi, mj)) {
+                            mi = i2;
+                            mj = j2;
+                        }
+                    }
+
+                }
+
+                // if there is a better value in the neighborhood -> ignore
+                // (mi,mj)
+                for (int i2 = mi - n; i2<= mi + n; i2++) {
+                    if (i2>=i || i2<= i + n) {
+                        continue;
+                    }
+
+
+                    for (int j2 = mj - n; j2 <= mj + n; j2++) {
+                        if (j2 >=j || j2 <=j + n) {
+                            continue;
+                        }
+
+                        if (s[slice](i2,j2) > s[slice](mi, mj)) {
+                            goto failed;
+                        }
+                    }
+
+                }
+                {
+                    // found maximum at (mi,mj)
+                    cv::Rect local_max_box(mi,mj,w[slice], h[slice] );
+                    boxes.push_back(local_max_box);
+                    boxes_objness.push_back(s[slice](mi,mj));
+                }
+            failed:
+                continue;
+            }
+        }
+    }
+
+    std::pair<std::vector<cv::Rect>, std::vector<double>> result =
+        std::make_pair(boxes, boxes_objness);
+
+    return result;
 }
 
 double Straddling::computeStraddling(cv::Rect &rect_big){
     double measure=0;
     // for each superpixel
     // find area of the overlap between superpixel and window
-    cv::Rect rect=getInnerRect(rect_big,this->inner_threshold);
+    cv::Rect rect=rect_big;
     int n=this->integrals.n_rows-1;
     int m=this->integrals.n_cols-1;
 

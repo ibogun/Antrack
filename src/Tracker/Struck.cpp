@@ -172,6 +172,7 @@ cv::Rect Struck::track(cv::Mat &image) {
 
     cv::Mat processedImage = this->feature->prepareImage(&image);
 
+    /*
     if (useEdgeDensity || useStraddling) {
 
         // Prepare small image for objectness
@@ -209,11 +210,6 @@ cv::Rect Struck::track(cv::Mat &image) {
             this->objectnessCanvas = cv::Mat(h, w, image.type(), CV_RGB(0, 0, 0));
         }
 
-        /*
-         For every scale from smallestScale:largestScale
-         generate boxes
-         find obj measures
-         */
 
         cv::Mat edges;
         arma::mat labels;
@@ -351,6 +347,7 @@ cv::Rect Struck::track(cv::Mat &image) {
         }
     }
 
+    */
     arma::mat x =
             this->feature->calculateFeature(processedImage, locationsOnaGrid);
 
@@ -1431,10 +1428,7 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
     KalmanFilter_my filter =
             KalmanFilterGenerator::generateConstantVelocityFilter(
                     x_k, 0, 0, R_cov, Q_cov, P, robustConstant_b);
-    // KalmanFilter_my
-    // filter=KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
-    // KalmanFilter_my
-    // filter=KalmanFilterGenerator::generateConstantAccelerationFilter(x_k,0,0,R_cov,Q_cov,P,robustConstant_b);
+
     tracker.setFilter(filter);
 
     tracker.setNote(note_);

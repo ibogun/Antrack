@@ -1,9 +1,14 @@
-# What is this?
-Antrack is a tracker which uses ancors and multiple objects tracking to guide its tracking process. It is based on Structured tracker with robust Kalman filter extended to multiple objects.
+# Reproducing VOT 2015
+To compile use:
+
+mkdir build
+cd build
+cmake -DVOT2015=ON ..
+cd ../matlab/vot-tookit/antrack
+
+// Start matlab and run
+run_experiments
 
 # Dependencies
-Compilers
-- gcc >= 4.9  (link on how to install http://www.sysads.co.uk/2014/07/install-gcc-gnu-4-9-1-on-ubuntu-14-04/)
-
-# Compiling on Blueshark
-     cmake -Dparallel=on  -DBOOST_ROOT=~/Download/boost_1_57_0/ ..
+Logging library
+https://github.com/google/glog

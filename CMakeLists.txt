@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8.4)
 
-# Options. Turn on with 'cmake -Dmyvarname=ON'.
 option(test "Build all tests." OFF) # Makes boolean 'test' available.
 option(VOT2015 "Build VOT2015-friendly" OFF)
 option(experiments "Build all experiments." OFF) # Makes boolean 'test' available.
@@ -10,31 +9,17 @@ option(python "Build python wrappers." OFF)
 option(parallel "Build parallel dataset evaluation." OFF)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
-#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY bin)
-# Make PROJECT_SOURCE_DIR, PROJECT_BINARY_DIR, and PROJECT_NAME available.
+
 set(PROJECT_NAME Robust_tracking_by_detection)
 project(${PROJECT_NAME})
 
-#set(CMAKE_CXX_FLAGS "-g -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 find_package(OpenCV REQUIRED )
 find_package(Armadillo REQUIRED)
 find_package (Threads REQUIRED)
+find_package( Boost COMPONENTS program_options filesystem system)
+find_library(GLOG_LIBRARY glog)
 
-
-
-# If you want your own include/ directory, set this, and then you can do
-# include_directories(${COMMON_INCLUDES}) in other CMakeLists.txt files.
-# set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include)
-
-################################
-# Normal Libraries & Executables
-################################
-#add_library(project1_lib src/Tests/project1.cpp)
-#add_executable(Testing src/Tests/test_project1.cpp)
-# Key idea: SEPARATE OUT your main() function into its own file so it can be its
-# own executable. Separating out main() means you can add this library to be
-# used elsewhere.
 
 set(PYTHON_FILES
 	src/python_wrappers/tracker_python.cpp
@@ -83,8 +68,6 @@ FILE(GLOB TRAX_FILES
 	src/Datasets/vot2014_trax/main.cpp
 )
 
-
-
 FILE(GLOB SOURCE_FILES
 	src/Datasets/*.cpp
 	src/Datasets/*.h
@@ -98,8 +81,6 @@ FILE(GLOB SOURCE_FILES
 	src/Tracker/*.h
 )
 
-
-
 ################################
 # Testing
 ################################
@@ -111,7 +92,8 @@ if (test)
 
   # Include the gtest library. gtest_SOURCE_DIR is available due to
   # 'project(gtest)' above.
-  include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+  include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR}
+    ${Boost_INCLUDE_DIR})
 
   ##############
   # Unit Tests
@@ -119,7 +101,8 @@ if (test)
   add_executable(RunUnitTests ${SOURCE_FILES} ${TEST_FILES} ${Superpixels})
   #add_executable(RunUnitTests ${SOURCE_FILES})
   # Standard linking to gtest stuff.
-  target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS}
+    ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})
 
   # Extra linking for the project.
   #target_link_libraries(runUnitTests project1_lib)
@@ -145,7 +128,8 @@ if(VOT2015)
 
 	include_directories( ${Boost_INCLUDE_DIR} )
 	add_executable(struck_vot2014 ${Superpixels} ${SOURCE_FILES} ${TRAX_FILES})
-	target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})
+    target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})
 
 	set_target_properties(struck_vot2014 PROPERTIES
 				RUNTIME_OUTPUT_DIRECTORY ${VOT2015_DESTINATION})
@@ -157,14 +141,14 @@ endif()
 
 if(python)
 	set(PYTHON_DESTINATION "../python/Tracker_wrapper/")
-
+    find_package( Boost COMPONENTS python)
 	find_package(PythonLibs)
 
 	set(PYTHON_INCLUDE_DIRS /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/Headers)
 	set(pyconfig /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/include/python2.7)
 	set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
 
-	find_package( Boost COMPONENTS python program_options filesystem system)
+
 	include_directories (${Boost_INCLUDE_DIRS} ${pyconfig})
 
 	PYTHON_ADD_MODULE(struck_tracker ${SOURCE_FILES} ${PYTHON_FILES} ${Superpixels})
@@ -195,7 +179,7 @@ include_directories(${ARMADILLO_INCLUDE_DIRS})
 include_directories (${Boost_INCLUDE_DIRS})
 target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
   ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
-    ${Boost_LIBRARIES} )
+    ${Boost_LIBRARIES} ${GLOG_LIBRARY} )
 
 
 if (parallel)

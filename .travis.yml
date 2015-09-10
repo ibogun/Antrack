@@ -1,0 +1,43 @@
+language: cpp
+
+compiler:
+  - clang
+
+before_install:
+  - echo $LANG
+  - echo $LC_ALL
+  - if [ $TRAVIS_OS_NAME == osx ]; then brew update && brew install glog &&
+  brew tap homebrew/science && brew install opencv && brew install armadillo && brew install boost; fi
+  
+before_script:
+  - travis_retry bundle
+   - if [ $TRAVIS_OS_NAME == osx ]; then travis_retry cmake -Dtest=on .; fi
+
+script: rake ci
+
+after_success:
+  - if [ $TRAVIS_BRANCH == $TRAVIS_TAG ]; then rake deploy; fi
+
+branches:
+  only:
+    - master
+    
+notifications:
+  email: true
+  irc:
+    channels:
+      - "chat.freenode.net#rubinius"
+    template:
+      - "%{repository}/%{branch} (%{commit} - %{author}): %{build_url}: %{message}"
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/9502afd22ca6c8e85fb3
+    on_success: change
+    on_failure: always
+    on_start: always
+
+env:
+  - RVM=2.0.0 LANG="en_US.UTF-8"
+
+os:
+  - osx

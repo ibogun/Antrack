@@ -16,14 +16,8 @@
 #include "SuperPixels.h"
 
 class Straddling{
-    
-    
     int nSuperPixels;
     double inner_threshold;
-    
-    // for plotting support vectors (used only if display==2)
-    
-    
     std::vector<double> straddling_history;
     
     arma::Cube<int> integrals;
@@ -49,20 +43,30 @@ public:
     }
     
     static cv::Rect getInnerRect(cv::Rect& r, double threshold);
+
+    std::pair<std::vector<cv::Rect>, std::vector<double>> nonMaxSuppression(
+        std::vector<arma::mat>& s,
+        int n,
+        std::vector<int>& w,
+        std::vector<int>& h);
     
     arma::mat getLabels(cv::Mat&);
-    arma::rowvec findStraddling(arma::mat& labels,std::vector<cv::Rect>& rects, int translate_x, int translate_y);
+    arma::rowvec findStraddling(arma::mat& labels,std::vector<cv::Rect>& rects,
+                                int translate_x, int translate_y);
     
     double findStraddlingMeasure(arma::mat& labels, cv::Rect& rectangle);
     
-    arma::rowvec findStraddlng_fast(arma::mat& labels,std::vector<cv::Rect>& rects, int translate_x,int translate_y);
+    arma::rowvec findStraddlng_fast(arma::mat& labels,
+                                    std::vector<cv::Rect>& rects,
+                                    int translate_x,int translate_y);
 
     void preprocessIntegral(cv::Mat& mat);
 
-    void straddlingOnCube(arma::mat& labels, int translate_x,
-                          int translate_y, std::vector<int>& R,
-                          std::vector<int>& w, std::vector<int>& h,
-                          std::vector<arma::mat>* s);
+    void straddlingOnCube(int n,
+                          int m,
+                          const std::vector<int>& R,
+                          const std::vector<int>& w, const std::vector<int>& h,
+                          std::vector<arma::mat>& s);
     
     void computeIntegralImages(arma::mat& labels);
     

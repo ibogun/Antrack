@@ -380,14 +380,14 @@ inline cv::Rect LocationSampler::fromCenterToBoundingBox(const double &x, const 
 std::vector<arma::mat> LocationSampler::generateBoxesTensor(
     const cv::Rect& rect,
     std::vector<int>* radiuses,
-    std::vector<int>* heights,
-    std::vector<int>* widths){
+    std::vector<int>* widths,
+    std::vector<int>* heights){
 
     std::vector<arma::mat> objness_canvas;
     using namespace cv;
 
     // current height and width
-    arma::mat current(2*this->radius + 1, 2*this->radius);
+    arma::mat current(2*this->radius + 1, 2*this->radius + 1, arma::fill::zeros);
     objness_canvas.push_back(current);
     radiuses->push_back(this->radius);
     heights->push_back(rect.height);
@@ -396,7 +396,7 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
     int R = this->radius / 3;
 
     // fixed aspect ratio
-    for (int s = this->min_scales; i <= this->max_scales; i++) {
+    for (int s = this->min_scales; s <= this->max_scales; s++) {
         if (s == 0) {
             continue;
         }
@@ -410,7 +410,7 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
             continue;
         }
 
-        arma::mat c(2*R + 1, 2*R + 1);
+        arma::mat c(2*R + 1, 2*R + 1,arma::fill::zeros);
         objness_canvas.push_back(c);
         radiuses->push_back(R);
         heights->push_back(halfHeight_scale*2);
@@ -440,7 +440,7 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
                 continue;
             }
 
-            arma::mat c(2*R + 1, 2*R + 1);
+            arma::mat c(2*R + 1, 2*R + 1, arma::fill::zeros);
             objness_canvas.push_back(c);
             radiuses->push_back(R);
             heights->push_back(halfHeight_scale*2);
