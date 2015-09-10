@@ -7,7 +7,7 @@ install: ./install_dependencies.sh
 
 before_script:
   - travis_retry bundle
-   -  travis_retry cmake -Dtest=on .
+   -  travis_retry cmake -Dtest=on . && make test
 
 branches:
   only:
