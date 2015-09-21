@@ -1,82 +1,68 @@
+//
+// Created by Ivan Bogun on 9/18/15.
+//
 
-#include "ObjStruck.h"
+#include "ObjDetectorStruck.h"
 #include  <glog/logging.h>
 
-cv::Rect ObjectStruck::track(cv::Mat& image){
+bool isBBoxTooSmallForStraddeling(cv::Rect& rect, int area, int nSuperpixels, double threshold){
 
-     std::vector<cv::Rect> locationsOnaGrid;
+    int box_area = rect.width * rect.height;
+
+    return (threshold*(area/((double) nSuperpixels)) < box_area);
+}
+
+cv::Rect ObjDetectorStruck::track(cv::Mat& image){
+
+    std::vector<cv::Rect> locationsOnaGrid;
     locationsOnaGrid.push_back(lastLocation);
 
-    // Do the objectness stuff here
-
-    int delta = this->samplerForSearch->getRadius();
-
-    int x_min = max(0, lastLocation.x - delta);
-    int y_min = max(0, lastLocation.y - delta);
-
-    int x_max = min(image.cols, lastLocation.x + lastLocation.width + delta);
-    int y_max = min(image.rows, lastLocation.y + lastLocation.height + delta);
-
-    cv::Rect big_box(x_min, y_min, x_max - x_min, y_max - y_min);
-    // extract small image from 'image'
-    cv::Mat small_image(image, big_box);
-    if (this->display == 3) {
-            // find dimensions
-            int separation = 10;
-            int w = image.cols + small_image.cols + separation;
-            int h = MAX(2 * image.rows, 2 * small_image.rows);
-
-            this->objectnessCanvas = cv::Mat(h, w, image.type(), CV_RGB(0,
-                                                                        0, 0));
-    }
-
-    // calculate integral images
-    //if (useStraddling) {
-    this->straddle.preprocessIntegral(small_image);
-    //}
-
-    std::vector<int> radiuses;
-    std::vector<int> heights;
-    std::vector<int> widths;
-
-    std::vector<arma::mat> straddling_cube =
-            this->samplerForSearch->generateBoxesTensor(lastLocation, &radiuses,
-                                                        &widths, &heights);
+    this->samplerForSearch->sampleEquiDistantMultiScale(lastLocation,
+                                                        locationsOnaGrid);
 
 
-    this->straddle.straddlingOnCube(small_image.rows, small_image.cols,
-                                    lastLocation.x - x_min,
-                                    lastLocation.y - y_min,
-                                    radiuses, widths, heights,
-                                    straddling_cube);
-    this->samplerForSearch->rearrangeByDimensionSimilarity(lastLocation,
-    radiuses,widths,heights);
-    int non_max_suppression_n = 3;
-    std::pair<std::vector<cv::Rect>, std::vector<double>> suppressed =
-        this->straddle.nonMaxSuppression(straddling_cube, non_max_suppression_n,
-                                         widths, heights);
 
 
-    std::vector<size_t > indices = LocationSampler::sort_indexes(suppressed.second);
-    std::vector<cv::Rect> rects_left;
+    arma::rowvec obj_predictions(locationsOnaGrid.size(), arma::fill::zeros);
 
-    for (int j = suppressed.second.size() - 2000; j < suppressed.second.size(); ++j) {
-        rects_left.push_back(suppressed.first[indices[j]]);
-    }
+    if (this->lambda > 0){
+        int delta = this->samplerForSearch->getRadius();
+    
+        int x_min = max(0, lastLocation.x - delta);
+        int y_min = max(0, lastLocation.y - delta);
+    
+        int x_max = min(image.cols, lastLocation.x + lastLocation.width + delta);
+        int y_max = min(image.rows, lastLocation.y + lastLocation.height + delta);
+    
+        cv::Rect big_box(x_min, y_min, x_max - x_min, y_max - y_min);
+        // extract small image from 'image'
+        cv::Mat small_image(image, big_box);
 
-    std::cout<<"Number of boxes: " << rects_left.size()<<std::endl;
-    cv::Rect image_box(0,0, image.cols, image.rows);
+        Straddling* s  = new Straddling(200, 0.9);
+        this->straddle = *s;
+        this->straddle.preprocessIntegral(small_image);
 
-    for (int i =0 ; i< rects_left.size(); i++) {
-        cv::Rect rect(rects_left[i].x + x_min,
-                      rects_left[i].y + y_min,
-                      rects_left[i].width, rects_left[i].height);
+        cv::Rect small_image_rect(0,0, big_box.width, big_box.height);
 
-        cv::Point top_left(rect.x, rect.y);
-        cv::Point bottom_right(rect.x + rect.width, rect.y + rect.height);
-        if(image_box.contains(top_left) && image_box.contains(bottom_right)){
-             locationsOnaGrid.push_back(rect);
+        for (int i = 0; i < locationsOnaGrid.size(); ++i) {
+
+            cv::Rect rectInSmallImage(locationsOnaGrid[i].x - x_min,
+                                      locationsOnaGrid[i].y - y_min, locationsOnaGrid[i].width,
+                                      locationsOnaGrid[i].height);
+
+            bool rect_fits_small_image = (rectInSmallImage.x+ rectInSmallImage.width < small_image.cols) &&
+                    (rectInSmallImage.y+ rectInSmallImage.height < small_image.rows)&& (rectInSmallImage.x >= 0)
+                                         && ( rectInSmallImage.y >= 0);
+
+            if (rect_fits_small_image){
+                obj_predictions[i] = this->straddle.computeStraddling(rectInSmallImage);
+            }
+
         }
+
+
+
+        delete s;
     }
 
     if (useFilter && !updateTracker) {
@@ -90,6 +76,12 @@ cv::Rect ObjectStruck::track(cv::Mat& image){
             this->feature->calculateFeature(processedImage, locationsOnaGrid);
 
     arma::rowvec predictions = this->olarank->predictAll(x);
+
+    if (lambda > 0) {
+        predictions = (predictions - arma::min(predictions))/  arma::max(predictions);
+        obj_predictions = (obj_predictions - arma::min(obj_predictions))/  arma::max(obj_predictions);
+        predictions = predictions + lambda* obj_predictions;
+    }
 
     uword groundTruth;
     predictions.max(groundTruth);
@@ -236,7 +228,7 @@ cv::Rect ObjectStruck::track(cv::Mat& image){
     return lastLocation;
 }
 
-ObjectStruck ObjectStruck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
+ObjDetectorStruck ObjDetectorStruck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
                                       bool useStraddling, bool scalePrior,
                                       std::string kernelSTR, std::string featureSTR, std::string note_) {
 
@@ -315,33 +307,6 @@ ObjectStruck ObjectStruck::getTracker(bool pretraining, bool useFilter, bool use
         kernel = new LinearKernel;
     }
 
-    // IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
-    // ApproximateKernel* kernel= new ApproximateKernel(30);
-    // IntersectionKernel* kernel=new IntersectionKernel;
-
-    // RBFKernel *kernel = new RBFKernel(0.2);
-
-    // HoGandRawFeatures* features=new HoGandRawFeatures(size,16);
-    // LinearKernel* kernel=new LinearKernel;
-
-    //    Haar* f1=new Haar(2);
-    //    HistogramFeatures* f2=new HistogramFeatures(2,16);
-    //    IntersectionKernel* k2=new IntersectionKernel;
-    //    RBFKernel* k1=new RBFKernel(0.2);
-    //
-    //    std::vector<Kernel*> ks;
-    //
-    //    ks.push_back(k1);
-    //    ks.push_back(k2);
-    //
-    //    std::vector<Feature*>    fs;
-    //
-    //    fs.push_back(f1);
-    //    fs.push_back(f2);
-    //
-    //    MultiKernel* kernel=new MultiKernel(ks,fs);
-    //    MultiFeature* features=new MultiFeature(fs);
-
     int verbose = 0;
     int display = 0;
     int m = features->calculateFeatureDimension();
@@ -362,7 +327,7 @@ ObjectStruck ObjectStruck::getTracker(bool pretraining, bool useFilter, bool use
     LocationSampler *samplerForSearch =
             new LocationSampler(r_search, nRadial_search, nAngular_search);
 
-    ObjectStruck tracker(olarank, features, samplerForSearch, samplerForUpdate,
+    ObjDetectorStruck tracker(olarank, features, samplerForSearch, samplerForUpdate,
                    useObjectness, scalePrior, useFilter, pretraining, display);
 
     tracker.useStraddling = useStraddling;

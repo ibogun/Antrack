@@ -1,8 +1,11 @@
+//
+// Created by Ivan Bogun on 9/18/15.
+//
 
-#include "ObjStruck.h"
+#include "FilterBadBoxesStruck.h"
 #include  <glog/logging.h>
 
-cv::Rect ObjectStruck::track(cv::Mat& image){
+cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
 
      std::vector<cv::Rect> locationsOnaGrid;
     locationsOnaGrid.push_back(lastLocation);
@@ -236,7 +239,7 @@ cv::Rect ObjectStruck::track(cv::Mat& image){
     return lastLocation;
 }
 
-ObjectStruck ObjectStruck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
+FilterBadBoxesStruck FilterBadBoxesStruck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
                                       bool useStraddling, bool scalePrior,
                                       std::string kernelSTR, std::string featureSTR, std::string note_) {
 
@@ -315,33 +318,6 @@ ObjectStruck ObjectStruck::getTracker(bool pretraining, bool useFilter, bool use
         kernel = new LinearKernel;
     }
 
-    // IntersectionKernel_fast* kernel=new IntersectionKernel_fast;
-    // ApproximateKernel* kernel= new ApproximateKernel(30);
-    // IntersectionKernel* kernel=new IntersectionKernel;
-
-    // RBFKernel *kernel = new RBFKernel(0.2);
-
-    // HoGandRawFeatures* features=new HoGandRawFeatures(size,16);
-    // LinearKernel* kernel=new LinearKernel;
-
-    //    Haar* f1=new Haar(2);
-    //    HistogramFeatures* f2=new HistogramFeatures(2,16);
-    //    IntersectionKernel* k2=new IntersectionKernel;
-    //    RBFKernel* k1=new RBFKernel(0.2);
-    //
-    //    std::vector<Kernel*> ks;
-    //
-    //    ks.push_back(k1);
-    //    ks.push_back(k2);
-    //
-    //    std::vector<Feature*>    fs;
-    //
-    //    fs.push_back(f1);
-    //    fs.push_back(f2);
-    //
-    //    MultiKernel* kernel=new MultiKernel(ks,fs);
-    //    MultiFeature* features=new MultiFeature(fs);
-
     int verbose = 0;
     int display = 0;
     int m = features->calculateFeatureDimension();
@@ -362,7 +338,7 @@ ObjectStruck ObjectStruck::getTracker(bool pretraining, bool useFilter, bool use
     LocationSampler *samplerForSearch =
             new LocationSampler(r_search, nRadial_search, nAngular_search);
 
-    ObjectStruck tracker(olarank, features, samplerForSearch, samplerForUpdate,
+    FilterBadBoxesStruck tracker(olarank, features, samplerForSearch, samplerForUpdate,
                    useObjectness, scalePrior, useFilter, pretraining, display);
 
     tracker.useStraddling = useStraddling;

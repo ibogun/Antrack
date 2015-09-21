@@ -7,13 +7,13 @@
 //
 
 #include "Objectness.h"
+#include "glog/logging.h"
 
 arma::mat Straddling::getLabels(cv::Mat& image){
     
     SuperPixels seeds;
     
     arma::mat Label=seeds.calculateSegmentation(image, this->nSuperPixels,this->display);
-    
     if (this->display) {
         this->canvas=seeds.canvas;
     }
@@ -27,17 +27,8 @@ double Straddling::findStraddlingMeasure(arma::mat &labels, cv::Rect &rect){
     arma::mat box=labels.submat(rect.x, rect.y, rect.x+rect.width-1, rect.y+rect.height-1);
     
     arma::mat uniqueLabels=arma::unique(box);
-    
-    //    for (int i=0; i<uniqueLabels.n_elem; i++) {
-    //        std::cout<<uniqueLabels(i)<<std::endl;
-    //    }
-    
-    
-    
-    using namespace arma;
-    
-    
-    double measure=0;
+   using namespace arma;
+   double measure=0;
     
     // for every label do
     // get label
@@ -148,36 +139,125 @@ void Straddling::preprocessIntegral(cv::Mat& image){
 }
 
 
-void Straddling::straddlingOnCube(int n,
-                                  int m,
+void Straddling::straddlingOnCube(int img_rows,
+                                  int img_cols,
+                                  int center_x,
+                                  int center_y,
                                   const std::vector<int> &R,
-                                  const std::vector<int> &w, const std::vector<int> &h,
+                                  const std::vector<int> &w,
+                                  const std::vector<int> &h,
                                   std::vector<arma::mat>& s){
 
-    cv::Rect image_box(0,0, n, m);
+    cv::Rect image_box(0,0, img_cols, img_rows);
 
+    CHECK_EQ(s.size(), R.size());
+    CHECK_EQ(R.size(), w.size());
+    CHECK_EQ(w.size(), h.size());
 
     for (int slice=0; slice < s.size(); slice++) {
 
         int r = R[slice];
         int width = w[slice];
         int height = h[slice];
+
         for (int x=0; x<s.at(slice).n_cols; x++) {
+
             for (int y=0; y<s.at(slice).n_rows; y++) {
 
-                cv::Point top_left(x,y);
+                int x_norm = (x-center_x);
+                int y_norm = (y-center_y);
+                // only interested in the values in the shpere
+                //if (sqrt(x_norm*x_norm + y_norm*y_norm)>r) continue;
+
+
+
+                cv::Point top_left(x, y);
                 cv::Point bottom_right(x+width, y+height);
+
+                //continue;
                 if (image_box.contains(top_left) &&
                     image_box.contains(bottom_right)) {
 
-                    cv::Rect rect(x,y, width, height);
+                    int c_x = x + floor( width / 2.0);
+                    int c_y = y + floor(height / 2.0);
+                    cv::Rect rect(x, y,
+                                  width, height);
                     double straddle = this->computeStraddling(rect);
-                    s[slice](x,y) = straddle;
+                    s[slice](c_y, c_x) = straddle;
+                    // std::cout<< "Coordinates: " << slice <<" " << x << " "
+                    //         << y <<" "<< s[slice](x,y)<<std::endl;
 
                 }
             }
         }
+
     }
+}
+
+
+void Straddling::renormalize(std::vector<arma::mat>& s, int r){
+    // renormalize the matrix s
+
+}
+
+arma::mat Straddling::nonMaxSuppression(const arma::mat &s, int n){
+    using namespace arma;
+
+    int W  = s.n_cols - 1;
+    int H  = s.n_rows - 1;
+    mat suppressed(H + 1, W + 1, fill::zeros);
+    std::cout << s.n_rows << " " << s.n_cols << std::endl;
+    std::cout << suppressed.n_rows << " " << suppressed.n_cols << std::endl;
+    int width_n = (W - 2*n)/(n+1);
+    int height_n = (H - 2*n)/(n+1);
+    arma::vec w_vec = arma::linspace<arma::vec>(n, W - n, width_n);
+    arma::vec h_vec = arma::linspace<arma::vec>(n, H - n, height_n);
+
+    for (int ii = 0; ii< h_vec.size(); ii++) {
+        for (int jj = 0; jj < w_vec.size(); jj++) {
+            int i = h_vec[ii];
+            int j = w_vec[jj];
+            // initialize maximum
+            int mi = i;
+            int mj = j;
+            // search within the block
+            for (int i2 = i; i2<= min(i + n, W); i2++) {
+                for (int j2 = j; j2 <= min(j + n, H ); j2++) {
+                    if (s(i2,j2) > s(mi, mj)) {
+                        mi = i2;
+                        mj = j2;
+                    }
+                }
+
+            }
+
+            // if there is a better value in the neighborhood -> ignore
+            // (mi,mj)
+            for (int i2 = mi - n; i2<=min( mi + n, W); i2++) {
+                if (i2>=i || i2<= i + n) {
+                    continue;
+                }
+                for (int j2 = mj - n; j2 <= min(mj + n, H); j2++) {
+                    if (j2 >=j || j2 <=j + n) {
+                        continue;
+                    }
+
+                    if (s(i2,j2) > s(mi, mj)) {
+                        goto failed;
+                    }
+                }
+
+            }
+            {
+                // found maximum at (mi,mj)
+                suppressed(mi,mj) = s(mi,mj);
+            }
+        failed:
+            continue;
+        }
+    }
+
+    return suppressed;
 }
 
 std::pair<std::vector<cv::Rect>, std::vector<double>> Straddling::
@@ -189,22 +269,30 @@ std::pair<std::vector<cv::Rect>, std::vector<double>> Straddling::
     std::vector<cv::Rect> boxes;
     std::vector<double> boxes_objness;
 
+
     for (int slice = 0; slice < s.size(); slice++) {
-        int W = s[slice].n_cols - 1;
-        int H = s[slice].n_rows - 1;
-        arma::vec w_vec = arma::linspace<arma::vec>(n, W - n, n + 1);
-        arma::vec h_vec = arma::linspace<arma::vec>(n, H - n, n + 1);
 
-        for (int i = 0; i < w_vec.size(); i++) {
-            for (int j = 0; j < h_vec.size(); j++) {
+        n++;
+        using namespace arma;
 
+        int W  = s[slice].n_cols - 1;
+        int H  = s[slice].n_rows - 1;
+
+        int width_n = (W - 2*n)/(n+1);
+        int height_n = (H - 2*n)/(n+1);
+        arma::vec w_vec = arma::linspace<arma::vec>(n, W - n, width_n);
+        arma::vec h_vec = arma::linspace<arma::vec>(n, H - n, height_n);
+
+        for (int ii = 0; ii< h_vec.size(); ii++) {
+            for (int jj = 0; jj < w_vec.size(); jj++) {
+                int i = h_vec[ii];
+                int j = w_vec[jj];
                 // initialize maximum
                 int mi = i;
                 int mj = j;
-
                 // search within the block
-                for (int i2 = i; i2<= i + n; i2++) {
-                    for (int j2 = j; j2 <= j + n; j2++) {
+                for (int i2 = i; i2<= min(i + n, W); i2++) {
+                    for (int j2 = j; j2 <= min(j + n, H ); j2++) {
                         if (s[slice](i2,j2) > s[slice](mi, mj)) {
                             mi = i2;
                             mj = j2;
@@ -215,13 +303,11 @@ std::pair<std::vector<cv::Rect>, std::vector<double>> Straddling::
 
                 // if there is a better value in the neighborhood -> ignore
                 // (mi,mj)
-                for (int i2 = mi - n; i2<= mi + n; i2++) {
+                for (int i2 = mi - n; i2<=min( mi + n, W); i2++) {
                     if (i2>=i || i2<= i + n) {
                         continue;
                     }
-
-
-                    for (int j2 = mj - n; j2 <= mj + n; j2++) {
+                    for (int j2 = mj - n; j2 <= min(mj + n, H); j2++) {
                         if (j2 >=j || j2 <=j + n) {
                             continue;
                         }
@@ -242,6 +328,7 @@ std::pair<std::vector<cv::Rect>, std::vector<double>> Straddling::
                 continue;
             }
         }
+
     }
 
     std::pair<std::vector<cv::Rect>, std::vector<double>> result =
@@ -252,9 +339,11 @@ std::pair<std::vector<cv::Rect>, std::vector<double>> Straddling::
 
 double Straddling::computeStraddling(cv::Rect &rect_big){
     double measure=0;
-    // for each superpixel
-    // find area of the overlap between superpixel and window
-    cv::Rect rect=rect_big;
+    // Transpose operation so that rect_big could be passed in
+    // image coordinates, not matrix ones.
+    //cv::Rect rect(rect_big.y, rect_big.x, rect_big.height, rect_big.width);
+    cv::Rect rect = this->getInnerRect(rect_big,this->inner_threshold);
+    //cv::Rect rect(rect_big.y, rect_big.x, rect_big.height, rect_big.width);
     int n=this->integrals.n_rows-1;
     int m=this->integrals.n_cols-1;
 
@@ -270,12 +359,14 @@ double Straddling::computeStraddling(cv::Rect &rect_big){
         //            int D=integrals(rect.x,rect.y+rect.height,superpixel);
         
         int area_superpixel_window_overlap=integrals(rect.x+rect.width,
-                                                     rect.y+rect.height,superpixel)+
-        integrals(rect.x,rect.y,superpixel)-
-        integrals(rect.x+rect.width,rect.y,superpixel)-
-        integrals(rect.x,rect.y+rect.height,superpixel);
+                                                     rect.y+rect.height,
+                                                     superpixel)+
+            integrals(rect.x,rect.y,superpixel)-
+            integrals(rect.x+rect.width,rect.y,superpixel)-
+            integrals(rect.x,rect.y+rect.height,superpixel);
         
-        int area_superpixel_without_window=integrals(n,m,superpixel)-area_superpixel_window_overlap;
+        int area_superpixel_without_window=integrals(n,m,superpixel)-
+            area_superpixel_window_overlap;
         
         
         //int sum=integrals(n,m,superpixel);
@@ -389,7 +480,6 @@ double EdgeDensity::computeEdgeDensity(cv::Rect &rect){
 
 cv::Rect Straddling::getInnerRect(cv::Rect &rect, double inner_threshold){
     // get inner rectangle
-    
     int inner_rect_x=rect.x+rect.width*(1-inner_threshold)/(2.0);
     int inner_rect_y=rect.y+rect.height*(1-inner_threshold)/(2.0);
     int inner_width=rect.width*inner_threshold;

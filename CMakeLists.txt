@@ -18,23 +18,26 @@ find_package(OpenCV REQUIRED )
 find_package(Armadillo REQUIRED)
 find_package (Threads REQUIRED)
 find_package( Boost COMPONENTS program_options filesystem system)
+find_package(gflags REQUIRED)
 find_library(GLOG_LIBRARY glog)
 
+set(PYTHON_FILES_Objectness
+  src/python_wrappers/objectness_topy.cpp
+  )
 
-set(PYTHON_FILES
-	src/python_wrappers/tracker_python.cpp
-)
-
+set(PYTHON_FILES_Tracker
+  src/python_wrappers/tracker_python.cpp
+  )
 
 FILE(GLOB TEST_FILES
-	src/Tests/*.cpp
-	src/Tests/*.h
-	src/Tests/main.cpp
-	)
+  src/Tests/*.cpp
+  src/Tests/*.h
+  src/Tests/main.cpp
+  )
 
 set(FILTER_PRETRAINING_MAIN
-	src/main_filter_pretraining.cpp
-)
+  src/main_filter_pretraining.cpp
+  )
 
 set(PARALLEL_MAIN
   src/main_parallel.cpp
@@ -141,9 +144,9 @@ endif()
 
 if(python)
 	set(PYTHON_DESTINATION "../python/Tracker_wrapper/")
-    find_package( Boost COMPONENTS python)
-	find_package(PythonLibs)
 
+	find_package(PythonLibs)
+    find_package( Boost COMPONENTS python filesystem system)
 	set(PYTHON_INCLUDE_DIRS /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/Headers)
 	set(pyconfig /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/include/python2.7)
 	set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
@@ -151,18 +154,32 @@ if(python)
 
 	include_directories (${Boost_INCLUDE_DIRS} ${pyconfig})
 
-	PYTHON_ADD_MODULE(struck_tracker ${SOURCE_FILES} ${PYTHON_FILES} ${Superpixels})
-target_link_libraries(struck_tracker
+    PYTHON_ADD_MODULE(objectness_python ${SOURCE_FILES} ${PYTHON_FILES_Objectness} ${Superpixels})
+target_link_libraries(objectness_python
     boost_python
     ${PYTHON_LIBRARIES}
     ${Boost_LIBRARIES}
 	${OpenCV_LIBS}
 	${ARMADILLO_LIBRARIES}
-	${CMAKE_THREAD_LIBS_INIT}
-
+    ${CMAKE_THREAD_LIBS_INIT}
+     ${GLOG_LIBRARY}
 	)
-	set_target_properties(struck_tracker PROPERTIES
-				LIBRARY_OUTPUT_DIRECTORY ${PYTHON_DESTINATION})
+    set_target_properties(objectness_python PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY ${PYTHON_DESTINATION})
+
+    PYTHON_ADD_MODULE(tracker_python ${SOURCE_FILES}
+      ${PYTHON_FILES_Tracker} ${Superpixels})
+    target_link_libraries(tracker_python
+      boost_python
+      ${PYTHON_LIBRARIES}
+      ${Boost_LIBRARIES}
+      ${OpenCV_LIBS}
+      ${ARMADILLO_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+       ${GLOG_LIBRARY}
+      )
+    set_target_properties(tracker_python PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY ${PYTHON_DESTINATION})
 
 	#FILE(COPY Antrack.so DESTINATION ${PYTHON_DESTINATION})
 endif()
@@ -179,7 +196,7 @@ include_directories(${ARMADILLO_INCLUDE_DIRS})
 include_directories (${Boost_INCLUDE_DIRS})
 target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
   ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
-    ${Boost_LIBRARIES} ${GLOG_LIBRARY} )
+    ${Boost_LIBRARIES} ${GLOG_LIBRARY} gflags)
 
 
 if (parallel)

@@ -36,6 +36,10 @@ public:
     void addToHistory(double x){
         this->straddling_history.push_back(x);
     }
+
+    int getNumberOfSuperpixel(){
+        return this->integrals.n_slices;
+    }
     
     std::vector<double> getStraddlingHistory(){
         return straddling_history;
@@ -49,7 +53,9 @@ public:
         int n,
         std::vector<int>& w,
         std::vector<int>& h);
-    
+
+    arma::mat nonMaxSuppression(const arma::mat& s, int n);
+
     arma::mat getLabels(cv::Mat&);
     arma::rowvec findStraddling(arma::mat& labels,std::vector<cv::Rect>& rects,
                                 int translate_x, int translate_y);
@@ -61,9 +67,11 @@ public:
                                     int translate_x,int translate_y);
 
     void preprocessIntegral(cv::Mat& mat);
-
+    void renormalize(std::vector<arma::mat>& s, int r);
     void straddlingOnCube(int n,
                           int m,
+                          int center_x,
+                          int center_y,
                           const std::vector<int>& R,
                           const std::vector<int>& w, const std::vector<int>& h,
                           std::vector<arma::mat>& s);
@@ -106,7 +114,8 @@ public:
     
     EdgeDensity(){};
     
-    EdgeDensity(double t1,double t2, double inner, int display_){this->threshold_1=t1; this->threshold_2=t2;
+    EdgeDensity(double t1,double t2, double inner, int display_){
+        this->threshold_1=t1; this->threshold_2=t2;
         this->inner_threshold=inner;
         this->display=display_;};
     
@@ -116,7 +125,8 @@ public:
     
     double computeEdgeDensity(cv::Rect& rect);
     
-    arma::rowvec findEdgeObjectness(std::vector<cv::Rect>& rects, int translate_x, int translate_y);
+    arma::rowvec findEdgeObjectness(std::vector<cv::Rect>& rects,
+                                    int translate_x, int translate_y);
 };
 
 #endif /* defined(__Robust_tracking_by_detection__Objectness__) */

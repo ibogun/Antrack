@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include <glog/logging.h>
+#include <gflags/gflags.h>
 
 #include "Features/HoG.h"
 
@@ -19,6 +20,8 @@
 #include "Tracker/OLaRank_old.h"
 #include "Tracker/Struck.h"
 #include "Tracker/ObjStruck.h"
+#include "Tracker/ObjDetectorStruck.h"
+#include "Tracker/FilterBadBoxesStruck.h"
 
 #include "Datasets/DataSetWu2013.h"
 #include "Datasets/DatasetALOV300.h"
@@ -91,6 +94,9 @@
 #elif __posix
 // POSIX
 #endif
+
+
+DEFINE_double(lambda, 0.1, "Lambda in ObjDetectorStruck()");
 
 
 void runTrackerOnDatasetPart(vector<pair<string,
@@ -224,8 +230,9 @@ void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder, std::string
 }
 
 
-int main(int argc, const char *argv[]) {
+int main(int argc, char *argv[]) {
     google::InitGoogleLogging(argv[0]);
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
     DataSetWu2013 *wu2013 = new DataSetWu2013;
 
     wu2013->setRootFolder(wu2013RootFolder);
@@ -256,12 +263,11 @@ int main(int argc, const char *argv[]) {
     bool spatialPrior = false;
     std::string note =" Object Struck tracker";
 
-    ObjectStruck tracker = ObjectStruck::getTracker(pretraining, filter, edgeness,
-                                                    straddling, spatialPrior, kernel,
-                                                    feature, note);
+    ObjDetectorStruck tracker = ObjDetectorStruck::getTracker(pretraining, filter, edgeness,
+                                                              straddling, spatialPrior, kernel,
+                                                              feature, note);
 
-   
-    //ObjectStruck tracker(tracker_s);
+    tracker.setLambda(FLAGS_lambda);
     int frames = 10;
 
 
@@ -292,19 +298,6 @@ int main(int argc, const char *argv[]) {
 
     int startingFrame= 0;
     int endingFrame=700;
-
-
-    //    t2=clock();
-//    double timeSec = (t2 - t1) / static_cast<double>( CLOCKS_PER_SEC );
-//
-//    std::cout<<"Time difference: "<<timeSec<<std::endl;
-
-    //for (int vidIndex= 4; vidIndex <=25; ++vidIndex) {
-    //runner.runExample(vidIndex,startingFrame,endingFrame,"test.dat",
-    //                  false,pretraining,filter,edgeness,straddling,
-    //                  spatialPrior,kernel,feature,b,display);
-    //
-    //run.runner.run(wu2013SaveFolder,1,false,pretraining,filter,edgeness,straddling,spatialPrior,kernel,feature);
 
     cv::Mat image = cv::imread(gt_images.second[startingFrame]);
 

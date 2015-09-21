@@ -227,7 +227,8 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect &currentLocation,
  *  @param R               radius vector to use for sampling
  *  @param step            how spread should locations be, default=1
  */
-void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation, std::vector<cv::Rect> &locations, int R, int step) {
+void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation,
+                                    std::vector<cv::Rect> &locations, int R, int step) {
     int centerX = cvRound(currentLocation.x + currentLocation.width / 2.0);
     int centerY = cvRound(currentLocation.y + currentLocation.height / 2.0);
 
@@ -376,8 +377,57 @@ inline cv::Rect LocationSampler::fromCenterToBoundingBox(const double &x, const 
     return result;
 }
 
+template <typename T>
+std::vector<size_t> LocationSampler::sort_indexes(const std::vector<T> &v) {
+    using namespace std;
+    // initialize original index locations
+    vector<size_t> idx(v.size());
+    for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
+
+    // sort indexes based on comparing values in v
+    sort(idx.begin(), idx.end(),
+       [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+
+    return idx;
+}
+
+void LocationSampler::rearrangeByDimensionSimilarity(const cv::Rect &rect, std::vector<int> &radiuses,
+                                              std::vector<int> &widths, std::vector<int> &heights) {
+
+    std::vector<double> ratios;
+    int h = rect.height;
+    int w = rect.width;
+    for (int i = 0; i < radiuses.size(); ++i) {
+        double current_ration = sqrt(pow(widths[i]-h,2) + pow(heights[i]-h,2));
+        ratios.push_back(current_ration);
+    }
+    std::vector<size_t > indices = sort_indexes(ratios);
+
+    std::vector<int> radiuses_sorted;
+    std::vector<int> widths_sorted;
+    std::vector<int> heights_sorted;
+
+    for (int j = 0; j < radiuses.size(); ++j) {
+        radiuses_sorted.push_back(radiuses[indices[j]]);
+        widths_sorted.push_back(widths[indices[j]]);
+        heights_sorted.push_back(heights[indices[j]]);
+    }
+    radiuses =radiuses_sorted;
+    widths = widths_sorted;
+    heights =heights_sorted;
+
+}
 
 std::vector<arma::mat> LocationSampler::generateBoxesTensor(
+    const int R,
+    const int scale_R,
+    const int min_size_half,
+    const int min_scales,
+    const int max_scales,
+    const double downsample,
+    const double shrink_one_side_scale,
+    const int rows,
+    const int cols,
     const cv::Rect& rect,
     std::vector<int>* radiuses,
     std::vector<int>* widths,
@@ -387,16 +437,15 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
     using namespace cv;
 
     // current height and width
-    arma::mat current(2*this->radius + 1, 2*this->radius + 1, arma::fill::zeros);
+
+    arma::mat current( rows, cols, arma::fill::zeros);
     objness_canvas.push_back(current);
-    radiuses->push_back(this->radius);
+    radiuses->push_back(R);
     heights->push_back(rect.height);
     widths->push_back(rect.width);
 
-    int R = this->radius / 3;
-
     // fixed aspect ratio
-    for (int s = this->min_scales; s <= this->max_scales; s++) {
+    for (int s = min_scales; s <= max_scales; s++) {
         if (s == 0) {
             continue;
         }
@@ -405,14 +454,16 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
         int halfHeight_scale = cvRound((rect.height/2.0) *
                                        pow(downsample, s));
 
-        if (halfWidth_scale <= this->min_size_half ||
-            halfHeight_scale <= this->min_size_half ) {
+        if (halfWidth_scale <= min_size_half ||
+            halfHeight_scale <= min_size_half ) {
             continue;
         }
 
-        arma::mat c(2*R + 1, 2*R + 1,arma::fill::zeros);
+
+        arma::mat c(rows, cols, arma::fill::zeros);
+
         objness_canvas.push_back(c);
-        radiuses->push_back(R);
+        radiuses->push_back(scale_R);
         heights->push_back(halfHeight_scale*2);
         widths->push_back(halfWidth_scale * 2);
 
@@ -421,12 +472,12 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
     int halfWidth = rect.width/2;
     int halfHeight = rect.height/2;
 
-    for (int scale_h = -shrink_one_side_scale+1; scale_h <= shrink_one_side_scale; scale_h++) {
+    for (int scale_h = -shrink_one_side_scale+1;
+         scale_h <= shrink_one_side_scale; scale_h++) {
         int scale_w = scale_h;
 
-        for (int scale_w = -shrink_one_side_scale+1; scale_w <= shrink_one_side_scale; scale_w++) {
-
-
+        for (int scale_w = -shrink_one_side_scale+1;
+             scale_w <= shrink_one_side_scale; scale_w++) {
             //continue;
             if ((scale_w == 0 && scale_h == 0)) {
                 continue;
@@ -435,12 +486,12 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
             int halfWidth_scale = cvRound(halfWidth * pow(downsample, scale_w));
             int halfHeight_scale = cvRound(halfHeight * pow(downsample, scale_h));
 
-            if (halfWidth_scale <= this->min_size_half ||
-                halfHeight_scale <= this->min_size_half) {
+            if (halfWidth_scale <= min_size_half ||
+                halfHeight_scale <= min_size_half) {
                 continue;
             }
 
-            arma::mat c(2*R + 1, 2*R + 1, arma::fill::zeros);
+            arma::mat c(rows, cols, arma::fill::zeros);
             objness_canvas.push_back(c);
             radiuses->push_back(R);
             heights->push_back(halfHeight_scale*2);
@@ -451,6 +502,24 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
 
     return objness_canvas;
 }
+
+std::vector<arma::mat> LocationSampler::generateBoxesTensor(
+    const cv::Rect& rect,
+    std::vector<int>* radiuses,
+    std::vector<int>* widths,
+    std::vector<int>* heights){
+
+    return this->generateBoxesTensor(this->radius,this->radius,
+                                     this->min_size_half,this->min_scales,
+                                     this->max_scales,this->downsample,
+                                     this->shrink_one_side_scale,
+                                     this->n, this->m,
+                                     rect,
+                                     radiuses,
+                                     widths,
+                                     heights);
+}
+
 
 
 std::ostream &operator<<(std::ostream &strm, const LocationSampler &s) {

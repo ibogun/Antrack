@@ -188,14 +188,12 @@ public:
 
 using namespace boost::python;
 
-BOOST_PYTHON_MODULE(struck_tracker)
+BOOST_PYTHON_MODULE(tracker_python)
 
 {
   class_<Antrack>("Antrack")
-      .def("initialize",&Antrack::initialize)
-    .def("initializetrackerwithparameters",
-         &Antrack::initializeTrackerWithParameters)
-      .def("track", &Antrack::track)
+    .def("initialize",&Antrack::initialize)
+    .def("track", &Antrack::track)
     .def("initializeTracker",&Antrack::initializeTracker)
       ;
 }

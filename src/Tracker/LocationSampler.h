@@ -48,6 +48,12 @@ LocationSampler(int r,int nRad, int nAng)
     int getRadius(){
         return this->radius;
     }
+    template <typename T>
+ static std::vector<size_t> sort_indexes(const std::vector<T> &v) ;
+
+    void rearrangeByDimensionSimilarity(const cv::Rect& rect,
+    std::vector<int>& radiuses, std::vector<int>& widths,
+    std::vector<int>& heights);
 
     void sampleEquiDistant(cv::Rect& currentRect,std::vector<cv::Rect>& rects);
 
@@ -62,6 +68,21 @@ LocationSampler(int r,int nRad, int nAng)
         objectWidth=objW;
         objectHeight=objH;
     }
+
+    static std::vector<arma::mat> generateBoxesTensor(
+        const int R,
+        const int scale_R,
+        const int min_size_half,
+        const int min_scales,
+        const int max_scales,
+        const double downsample,
+        const double shrink_one_side_scale,
+        const int rows,
+        const int cols,
+        const cv::Rect& rect,
+        std::vector<int>* radiuses,
+        std::vector<int>* widths,
+        std::vector<int>* heights);
 
     std::vector<arma::mat> generateBoxesTensor(const cv::Rect& rect,
                                                std::vector<int>* radiuses,

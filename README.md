@@ -12,3 +12,5 @@ run_experiments
 # Dependencies
 Logging library
 https://github.com/google/glog
+For python wrappers
+https://github.com/ndarray/Boost.NumPy
