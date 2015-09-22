@@ -21,9 +21,19 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
                                                         locationsOnaGrid);
 
 
+    if (useFilter && !updateTracker) {
+        this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn,
+                                              locationsOnaGrid, this->R, 2);
+    }
 
+    cv::Mat processedImage = this->feature->prepareImage(&image);
 
-    arma::rowvec obj_predictions(locationsOnaGrid.size(), arma::fill::zeros);
+    arma::mat x =
+            this->feature->calculateFeature(processedImage, locationsOnaGrid);
+
+    arma::rowvec predictions = this->olarank->predictAll(x);
+
+    arma::rowvec obj_predictions(predictions.size(), arma::fill::zeros);
 
     if (this->lambda > 0){
         int delta = this->samplerForSearch->getRadius();
@@ -44,7 +54,18 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
 
         cv::Rect small_image_rect(0,0, big_box.width, big_box.height);
 
-        for (int i = 0; i < locationsOnaGrid.size(); ++i) {
+        for (int i = 0; i < predictions.size(); ++i) {
+
+            if (i == 0){
+
+                // if straddeling on the previous location of the object is
+                // too small - straddeling won't help.
+                double area_to_npixels =(small_image.rows*small_image.cols/
+                                         (double)this->straddle.getNumberOfSuperpixel());
+                if (area_to_npixels*this->straddeling_threshold <= lastLocation.width * lastLocation.height) {
+                    break;
+                }
+            }
 
             cv::Rect rectInSmallImage(locationsOnaGrid[i].x - x_min,
                                       locationsOnaGrid[i].y - y_min, locationsOnaGrid[i].width,
@@ -55,27 +76,17 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
                                          && ( rectInSmallImage.y >= 0);
 
             if (rect_fits_small_image){
-                obj_predictions[i] = this->straddle.computeStraddling(rectInSmallImage);
+
+                obj_predictions[i] = this->straddle.computeStraddling(
+                    rectInSmallImage);
+
             }
-
         }
-
-
 
         delete s;
     }
 
-    if (useFilter && !updateTracker) {
-        this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn,
-                                              locationsOnaGrid, this->R, 2);
-    }
 
-    cv::Mat processedImage = this->feature->prepareImage(&image);
-
-    arma::mat x =
-            this->feature->calculateFeature(processedImage, locationsOnaGrid);
-
-    arma::rowvec predictions = this->olarank->predictAll(x);
 
     if (lambda > 0) {
         predictions = (predictions - arma::min(predictions))/  arma::max(predictions);

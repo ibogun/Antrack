@@ -19,22 +19,37 @@ public:
     ExperimentRunner(Experiment *e, Dataset *d) : experiment(e), dataset(d) { }
 
     void run(std::string safeFolder, int nThreads, bool saveResults,
-             bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling,
+             bool pretraining, bool useFilter, bool useEdgeDensity,
+             bool useStraddling,
              bool scalePrior,
-             std::string kernel, std::string feature,int updateEveryNFrames, double b,int P, int R, int Q);
+             std::string kernel, std::string feature,int updateEveryNFrames,
+             double b,int P, int R, int Q, double lambda,
+             double straddeling_threshold);
 
     void runExample(int video,int startingFrame, int endingFrame,
                     std::string saveName,
                     bool saveResults,
-                    bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
-                    std::string kernel, std::string feature,double b, int display);
+                    bool pretraining, bool useFilter, bool useEdgeDensity,
+                    bool useStraddling, bool scalePrior,
+                    std::string kernel, std::string feature, double b,
+                    double lambda,
+                    double straddeling_threshold,
+                    int display);
 
 
-    static void runOneThreadOneJob(int startingFrame, cv::Rect initialBox, std::vector<std::string> frameNames,
-                            std::string saveName,
-                            bool saveResults,
-                            bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling, bool scalePrior,
-                            std::string kernel, std::string feature,int updateEveryNFrames,double b, int P, int R, int Q,int display=0);
+    static void runOneThreadOneJob(int startingFrame, cv::Rect initialBox,
+                                   std::vector<std::string> frameNames,
+                                   std::string saveName,
+                                   bool saveResults,
+                                   bool pretraining, bool useFilter,
+                                   bool useEdgeDensity, bool useStraddling,
+                                   bool scalePrior,
+                                   std::string kernel, std::string feature,
+                                   int updateEveryNFrames,double b, int P,
+                                   int R, int Q,
+                                   double lambda,
+                                   double straddeling_threshold,
+                                   int display=0);
 };
 
 

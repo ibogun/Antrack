@@ -19,4 +19,13 @@ echo "kernel: ${kernel}"
 echo "feature: ${feature}"
 echo "filter: ${filter}"
 echo "Number of threads: ${nThreads}"
-./struck_filter_experiments --tmpSaveLocation=${datasetSaveLocation} --filter=${filter} --nThreads=${nThreads} --updateEveryNframes=${updateEveryNFrames} --b=${b} --P=${P_param} --Q=${Q} --R=${R} --feature=${feature} --kernel=${kernel} --prefix=${prefix}
+echo "lambda: ${lambda}"
+echo "Straddeling threshold: ${straddeling_threshold}"
+./cvpr2016 --tmpSaveLocation=${datasetSaveLocation} --filter=${filter} \
+           --nThreads=${nThreads} \
+           --updateEveryNframes=${updateEveryNFrames} \
+           --b=${b} --P=${P_param} --Q=${Q} --R=${R} \
+           --feature=${feature} --kernel=${kernel} \
+           --prefix=${prefix} \
+           --lambda=${lambda} \
+           --straddeling_threshold=${straddeling_threshold}

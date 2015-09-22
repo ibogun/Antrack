@@ -6,7 +6,8 @@ option(experiments "Build all experiments." OFF) # Makes boolean 'test' availabl
 
 option(python "Build python wrappers." OFF)
 
-option(parallel "Build parallel dataset evaluation." OFF)
+option(PAMI "Build evaluation for PAMI paper." OFF)
+option(CVPR2016 "Build evaluation for CVPR2015 paper." OFF)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
 
@@ -37,6 +38,10 @@ FILE(GLOB TEST_FILES
 
 set(FILTER_PRETRAINING_MAIN
   src/main_filter_pretraining.cpp
+  )
+
+set(cvpr2016_main
+  src/main_cvpr2016.cpp
   )
 
 set(PARALLEL_MAIN
@@ -199,16 +204,23 @@ target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
     ${Boost_LIBRARIES} ${GLOG_LIBRARY} gflags)
 
 
-if (parallel)
-
+if (PAMI)
 
 	find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
 
-	include_directories( ${Boost_INCLUDE_DIR} )
+    include_directories( ${Boost_INCLUDE_DIRS} )
 
   	#add_executable(parallel_main ${Superpixels} ${SOURCE_FILES} ${PARALLEL_MAIN})
 	#target_link_libraries(parallel_main ${Boost_LIBRARIES} ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 	add_executable(struck_filter_experiments ${Superpixels} ${SOURCE_FILES} ${FILTER_PRETRAINING_MAIN})
 	target_link_libraries(struck_filter_experiments ${Boost_LIBRARIES} ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+endif()
+
+if (CVPR2016)
+    find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
+    include_directories( ${Boost_INCLUDE_DIRS} )
+    add_executable(cvpr2016 ${Superpixels} ${SOURCE_FILES} ${cvpr2016_main})
+    target_link_libraries(cvpr2016 ${Boost_LIBRARIES}
+      ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}  ${GLOG_LIBRARY} gflags)
 endif()

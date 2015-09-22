@@ -1277,12 +1277,14 @@ Struck Struck::getTracker() { return getTracker(true, true, true, true, true, "l
 Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
                           bool useStraddling, bool scalePrior,
                           std::string kernelSTR, std::string featureSTR) {
-    return getTracker(pretraining, useFilter, useEdgeDensity, useStraddling, scalePrior, kernelSTR, featureSTR, "");
+    return getTracker(pretraining, useFilter, useEdgeDensity,
+                      useStraddling, scalePrior, kernelSTR, featureSTR, "");
 }
 
 Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
                           bool useStraddling, bool scalePrior,
-                          std::string kernelSTR, std::string featureSTR, std::string note_) {
+                          std::string kernelSTR,
+                          std::string featureSTR, std::string note_) {
 
     // Parameters
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

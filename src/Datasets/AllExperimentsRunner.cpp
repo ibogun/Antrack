@@ -31,7 +31,8 @@ void AllExperimentsRunner::deleteDirectory(std::string s) {
     boost::filesystem::remove_all(dir);
 }
 
-void saveData(Experiment* e, std::string saveFolder, bool pretraining, bool useFilter, bool useEdgeDensity,
+void saveData(Experiment* e, std::string saveFolder, bool pretraining,
+              bool useFilter, bool useEdgeDensity,
               bool useStraddling,
               bool scalePrior, std::string kernel, std::string feature) {
     std::time_t t2 = std::time(0);
@@ -39,7 +40,8 @@ void saveData(Experiment* e, std::string saveFolder, bool pretraining, bool useF
 
 
     std::ofstream out(saveFolder + "/" + "tracker_info.txt");
-    out << Struck::getTracker(pretraining, useFilter, useEdgeDensity, useStraddling, scalePrior,
+    out << Struck::getTracker(pretraining, useFilter, useEdgeDensity,
+                              useStraddling, scalePrior,
                               kernel,
                               feature);
     out.close();
@@ -50,8 +52,10 @@ void saveData(Experiment* e, std::string saveFolder, bool pretraining, bool useF
 }
 
 
-void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::Rect>> &jobs,
-                              std::vector<std::pair<std::string, std::vector<std::string>>> &vidData,
+void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int,
+                              cv::Rect>> &jobs,
+                              std::vector<std::pair<std::string,
+                              std::vector<std::string>>> &vidData,
                               int from,
                               int to,
                               bool saveResults,
@@ -62,7 +66,9 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::
                               bool scalePrior,
                               std::string
                               kernel,
-                              std::string feature,int updateEveryNFrames, double b, int P, int R, int Q) {
+                              std::string feature,int updateEveryNFrames,
+                              double b, int P, int R, int Q, double lambda,
+                              double straddeling_threshold) {
 
 // run jobs from index 'from' to the index 'to', make sure to create proper saveName
 
@@ -80,23 +86,33 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int, cv::
 
         std::stringstream ss;
 
-        ss << saveName << "/" << videoName <<"_sframe="<<std::to_string(frame) <<"__" << std::to_string(i) << ".dat";
+        ss << saveName << "/" << videoName <<"_sframe="<<std::to_string(frame)
+           <<"__" << std::to_string(i) << ".dat";
 
 
         std::string finalFilename = ss.str();
 
 
-        ExperimentRunner::runOneThreadOneJob(frame, bb, frameNames, finalFilename, saveResults, pretraining, useFilter,
+        ExperimentRunner::runOneThreadOneJob(frame, bb, frameNames,
+                                             finalFilename, saveResults,
+                                             pretraining, useFilter,
                                              useEdgeDensity,
-                                             useStraddling, scalePrior, kernel, feature,updateEveryNFrames,b,P,R,Q
-        );
+                                             useStraddling, scalePrior, kernel,
+                                             feature,updateEveryNFrames,b,P,R,Q,
+                                             lambda, straddeling_threshold
+            );
     }
 
 }
 
-void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveResults, bool pretraining, bool useFilter,
-                               bool useEdgeDensity, bool useStraddling, bool scalePrior, std::string kernel,
-                               std::string feature,int updateEveryNFrames, double b, int P, int R, int Q) {
+void AllExperimentsRunner::run(std::string saveFolder, int nThreads,
+                               bool saveResults, bool pretraining,
+                               bool useFilter,
+                               bool useEdgeDensity, bool useStraddling,
+                               bool scalePrior, std::string kernel,
+                               std::string feature,int updateEveryNFrames,
+                               double b, int P, int R, int Q, double lambda,
+                               double straddeling_threshold) {
 
     //ExperimentDefault ed;
     ExperimentSpatialRobustness es;
@@ -123,8 +139,10 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveRe
 
 
     //std::vector<std::tuple<int, int, cv::Rect>> ed_boxes = ed.generateAllBoxesToEvaluate(this->dataset);
-    std::vector<std::tuple<int, int, cv::Rect>> es_boxes = es.generateAllBoxesToEvaluate(this->dataset);
-    std::vector<std::tuple<int, int, cv::Rect>> et_boxes = et.generateAllBoxesToEvaluate(this->dataset);
+    std::vector<std::tuple<int, int, cv::Rect>> es_boxes =
+        es.generateAllBoxesToEvaluate(this->dataset);
+    std::vector<std::tuple<int, int, cv::Rect>> et_boxes =
+        et.generateAllBoxesToEvaluate(this->dataset);
 
 
     std::vector<std::tuple<std::string, int, int, cv::Rect>> jobs;
@@ -226,7 +244,8 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads, bool saveRe
                 std::ref(useFilter), std::ref(useEdgeDensity),
                 std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),
                 std::ref(updateEveryNFrames),std::ref(b),std::ref(P),
-        std::ref(R),std::ref(Q)));
+                std::ref(R),std::ref(Q), std::ref(lambda),
+                std::ref(straddeling_threshold)));
     }
 
     for (auto &t : th) {

@@ -97,7 +97,7 @@
 
 
 DEFINE_double(lambda, 0.1, "Lambda in ObjDetectorStruck()");
-
+DEFINE_double(straddling_threshold, 0.5, "Straddeling threshold.");
 
 void runTrackerOnDatasetPart(vector<pair<string,
                              vector<string>>> &video_gt_images, Dataset *dataset, int from, int to, std::string saveFolder,
@@ -268,10 +268,11 @@ int main(int argc, char *argv[]) {
                                                               feature, note);
 
     tracker.setLambda(FLAGS_lambda);
+    tracker.setMinStraddeling(FLAGS_straddling_threshold);
     int frames = 10;
 
 
-    std::string vidName = "bolt2";
+    std::string vidName = "handball1";
     int vidIndex = dataset->vidToIndex.at(vidName);
     //tracker.display=0;
 

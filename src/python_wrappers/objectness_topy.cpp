@@ -103,17 +103,21 @@ public:
     }
 
     void plotObjectness(){
-          cv::imshow("Objectness", this->straddle->canvas);
-          cv::waitKey();
-          cv::destroyAllWindows();
+      cv::imshow("Image", this->small_image);
+      //cv::waitKey();
+      //cv::destroyAllWindows();
+
+      cv::imshow("Objectness", this->straddle->canvas);
+      cv::waitKey();
+      cv::destroyAllWindows();
 
     };
 
   void readImage(std::string imName){
-      cv::Mat im = cv::imread(imName);
+    cv::Mat im = cv::imread(imName);
 
-     // setImageSize(im.cols,im.rows);
-     this->image = im.clone();
+    // setImageSize(im.cols,im.rows);
+    this->image = im.clone();
   };
 
 

@@ -6,7 +6,7 @@ Q=13
 feature=hogANDhist
 kernel=int
 
-updateEveryNFrames=5
+updateEveryNFrames=3
 filter=true
 
 R[0]=1
