@@ -5,7 +5,8 @@
 #include "ObjDetectorStruck.h"
 #include  <glog/logging.h>
 
-bool isBBoxTooSmallForStraddeling(cv::Rect& rect, int area, int nSuperpixels, double threshold){
+bool isBBoxTooSmallForStraddeling(cv::Rect& rect, int area,
+                                  int nSuperpixels, double threshold){
 
     int box_area = rect.width * rect.height;
 
@@ -32,17 +33,19 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
             this->feature->calculateFeature(processedImage, locationsOnaGrid);
 
     arma::rowvec predictions = this->olarank->predictAll(x);
-
     arma::rowvec obj_predictions(predictions.size(), arma::fill::zeros);
+    bool boxTooSmallForStraddeling=false;
 
-    if (this->lambda > 0){
+    if (this->lambda > 0 && updateTracker){
         int delta = this->samplerForSearch->getRadius();
     
         int x_min = max(0, lastLocation.x - delta);
         int y_min = max(0, lastLocation.y - delta);
     
-        int x_max = min(image.cols, lastLocation.x + lastLocation.width + delta);
-        int y_max = min(image.rows, lastLocation.y + lastLocation.height + delta);
+        int x_max = min(image.cols, lastLocation.x +
+                        lastLocation.width + delta);
+        int y_max = min(image.rows, lastLocation.y +
+                        lastLocation.height + delta);
     
         cv::Rect big_box(x_min, y_min, x_max - x_min, y_max - y_min);
         // extract small image from 'image'
@@ -62,24 +65,33 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
                 // too small - straddeling won't help.
                 double area_to_npixels =(small_image.rows*small_image.cols/
                                          (double)this->straddle.getNumberOfSuperpixel());
-                if (area_to_npixels*this->straddeling_threshold <= lastLocation.width * lastLocation.height) {
+
+                LOG(INFO)<<"Min area in pixels: " << area_to_npixels*this->straddeling_threshold;
+                LOG(INFO)<<"Area of the box: "  << lastLocation.width * lastLocation.height;
+                LOG(INFO) << "Straddling is: " << (area_to_npixels*this->straddeling_threshold
+                    <= lastLocation.width * lastLocation.height);
+                if (area_to_npixels*this->straddeling_threshold
+                    <= lastLocation.width * lastLocation.height) {
+                    boxTooSmallForStraddeling= true;
                     break;
                 }
             }
 
             cv::Rect rectInSmallImage(locationsOnaGrid[i].x - x_min,
-                                      locationsOnaGrid[i].y - y_min, locationsOnaGrid[i].width,
+                                      locationsOnaGrid[i].y - y_min,
+                                      locationsOnaGrid[i].width,
                                       locationsOnaGrid[i].height);
 
-            bool rect_fits_small_image = (rectInSmallImage.x+ rectInSmallImage.width < small_image.cols) &&
-                    (rectInSmallImage.y+ rectInSmallImage.height < small_image.rows)&& (rectInSmallImage.x >= 0)
-                                         && ( rectInSmallImage.y >= 0);
+            bool rect_fits_small_image = (rectInSmallImage.x+
+                                          rectInSmallImage.width <
+                                          small_image.cols) &&
+                (rectInSmallImage.y+ rectInSmallImage.height <
+                 small_image.rows)&& (rectInSmallImage.x >= 0)
+                && ( rectInSmallImage.y >= 0);
 
             if (rect_fits_small_image){
-
                 obj_predictions[i] = this->straddle.computeStraddling(
                     rectInSmallImage);
-
             }
         }
 
@@ -88,9 +100,11 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
 
 
 
-    if (lambda > 0) {
-        predictions = (predictions - arma::min(predictions))/  arma::max(predictions);
-        obj_predictions = (obj_predictions - arma::min(obj_predictions))/  arma::max(obj_predictions);
+    if (lambda > 0 && !boxTooSmallForStraddeling && updateTracker)  {
+        predictions = (predictions - arma::min(predictions))/
+            arma::max(predictions);
+        obj_predictions = (obj_predictions - arma::min(obj_predictions))/
+            arma::max(obj_predictions);
         predictions = predictions + lambda* obj_predictions;
     }
 
@@ -115,7 +129,8 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
         arma::colvec x_k = filter.predict(z_k);
 
         bestLocationFilter = filter.getBoundingBox(this->lastLocation.width,
-                                                   this->lastLocation.height, x_k);
+                                                   this->lastLocation.height,
+                                                   x_k);
 
         this->lastLocationFilter = bestLocationFilter;
 
@@ -149,7 +164,8 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
      Tracker Update
      **/
 
-    if (updateTracker && this->boundingBoxes.size() % this->updateEveryNframes==0) {
+    if (updateTracker && this->boundingBoxes.size() %
+        this->updateEveryNframes==0) {
 
         // sample for updating the tracker
         std::vector<cv::Rect> locationsOnPolarPlane;
@@ -160,7 +176,8 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
 
         // calculate features
         arma::mat x_update =
-                feature->calculateFeature(processedImage, locationsOnPolarPlane);
+                feature->calculateFeature(processedImage,
+                                          locationsOnPolarPlane);
         arma::mat y_update = this->feature->reshapeYs(locationsOnPolarPlane);
         olarank->process(x_update, y_update, 0, framesTracked);
     }
@@ -174,7 +191,8 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
         cv::rectangle(plotImg, lastLocation, color, 2);
 
         if (useFilter) {
-            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100), 0);
+            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255,
+                                                                  100), 0);
         }
 
         cv::imshow("Tracking window", plotImg);
@@ -201,19 +219,22 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
         if (useFilter) {
 
             cv::Rect bestLocationFilter = this->lastLocationFilter;
-            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100), 0);
+            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100),
+                          0);
         }
 
 
         if (this->useEdgeDensity || this->useStraddling) {
 
-            cv::rectangle(plotImg, lastLocationObjectness, cv::Scalar(0, 204, 102),
+            cv::rectangle(plotImg, lastLocationObjectness, cv::Scalar(0, 204,
+                                                                      102),
                           0);
 
             cv::Mat objPlot = this->objPlot->getCanvas();
             cv::resize(objPlot, objPlot, cv::Size(image.cols, image.rows));
 
-            cv::Rect bottomLeftRect(image.rows + 1, 0, objPlot.rows, objPlot.cols);
+            cv::Rect bottomLeftRect(image.rows + 1, 0, objPlot.rows,
+                                    objPlot.cols);
             cv::rectangle(plotImg, this->gtBox, cv::Scalar(0, 0, 255), 0);
             this->copyFromRectangleToImage(plotImg, objPlot, bottomLeftRect, 0,
                                            cv::Vec3b(0, 0, 0));
@@ -239,9 +260,14 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
     return lastLocation;
 }
 
-ObjDetectorStruck ObjDetectorStruck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
-                                      bool useStraddling, bool scalePrior,
-                                      std::string kernelSTR, std::string featureSTR, std::string note_) {
+ObjDetectorStruck ObjDetectorStruck::getTracker(bool pretraining,
+                                                bool useFilter,
+                                                bool useEdgeDensity,
+                                                bool useStraddling,
+                                                bool scalePrior,
+                                                std::string kernelSTR,
+                                                std::string featureSTR,
+                                                std::string note_) {
 
     // Parameters
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -269,14 +295,9 @@ ObjDetectorStruck ObjDetectorStruck::getTracker(bool pretraining, bool useFilter
     } else if (featureSTR == "haar"){
         features = new Haar(2);
     } else if (featureSTR == "hogANDhist"){
-
-
-
         Feature* f1;
         Feature* f2;
         f1=new HistogramFeatures(4,16);
-        std::cout<<f1->calculateFeatureDimension()<<std::endl;
-
         cv::Size winSize(32, 32);
         cv::Size blockSize(16, 16);
         cv::Size cellSize(4, 4); // was 8
@@ -285,21 +306,11 @@ ObjDetectorStruck ObjDetectorStruck::getTracker(bool pretraining, bool useFilter
 
         f2= new HoG(winSize,blockSize,cellSize,blockSize,nBins);
 
-        std::cout<<f2->calculateFeatureDimension()<<std::endl;
-
-
         std::vector<Feature*> mf;
         mf.push_back(f1);
         mf.push_back(f2);
-
-
-
-
         features = new MultiFeature(mf);
     }
-
-
-
 
     else {
         features = new RawFeatures(16);
@@ -338,7 +349,8 @@ ObjDetectorStruck ObjDetectorStruck::getTracker(bool pretraining, bool useFilter
     LocationSampler *samplerForSearch =
             new LocationSampler(r_search, nRadial_search, nAngular_search);
 
-    ObjDetectorStruck tracker(olarank, features, samplerForSearch, samplerForUpdate,
+    ObjDetectorStruck tracker(olarank, features, samplerForSearch,
+                              samplerForUpdate,
                    useObjectness, scalePrior, useFilter, pretraining, display);
 
     tracker.useStraddling = useStraddling;
@@ -353,9 +365,9 @@ ObjDetectorStruck ObjDetectorStruck::getTracker(bool pretraining, bool useFilter
 
     int robustConstant_b = 10;
 
-    int R_cov = 5;
-    int Q_cov = 5;
-    int P = 3;
+    int R_cov = 10;
+    int Q_cov = 13;
+    int P = 13;
 
     KalmanFilter_my filter =
             KalmanFilterGenerator::generateConstantVelocityFilter(

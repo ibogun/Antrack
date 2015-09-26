@@ -11,6 +11,8 @@
 #include <ctime>
 #include <algorithm>
 
+#include <glog/logging.h>
+#include <gflags/gflags.h>
 
 #include "Tracker/LocationSampler.h"
 #include "Tracker/OLaRank_old.h"
@@ -47,7 +49,7 @@
 
 #define NUM_THREADS         16
 
-#define wu2013RootFolder    "/Users/Ivan/Files/Data/Tracking_benchmark/"
+#define wu2013RootFolder    "/Users/Ivan/Files/Data/wu2013/"
 #define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
 #define vot2014RootFolder   "/Users/Ivan/Files/Data/vot2014/"
 
@@ -116,6 +118,10 @@ using boost::uuids::random_generator;
 
 #include <boost/uuid/uuid_io.hpp>
 
+
+
+
+
 string make_uuid() {
     return lexical_cast<string>((random_generator()) ());
 }
@@ -126,7 +132,8 @@ void experiment(int n_threads, std::string datasetTempSaveLocation,
                 std::string kernel, std::string feature,bool useFilter,
                 int updateEveryNthFrames,
                 double b, int P, int Q, int R, double lambda,
-                double straddeling_threshold) {
+                double straddeling_threshold, std::string wu2013_dataset_folder,
+                int display) {
     // Now, run everything
 
     bool useEdgeDensity = false;
@@ -141,7 +148,7 @@ void experiment(int n_threads, std::string datasetTempSaveLocation,
     DataSetWu2013 *wu2013 = new DataSetWu2013;
 
     std::vector<std::pair<std::string, std::vector<std::string> > > wuPrepared =
-        wu2013->prepareDataset(wu2013RootFolder);
+        wu2013->prepareDataset(wu2013_dataset_folder);
 
     bool pretraining = false;
 
@@ -158,9 +165,6 @@ void experiment(int n_threads, std::string datasetTempSaveLocation,
     } else {
         s1 << "0";
     }
-
-    s1 << "_lambda";
-    s1 << lambda;
     trackerID = s1.str();
     //std::string folderName = make_uuid();
 
@@ -184,16 +188,16 @@ void experiment(int n_threads, std::string datasetTempSaveLocation,
     }
 
 
-    wu2013->setRootFolder(wu2013RootFolder);
+    wu2013->setRootFolder(wu2013_dataset_folder);
     AllExperimentsRunner run(wu2013);
 
 
-    run.run(fullFolderName, n_threads, true, pretraining, useFilter,
-            useEdgeDensity, useStraddling,
-            scalePrior,
-            kernel,
-            feature,updateEveryNthFrames, b, P, R, Q,
-            lambda, straddeling_threshold);
+    run.runSmall(fullFolderName, n_threads, true, pretraining, useFilter,
+                 useEdgeDensity, useStraddling,
+                 scalePrior,
+                 kernel,
+                 feature,updateEveryNthFrames, b, P, R, Q,
+                 lambda, straddeling_threshold, display);
 
 
     delete wu2013;
@@ -219,8 +223,10 @@ int main(int ac, char *av[]) {
                 "P", po::value<int>(), "P")(
                 "Q", po::value<int>(), "Q")(
                 "R", po::value<int>(), "R")(
+                "wu2013RootFolder", po::value<std::string>(), "Wu2013 dataset rootFolder")(
                 "lambda", po::value<double>(), "lambda")(
                 "straddeling_threshold", po::value<double>(), "straddeling_threshold")(
+                "display", po::value<int>(), "Display")(
                 "prefix", po::value<std::string>(),
                 "Experiment prefix (i.g. b=${b} for sensitivity to b, Q=${Q} for sensitivity to Q)");
 
@@ -233,24 +239,26 @@ int main(int ac, char *av[]) {
             return 0;
         }
 
-        std::string datasetSaveLocation = "";
+        std::string datasetSaveLocation = wu2013SaveFolder;
         std::string permamentSaveLoation = "";
         int index = 0;
         int nThreads = 1;
 
-        int updateEveryNthFrames=5;
+        int updateEveryNthFrames=3;
         double b = 10;
-        int P = 3;
-        int Q = 5;
-        int R = 5;
+        int P = 10;
+        int Q = 13;
+        int R = 13;
         double lambda = 0;
-        double straddeling_threshold = 0.5;
+        double straddeling_threshold = 1.5;
         bool filter;
 
-        std::string feature = "raw";
-        std::string kernel = "linear";
+        std::string feature = "hogANDhist";
+        std::string kernel = "int";
         std::string prefix = "ms";
 
+        std::string wu2013_root_folder = wu2013RootFolder;
+        int display = 0;
 
         if (vm.count("filter")) {
             cout << "Filter is: " << vm["filter"].as<bool>() << ".\n";
@@ -299,6 +307,11 @@ int main(int ac, char *av[]) {
             R = vm["R"].as<int>();
         }
 
+        if (vm.count("wu2013RootFolder")) {
+            cout << "wu2013_root_folder: " << vm["wu2013RootFolder"].as<std::string>() << ".\n";
+            wu2013_root_folder = vm["wu2013RootFolder"].as<std::string>();
+        }
+
         if (vm.count("nThreads")) {
             cout << "Number of threads is: "
                  << vm["nThreads"].as<int>() << ".\n";
@@ -322,9 +335,15 @@ int main(int ac, char *av[]) {
             straddeling_threshold = vm["straddeling_threshold"].as<double>();
         }
 
+        if (vm.count("display")) {
+            cout << "Display is: "
+                 << vm["display"].as<int>() << ".\n";
+            display = vm["display"].as<int>();
+        }
+
         experiment(nThreads,datasetSaveLocation,prefix,
                    kernel,feature,filter,updateEveryNthFrames,b,P,Q,R,
-                   lambda, straddeling_threshold);
+                   lambda, straddeling_threshold, wu2013_root_folder, display);
 
     }
     catch (exception &e) {

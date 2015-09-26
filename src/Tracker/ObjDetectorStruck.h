@@ -25,7 +25,7 @@ public:
 
     static ObjDetectorStruck getTracker(bool,bool,bool,bool,bool,std::string,
                                         std::string,std::string);
-        cv::Rect track(cv::Mat& image);
+    cv::Rect track(cv::Mat& image);
 
     void setLambda( double lambda_){
         this->lambda = lambda_;

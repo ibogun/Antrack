@@ -46,7 +46,8 @@ std::vector<std::string> Dataset::listSubFolders(std::string folder){
         
         entry = readdir(dir);
     }
-    
+
+    std::sort(r.begin(), r.end());
     //delete PATH;
     closedir(dir);
     //delete dir;

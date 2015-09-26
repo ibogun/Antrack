@@ -136,8 +136,8 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location,
 
 void Struck::initialize(cv::Mat &image, cv::Rect &location) {
 
-    double b=7;
-    int P=7;
+    double b=10;
+    int P=10;
     int Q=13;
     int R=13;
 
@@ -1318,7 +1318,6 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
         Feature* f1;
         Feature* f2;
         f1=new HistogramFeatures(4,16);
-        std::cout<<f1->calculateFeatureDimension()<<std::endl;
 
         cv::Size winSize(32, 32);
         cv::Size blockSize(16, 16);
@@ -1327,9 +1326,6 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
         int nBins = 8;          // was 5
 
         f2= new HoG(winSize,blockSize,cellSize,blockSize,nBins);
-
-        std::cout<<f2->calculateFeatureDimension()<<std::endl;
-
 
         std::vector<Feature*> mf;
         mf.push_back(f1);

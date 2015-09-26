@@ -9,6 +9,8 @@
 #include "LocationSampler.h"
 #include "algorithm"
 
+#include <glog/logging.h>
+#include <gflags/gflags.h>
 
 /**
  *  Samples rectangles in polar coordinates
@@ -97,7 +99,6 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect &currentLocation,
 
         }
     }
-
 
     // CAREFUL!
     //return;

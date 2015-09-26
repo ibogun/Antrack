@@ -21,6 +21,7 @@
 #include "../../Features/Histogram.h"
 #include "../../Features/HoG.h"
 
+#include "../../Tracker/ObjDetectorStruck.h"
 #include "../../Tracker/LocationSampler.h"
 #include "../../Tracker/OLaRank_old.h"
 #include "../../Tracker/Struck.h"
@@ -63,14 +64,16 @@ int main(int ac, char **av) {
 
         po::options_description desc("Allowed options");
         desc.add_options()("help", "produce help message")(
-                "feature", po::value<std::string>(), "Feature (e.g. raw, hist, haar, hog)")(
+            "feature", po::value<std::string>(), "Feature (e.g. raw, hist, haar, hog)")(
                 "kernel", po::value<std::string>(), "Kernel (e.g. linear, gauss, int)")(
-                "filter", po::value<bool>(), " Filter 1-on, 0-off")(
-                "updateEveryNframes", po::value<int>(), "Update tracker every Nth frames")(
-                "b", po::value<double>(), " Robust constant")(
-                "P", po::value<int>(), "P")(
-                "Q", po::value<int>(), "Q")(
-                "R", po::value<int>(), "R");
+                    "filter", po::value<bool>(), " Filter 1-on, 0-off")(
+                    "updateEveryNframes", po::value<int>(), "Update tracker every Nth frames")(
+                    "b", po::value<double>(), " Robust constant")(
+                    "P", po::value<int>(), "P")(
+                    "Q", po::value<int>(), "Q")(
+                    "lambda", po::value<double>(), "lambda")(
+                    "straddeling_threshold", po::value<double>(), "straddeling_threshold")(
+                     "R", po::value<int>(), "R");
 
         po::variables_map vm;
         po::store(po::parse_command_line(ac, av, desc), vm);
@@ -87,6 +90,8 @@ int main(int ac, char **av) {
         int P = 10;
         int Q = 13;
         int R = 13;
+        double lambda = 0;
+        double straddeling_threshold = 2;
         bool filter;
 
         std::string feature = "hogANDhist";
@@ -111,7 +116,8 @@ int main(int ac, char **av) {
 
 
         if (vm.count("updateEveryNframes")) {
-            cout << "Tracker will be updated every frames: " << vm["updateEveryNframes"].as<int>() << ".\n";
+            cout << "Tracker will be updated every frames: " <<
+                vm["updateEveryNframes"].as<int>() << ".\n";
             updateEveryNthFrames = vm["updateEveryNframes"].as<int>();
         }
 
@@ -136,6 +142,18 @@ int main(int ac, char **av) {
             b = vm["b"].as<double>();
         }
 
+        if (vm.count("lambda")) {
+            cout << "Straddeling lambda is: "
+                 << vm["lambda"].as<double>() << ".\n";
+            lambda = vm["lambda"].as<double>();
+        }
+
+        if (vm.count("straddeling_threshold")) {
+            cout << "Robust constant is is: " <<
+                vm["straddeling_threshold"].as<double>() << ".\n";
+            straddeling_threshold = vm["straddeling_threshold"].as<double>();
+        }
+
 
         bool pretraining = false;
         bool useEdgeDensity = false;
@@ -144,8 +162,14 @@ int main(int ac, char **av) {
 
         std::string note_ = "";
 
-        Struck tracker = Struck::getTracker(pretraining, filter, useEdgeDensity, useStraddling, scalePrior, kernel,
-                                            feature, note_);
+        ObjDetectorStruck tracker = ObjDetectorStruck::
+            getTracker(pretraining, filter,
+                       useEdgeDensity, useStraddling,
+                       scalePrior, kernel,
+                       feature, note_);
+
+        tracker.setLambda(lambda);
+        tracker.setMinStraddeling(straddeling_threshold);
 
         trax_image *img = NULL;
         trax_region *reg = NULL;

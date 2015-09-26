@@ -25,7 +25,15 @@ public:
              bool scalePrior,
              std::string kernel, std::string feature,
              int updateEveryNFrames,double b,int P, int R, int Q,
-             double lambda, double straddeling_threshold);
+             double lambda, double straddeling_threshold, int display = 0);
+
+    void runSmall(std::string safeFolder, int nThreads, bool saveResults,
+                  bool pretraining, bool useFilter, bool useEdgeDensity,
+                  bool useStraddling,
+                  bool scalePrior,
+                  std::string kernel, std::string feature,
+                  int updateEveryNFrames,double b,int P, int R, int Q,
+                  double lambda, double straddeling_threshold, int display=0);
 
 
     static void createDirectory(std::string s);

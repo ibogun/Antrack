@@ -66,40 +66,34 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame,
 
 
     if (startingFrame > 0) {
-        backwardTracker.initialize(im, initialBox,updateEveryNFrames,b,P,R,Q);
-
-
-
-
+        //backwardTracker.initialize(im, initialBox, updateEveryNFrames, b, P, R, Q);
+        backwardTracker.initialize(im, initialBox);
         for (int i = startingFrame - 1; i >= 0; i--) {
-            cv::Mat image = cv::imread(frameNames[i]);
-            backwardTracker.track(image);
-
-
+            //cv::Mat image = cv::imread(frameNames[i]);
+            //backwardTracker.track(image);
+            backwardTracker.track(frameNames[i]);
         }
     }
 
     clock_t t1;
-    if (display!=0){
+    //if (display!=0){
         t1=clock();
-    }
+        //}
     if (startingFrame <= frameNames.size() - 1) {
-        forwardTracker.initialize(im, initialBox,updateEveryNFrames,b,P,R,Q);
-
+        //forwardTracker.initialize(im, initialBox,updateEveryNFrames,b,P,R,Q);
+        forwardTracker.initialize(im, initialBox);
         for (int i = startingFrame + 1; i < frameNames.size(); i++) {
-            cv::Mat image = cv::imread(frameNames[i]);
-            forwardTracker.track(image);
-
-            if (display!=0){
+            //cv::Mat image = cv::imread(frameNames[i]);
+            //forwardTracker.track(image);
+            forwardTracker.track(frameNames[i]);
+            //if (display!=0){
                 clock_t t2=clock();
-
                 double timeSec = (t2 - t1) / static_cast<double>(
                     CLOCKS_PER_SEC );
                 timeSec=(i+1)/timeSec;
-
                 std::cout<<"FPS: "<<timeSec<<" frame "<<i<<" / "<<
-                    frameNames.size() <<std::endl;
-            }
+                    frameNames.size() << "  " << forwardTracker.getBoundingBoxes()[i - startingFrame - 1] << std::endl;
+                //}
         }
 
     }
@@ -298,10 +292,10 @@ void ExperimentRunner::runExample(int video, int startingFrame,int endingFrame,
 
     cv::Rect gt = rects[startingFrame];
 
-    int P=3;
-    int R=5;
-    int Q=5;
-    int updateEveryNFrames=5;
+    int P=10;
+    int R=13;
+    int Q=13;
+    int updateEveryNFrames=3;
 
     runOneThreadOneJob(startingFrame, gt, frames, saveName, saveResults,
                        pretraining, useFilter, useEdgeDensity,

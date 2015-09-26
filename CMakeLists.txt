@@ -110,7 +110,8 @@ if (test)
   #add_executable(RunUnitTests ${SOURCE_FILES})
   # Standard linking to gtest stuff.
   target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS}
-    ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})
+    ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}
+    ${GLOG_LIBRARY} gflags)
 
   # Extra linking for the project.
   #target_link_libraries(runUnitTests project1_lib)
@@ -137,7 +138,7 @@ if(VOT2015)
 	include_directories( ${Boost_INCLUDE_DIR} )
 	add_executable(struck_vot2014 ${Superpixels} ${SOURCE_FILES} ${TRAX_FILES})
     target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES}
-      ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})
+      ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  ${GLOG_LIBRARY} gflags )
 
 	set_target_properties(struck_vot2014 PROPERTIES
 				RUNTIME_OUTPUT_DIRECTORY ${VOT2015_DESTINATION})

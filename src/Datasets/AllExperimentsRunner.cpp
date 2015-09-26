@@ -8,6 +8,7 @@
 #include <vector>
 #include <thread>
 #include "../Tracker/Struck.h"
+#include "../Tracker/ObjDetectorStruck.h"
 #include <sstream>
 #include <random>
 #include "armadillo"
@@ -35,15 +36,12 @@ void saveData(Experiment* e, std::string saveFolder, bool pretraining,
               bool useFilter, bool useEdgeDensity,
               bool useStraddling,
               bool scalePrior, std::string kernel, std::string feature) {
-    std::time_t t2 = std::time(0);
-    //std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
-
 
     std::ofstream out(saveFolder + "/" + "tracker_info.txt");
-    out << Struck::getTracker(pretraining, useFilter, useEdgeDensity,
-                              useStraddling, scalePrior,
+    out << ObjDetectorStruck::getTracker(pretraining, useFilter, useEdgeDensity,
+                                         useStraddling, scalePrior,
                               kernel,
-                              feature);
+                              feature,"");
     out.close();
 
     std::ofstream outExperiment(saveFolder + "/" + "experiment_info.txt");
@@ -68,13 +66,15 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int,
                               kernel,
                               std::string feature,int updateEveryNFrames,
                               double b, int P, int R, int Q, double lambda,
-                              double straddeling_threshold) {
+                              double straddeling_threshold,
+                              int display) {
 
 // run jobs from index 'from' to the index 'to', make sure to create proper saveName
 
     for (int i = from; i < to; i++) {
 
         int videoNumber = std::get<1>(jobs[i]);
+        if (videoNumber!=49) continue;
         int frame = std::get<2>(jobs[i]);
         cv::Rect bb = std::get<3>(jobs[i]);
 
@@ -88,22 +88,152 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int,
 
         ss << saveName << "/" << videoName <<"_sframe="<<std::to_string(frame)
            <<"__" << std::to_string(i) << ".dat";
+        for (int j = 0; j < vidData.size(); j++) {
+            std::cout<< vidData[j].first << std::endl;
+        }
+
 
 
         std::string finalFilename = ss.str();
 
-
+        std::cout<< "Current video: " <<  videoName << std::endl;;
         ExperimentRunner::runOneThreadOneJob(frame, bb, frameNames,
                                              finalFilename, saveResults,
                                              pretraining, useFilter,
                                              useEdgeDensity,
                                              useStraddling, scalePrior, kernel,
                                              feature,updateEveryNFrames,b,P,R,Q,
-                                             lambda, straddeling_threshold
+                                             lambda, straddeling_threshold,
+                                             display
             );
     }
 
 }
+
+void AllExperimentsRunner::runSmall(std::string saveFolder, int nThreads,
+                                    bool saveResults, bool pretraining,
+                                    bool useFilter,
+                                    bool useEdgeDensity, bool useStraddling,
+                                    bool scalePrior, std::string kernel,
+                                    std::string feature,int updateEveryNFrames,
+                                    double b, int P, int R, int Q, double lambda,
+                                    double straddeling_threshold, int display) {
+
+    ExperimentDefault ed;
+
+    std::string saveFolderDefault = saveFolder + "/default/";
+
+    createDirectory(saveFolderDefault);
+
+
+    std::vector<std::tuple<int, int, cv::Rect>> ed_boxes = ed.generateAllBoxesToEvaluate(this->dataset);
+
+
+
+    std::vector<std::tuple<std::string, int, int, cv::Rect>> jobs;
+
+    for (int i = 0; i < ed_boxes.size(); ++i) {
+
+        int video = std::get<0>(ed_boxes[i]);
+        int frame = std::get<1>(ed_boxes[i]);
+        cv::Rect box = std::get<2>(ed_boxes[i]);
+        auto t = std::make_tuple(saveFolderDefault, video, frame, box);
+
+        jobs.push_back(t);
+    }
+
+
+
+
+//    runner1.run(saveFolderDefault, nThreads, saveResults, pretraining, useFilter, useEdgeDensity, useStraddling,
+//                scalePrior, kernel, feature);
+//    runner2.run(saveFolderSRE, nThreads, saveResults, pretraining, useFilter, useEdgeDensity, useStraddling, scalePrior,
+//                kernel, feature);
+//    runner3.run(saveFolderTRE, nThreads, saveResults, pretraining, useFilter, useEdgeDensity, useStraddling, scalePrior,
+//                kernel, feature);
+
+    using namespace std;
+    vector<pair<string, vector<string>>> video_gt_images =
+            this->dataset->prepareDataset();
+
+    for (int j = 0; j < video_gt_images.size(); ++j) {
+        pair<string, vector<string>> p = video_gt_images[j];
+        p.first = this->dataset->videos[j];
+
+
+        vector<string> p_second=p.second;
+
+        video_gt_images[j] = p;
+    }
+
+
+    // to make sure same set of boxes is generates all the time.
+    //std::srand(143);
+    auto engine = std::default_random_engine{};
+    //engine.seed(100);
+    std::shuffle(std::begin(jobs), std::end(jobs), engine);
+
+
+
+
+    std::time_t t1 = std::time(0);
+
+
+    std::vector<std::thread> th;
+
+    arma::rowvec bounds = arma::linspace<arma::rowvec>(
+            0, jobs.size(), MIN(MAX(nThreads, 2), jobs.size()));
+
+    bounds = arma::round(bounds);
+
+    for (int i = 0; i < bounds.size() - 1; i++) {
+
+        /*
+         * (std::vector<std::tuple<int, int, cv::Rect>> &jobs,
+                              vector<pair<string, vector<string>>> &vidData, std::string saveName, int from, int to,
+                              bool saveResults,
+                              bool pretraining, bool useFilter, bool useEdgeDensity, bool useStraddling,
+                              bool scalePrior,
+                              std::string kernel, std::string feature)
+         *
+         *
+         */
+
+        if (nThreads == 1){
+
+        runOneThreadMultipleJobs(jobs,video_gt_images,bounds[i],bounds[i + 1],
+        saveResults,pretraining, useFilter, useEdgeDensity, useStraddling , scalePrior, kernel,
+        feature, updateEveryNFrames, b, P, R, Q, lambda, straddeling_threshold,display);
+        }else{
+
+        th.push_back(std::thread(
+                runOneThreadMultipleJobs, std::ref(jobs), std::ref(video_gt_images),
+                std::ref(bounds[i]), std::ref(bounds[i + 1]),
+                std::ref(saveResults), std::ref(pretraining),
+                std::ref(useFilter), std::ref(useEdgeDensity),
+                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),
+                std::ref(updateEveryNFrames),std::ref(b),std::ref(P),
+                std::ref(R),std::ref(Q), std::ref(lambda),
+                std::ref(straddeling_threshold), std::ref(display)));
+        }
+
+    }
+
+    if (nThreads != 1){
+
+        for (auto &t : th) {
+            t.join();
+        }
+    }
+
+
+    saveData(&ed, saveFolderDefault, pretraining, useFilter, useEdgeDensity,
+             useStraddling,
+             scalePrior, kernel, feature);
+
+
+}
+
 
 void AllExperimentsRunner::run(std::string saveFolder, int nThreads,
                                bool saveResults, bool pretraining,
@@ -112,7 +242,7 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads,
                                bool scalePrior, std::string kernel,
                                std::string feature,int updateEveryNFrames,
                                double b, int P, int R, int Q, double lambda,
-                               double straddeling_threshold) {
+                               double straddeling_threshold, int display) {
 
     //ExperimentDefault ed;
     ExperimentSpatialRobustness es;
@@ -245,7 +375,7 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads,
                 std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),
                 std::ref(updateEveryNFrames),std::ref(b),std::ref(P),
                 std::ref(R),std::ref(Q), std::ref(lambda),
-                std::ref(straddeling_threshold)));
+                std::ref(straddeling_threshold), std::ref(display)));
     }
 
     for (auto &t : th) {
@@ -266,6 +396,7 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads,
              scalePrior, kernel, feature);
 
 }
+
 
 
 
