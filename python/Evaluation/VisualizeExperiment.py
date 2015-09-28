@@ -174,8 +174,9 @@ class VisualizeExperiment(object):
 
         gt_data = [x for x in self.dataset.data if x[0] == vidName][0]
 
-        tracker_data = [x for x in self.run.data[experimentType].data if x[0] == vidName][0]
-
+        #tracker_data = [x for x in self.run.data[experimentType].data if x[0] == vidName][0]
+        print vidName
+        tracker_data = [x for x in self.run.data if x[0] == vidName][0]
         (x_pr, y_pr, x_s, y_s) = Evaluator.evaluateSingleVideo(tracker_data, gt_data,
                                                                experimentNumber=0)
 
@@ -495,13 +496,13 @@ def main(argv=None):
 
 
 
-    runName = './Runs/fk_hist_int_f1.p'
+    runName = './Runs/lambda=0.1_hogANDhist_int_f1.p'
 
     run=loadPickle(runName)
 
     #print run
 
-    experimenType='SRE'
+    experimenType='default'
 
     #
     vidName='jogging-2'
@@ -511,7 +512,7 @@ def main(argv=None):
 
     viz=VisualizeExperiment(dataset,run)
 
-    viz.show(vidName, experimenType)
+    #viz.show(vidName, experimenType)
 
     viz.barplot()
     #viz.precisionAndSuccessPlot(vidName)

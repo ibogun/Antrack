@@ -627,7 +627,7 @@ class Evaluated(object):
 
 def createSavedEvaluations(wildcard):
     wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
-    wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
 
     vot2014Results = "/Users/Ivan/Files/Results/Tracking/vot2014"
     vot2014GrounTruth = "/Users/Ivan/Files/Data/vot2014"
@@ -662,12 +662,12 @@ if __name__ == "__main__":
     # if you want to evaluate and save evaluations ( do this first)
 
 
-    wildcard = "p"
-    createSavedEvaluations(wildcard);
+    wildcard = "lambda"
+    #createSavedEvaluations(wildcard);
 
 
     wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
-    wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
 
     vot2014Results = "/Users/Ivan/Files/Results/Tracking/vot2014"
     vot2014GrounTruth = "/Users/Ivan/Files/Data/vot2014"
@@ -703,17 +703,18 @@ if __name__ == "__main__":
 
     evaluator = EvaluatorAllExperiments(dataset, list(), names)
 
-    saveFigureToFolder = '/Users/Ivan/Code/personal-website/Projects/Object_aware_tracking/images/multiScale/'
+    #saveFigureToFolder = '/Users/Ivan/Code/personal-website/Projects/Object_aware_tracking/images/multiScale/'
+    saveFigureToFolder = '/Users/Ivan/Code/Tracking/Antrack/doc/technical_reports/images/'
     #saveFormat = ['png', 'pdf']
-    saveFormat=['pdf']
+    saveFormat=['png']
     successAndPrecision = 'SuccessAndPrecision_wu2013'
     histograms = 'histogram_wu2013'
 
 
 
-    # for i in saveFormat:
-    #     evaluator.evaluateFromSave(runs,successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
-    #                                                    i,histogramPlot=saveFigureToFolder+histograms+'.'+
-    #                                                                                i)
+    for i in saveFormat:
+         evaluator.evaluateFromSave(runs,successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
+                                                        i,histogramPlot=saveFigureToFolder+histograms+'.'+
+                                                                                    i)
 
-    evaluator.evaluateFromSave(runs)
+    #evaluator.evaluateFromSave(runs)

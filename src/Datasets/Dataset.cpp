@@ -102,6 +102,6 @@ std::vector<std::string> Dataset::listImages(std::string imgLocation, std::strin
         perror ("Couldnt open directory");
         //return nullptr;
     }
-    
+    std::sort(imageFilenames.begin(), imageFilenames.end());
     return imageFilenames;
 }

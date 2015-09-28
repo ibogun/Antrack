@@ -26,13 +26,15 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
         this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn,
                                               locationsOnaGrid, this->R, 2);
     }
-
+    //std::cout<< "Original image: " << image.diag() << std::endl;
     cv::Mat processedImage = this->feature->prepareImage(&image);
+
 
     arma::mat x =
             this->feature->calculateFeature(processedImage, locationsOnaGrid);
 
     arma::rowvec predictions = this->olarank->predictAll(x);
+
     arma::rowvec obj_predictions(predictions.size(), arma::fill::zeros);
     bool boxTooSmallForStraddeling=false;
 

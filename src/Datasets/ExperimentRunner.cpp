@@ -53,8 +53,6 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame,
                                       kernel,
                                       feature, note);
 
-
-
     backwardTracker.setLambda(lambda);
     backwardTracker.setMinStraddeling(straddeling_threshold);
 
@@ -66,8 +64,8 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame,
 
 
     if (startingFrame > 0) {
-        //backwardTracker.initialize(im, initialBox, updateEveryNFrames, b, P, R, Q);
-        backwardTracker.initialize(im, initialBox);
+        backwardTracker.initialize(im, initialBox, updateEveryNFrames, b, P, R, Q);
+        //backwardTracker.initialize(im, initialBox);
         for (int i = startingFrame - 1; i >= 0; i--) {
             //cv::Mat image = cv::imread(frameNames[i]);
             //backwardTracker.track(image);
@@ -76,24 +74,25 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame,
     }
 
     clock_t t1;
-    //if (display!=0){
+    if (display!=0){
         t1=clock();
-        //}
+    }
     if (startingFrame <= frameNames.size() - 1) {
-        //forwardTracker.initialize(im, initialBox,updateEveryNFrames,b,P,R,Q);
-        forwardTracker.initialize(im, initialBox);
+        forwardTracker.initialize(im, initialBox,updateEveryNFrames,b,P,R,Q);
+        //forwardTracker.initialize(im, initialBox);
         for (int i = startingFrame + 1; i < frameNames.size(); i++) {
-            //cv::Mat image = cv::imread(frameNames[i]);
-            //forwardTracker.track(image);
-            forwardTracker.track(frameNames[i]);
-            //if (display!=0){
+
+            cv::Mat image = cv::imread(frameNames[i]);
+            forwardTracker.track(image);
+            //forwardTracker.track(frameNames[i]);
+            if (display!=0){
                 clock_t t2=clock();
                 double timeSec = (t2 - t1) / static_cast<double>(
                     CLOCKS_PER_SEC );
                 timeSec=(i+1)/timeSec;
                 std::cout<<"FPS: "<<timeSec<<" frame "<<i<<" / "<<
                     frameNames.size() << "  " << forwardTracker.getBoundingBoxes()[i - startingFrame - 1] << std::endl;
-                //}
+            }
         }
 
     }

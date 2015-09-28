@@ -74,7 +74,6 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int,
     for (int i = from; i < to; i++) {
 
         int videoNumber = std::get<1>(jobs[i]);
-        if (videoNumber!=49) continue;
         int frame = std::get<2>(jobs[i]);
         cv::Rect bb = std::get<3>(jobs[i]);
 
@@ -88,11 +87,6 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int,
 
         ss << saveName << "/" << videoName <<"_sframe="<<std::to_string(frame)
            <<"__" << std::to_string(i) << ".dat";
-        for (int j = 0; j < vidData.size(); j++) {
-            std::cout<< vidData[j].first << std::endl;
-        }
-
-
 
         std::string finalFilename = ss.str();
 
@@ -168,7 +162,7 @@ void AllExperimentsRunner::runSmall(std::string saveFolder, int nThreads,
 
 
     // to make sure same set of boxes is generates all the time.
-    //std::srand(143);
+    std::srand(143);
     auto engine = std::default_random_engine{};
     //engine.seed(100);
     std::shuffle(std::begin(jobs), std::end(jobs), engine);

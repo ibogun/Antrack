@@ -282,7 +282,7 @@ def plotComparisonToOtherTrackers(dataset, saveFigureToFolders,save):
 
 
     # TODO: Add TLD tracker and, perhaps, SCM
-    runsNames = ['SAMF', 'Kernelized_filter', 'upd=3_hogANDhist_int_f1','a30_hogANDhist_int_f1']
+    runsNames = ['SAMF','DSST', 'upd=3_hogANDhist_int_f1','a30_hogANDhist_int_f1']
     runs = list()
     #
     names = list()
@@ -338,10 +338,10 @@ def plotSensitivity(paperPlot,baselineRun, saveResultsFolders, save):
     wildcards = list()
 
     #wildcards.append('r')
-    wildcards.append('b')
+    #wildcards.append('b')
     #wildcards.append('q')
     #wildcards.append('p')
-    wildcards.append('upd')
+    wildcards.append('lambda')
     if save:
         for i in saveResultsFolders:
 
@@ -358,12 +358,63 @@ def plotSensitivity(paperPlot,baselineRun, saveResultsFolders, save):
             paperPlot.plotsensitivity(baselineRun,w)
 
 
+def plotParameter(paperPlot,baselineRun, saveResultsFolders, save, parameter='upd'):
+    print "Results are averaged across all runs: TRE and SRE ( default not included)"
+
+    wildcards = list()
+    wildcards.append(parameter)
+    if save:
+        for i in saveResultsFolders:
+
+            for w in wildcards:
+                saveResultsFolder = i + "/"+w+"_sensitivity.pdf"
+
+                print "Generating figure for parameter ",parameter," comparison...", saveResultsFolder
+                paperPlot.plotsensitivity(baselineRun,w,saveResultsFolder)
+    else:
+
+
+
+        for w in wildcards:
+            paperPlot.plotsensitivity(baselineRun,w)
+
+
+
+def customParameter():
+
+    folder='./Results/'
+
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
+    saveResultsFolder=list()
+
+    bookChapter="/Users/Ivan/Documents/Papers/My_papers/Tracking_book_chapter/images"
+    paper="/Users/Ivan/Documents/Papers/My_papers/Tracking_with_Robust_Kalman/images"
+
+    saveResultsFolder.append(bookChapter)
+    saveResultsFolder.append(paper)
+
+
+
+    save=False
+
+    datasetType = 'wu2013'
+    dataset = Dataset(wu2013GroundTruth, datasetType)
+
+
+    baseLineRun= folder+'upd=3_hogANDhist_int_f1'+".p"
+
+
+    paperPlot=PaperPlots(dataset,folder)
+
+    #plotComparisonToOtherTrackers(dataset,saveResultsFolder,save)
+    #plotFeatureKernel(paperPlot,saveResultsFolder,save)
+    plotParameter(paperPlot, baseLineRun,saveResultsFolder,save, parameter='lambda')
 
 def main():
 
     folder='./Results/'
 
-    wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
     saveResultsFolder=list()
 
     bookChapter="/Users/Ivan/Documents/Papers/My_papers/Tracking_book_chapter/images"
@@ -392,4 +443,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
+    #customParameter()

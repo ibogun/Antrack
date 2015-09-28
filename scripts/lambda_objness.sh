@@ -10,17 +10,23 @@ kernel=int
 updateEveryNFrames=3
 filter=true
 
-straddeling_threshold=0.5
+straddeling_threshold=1.5
 lambda[0]=0
 lambda[1]=0.2
 lambda[2]=0.4
 lambda[3]=0.6
 lambda[4]=0.8
 lambda[5]=1
+nThreads=24
 
 echo "Author: Ivan Bogun, email: ibogun2010 at my dot fit dot edu"
 echo "Lambda in the objectness."
 echo " ============================================================="
+
+currentDir=pwd
+cd ../build
+make -j8
+cd $currentDir
 
 for idx in `seq 0 5`;
 do

@@ -576,7 +576,7 @@ class Evaluator(object):
 
 if __name__ == "__main__":
     wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
-    wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
 
     vot2014Results = "/Users/Ivan/Files/Results/Tracking/vot2014"
     vot2014GrounTruth = "/Users/Ivan/Files/Data/vot2014"
@@ -587,7 +587,7 @@ if __name__ == "__main__":
     # trackerLabel="STR+f_hog"
 
     #wildcard = sys.argv[1]
-    wildcard="obj"
+    wildcard="lambda"
     #
     # run=Experiment(wu2013results,datasetType,trackerLabel)
     # run.loadResults()
@@ -602,7 +602,7 @@ if __name__ == "__main__":
     #
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
-    runsNames = glob.glob('./Runs/old_default_experiments/' + wildcard + '*.p')
+    runsNames = glob.glob('./Runs/' + wildcard + '*.p')
 
 
     experimentType='default'
