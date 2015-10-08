@@ -319,10 +319,12 @@ std::pair<std::vector<cv::Rect>, std::vector<double>> Straddling::
 
                 }
                 {
-                    // found maximum at (mi,mj)
-                    cv::Rect local_max_box(mi,mj,w[slice], h[slice] );
-                    boxes.push_back(local_max_box);
-                    boxes_objness.push_back(s[slice](mi,mj));
+                    if (s[slice](mi, mj)!= 0) {
+                        // found maximum at (mi,mj)
+                        cv::Rect local_max_box(mi, mj, w[slice], h[slice]);
+                        boxes.push_back(local_max_box);
+                        boxes_objness.push_back(s[slice](mi, mj));
+                    }
                 }
             failed:
                 continue;
@@ -381,6 +383,11 @@ double Straddling::computeStraddling(cv::Rect &rect_big){
     return measure;
 }
 
+
+void EdgeDensity::preprocessIntegral(cv::Mat& image){
+    cv::Mat edges = this->getEdges(image);
+    this->computeIntegrals(edges);
+}
 
 /**
  *  Compute edges from the image using Canny edge detector

@@ -120,11 +120,9 @@ public:
         this->display=display_;};
     
     cv::Mat getEdges(cv::Mat&);
-    
     void computeIntegrals(cv::Mat& labels);
-    
     double computeEdgeDensity(cv::Rect& rect);
-    
+    void preprocessIntegral(cv::Mat& image);
     arma::rowvec findEdgeObjectness(std::vector<cv::Rect>& rects,
                                     int translate_x, int translate_y);
 };

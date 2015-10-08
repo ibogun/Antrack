@@ -13,8 +13,10 @@ bool isBBoxTooSmallForStraddeling(cv::Rect& rect, int area,
     return (threshold*(area/((double) nSuperpixels)) < box_area);
 }
 
-cv::Rect ObjDetectorStruck::track(cv::Mat& image){
 
+
+
+cv::Rect ObjDetectorStruck::track(cv::Mat& image){
     std::vector<cv::Rect> locationsOnaGrid;
     locationsOnaGrid.push_back(lastLocation);
 
@@ -26,56 +28,80 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
         this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn,
                                               locationsOnaGrid, this->R, 2);
     }
-    //std::cout<< "Original image: " << image.diag() << std::endl;
     cv::Mat processedImage = this->feature->prepareImage(&image);
-
-
     arma::mat x =
             this->feature->calculateFeature(processedImage, locationsOnaGrid);
 
     arma::rowvec predictions = this->olarank->predictAll(x);
 
-    arma::rowvec obj_predictions(predictions.size(), arma::fill::zeros);
-    bool boxTooSmallForStraddeling=false;
+    arma::rowvec predictions_straddling(predictions.size(), arma::fill::zeros);
+    arma::rowvec predictions_edgeness(predictions.size(), arma::fill::zeros);
+    bool boxTooSmallForStraddeling = false;
 
-    if (this->lambda > 0 && updateTracker){
-        int delta = this->samplerForSearch->getRadius();
-    
-        int x_min = max(0, lastLocation.x - delta);
-        int y_min = max(0, lastLocation.y - delta);
-    
-        int x_max = min(image.cols, lastLocation.x +
-                        lastLocation.width + delta);
-        int y_max = min(image.rows, lastLocation.y +
-                        lastLocation.height + delta);
-    
-        cv::Rect big_box(x_min, y_min, x_max - x_min, y_max - y_min);
-        // extract small image from 'image'
-        cv::Mat small_image(image, big_box);
 
-        Straddling* s  = new Straddling(200, 0.9);
+    bool useEdgeness = (this->lambda_edgeness > 0);
+    bool useStraddling = (this->lambda_straddeling > 0);
+
+    bool useObjectness = (useEdgeness || useStraddling) && updateTracker;
+
+    int delta = this->samplerForSearch->getRadius();
+    int x_min = max(0, lastLocation.x - delta);
+    int y_min = max(0, lastLocation.y - delta);
+    int x_max = min(image.cols, lastLocation.x +
+                                lastLocation.width + delta);
+    int y_max = min(image.rows, lastLocation.y +
+                                lastLocation.height + delta);
+    cv::Rect big_box(x_min, y_min, x_max - x_min, y_max - y_min);
+    // extract small image from 'image'
+    cv::Mat small_image(image, big_box);
+
+    if (this->display == 3) {
+        // find dimensions
+        int separation = 10;
+        int w = image.cols + small_image.cols + separation;
+        int h = MAX(2 * image.rows, 2 * small_image.rows);
+
+        this->objectnessCanvas = cv::Mat(h, w, image.type(), CV_RGB(0, 0,
+                                                                    0));
+
+        cv::Rect r(0, 0, image.rows, image.cols);
+        this->copyFromRectangleToImage(this->objectnessCanvas, image, r, 2,
+                                       cv::Vec3b(0, 0, 0));
+    }
+
+    if (useObjectness) {
+
+
+        Straddling* s  = new Straddling(200, this->inner);
         this->straddle = *s;
         this->straddle.preprocessIntegral(small_image);
 
-        cv::Rect small_image_rect(0,0, big_box.width, big_box.height);
+        EdgeDensity edge(0.1, 0.5, this->inner, this->display);
 
+        cv::Mat edges = edge.getEdges(small_image);
+        edge.computeIntegrals(edges);
+
+        cv::Rect small_image_rect(0, 0, big_box.width, big_box.height);
+
+        int badBoxCount = 0;
         for (int i = 0; i < predictions.size(); ++i) {
-
-            if (i == 0){
-
+            if (i == 0) {
                 // if straddeling on the previous location of the object is
                 // too small - straddeling won't help.
-                double area_to_npixels =(small_image.rows*small_image.cols/
-                                         (double)this->straddle.getNumberOfSuperpixel());
+                double area_to_npixels = (small_image.rows*small_image.cols/
+                                          static_cast<double>(this->straddle.getNumberOfSuperpixel()));
 
-                LOG(INFO)<<"Min area in pixels: " << area_to_npixels*this->straddeling_threshold;
-                LOG(INFO)<<"Area of the box: "  << lastLocation.width * lastLocation.height;
-                LOG(INFO) << "Straddling is: " << (area_to_npixels*this->straddeling_threshold
+                LOG(INFO) << "Min area in pixels: " <<
+                    area_to_npixels*this->straddeling_threshold;
+                LOG(INFO) << "Area of the box: "  <<
+                    lastLocation.width * lastLocation.height;
+                LOG(INFO) << "Straddling is: " <<
+                    (area_to_npixels*this->straddeling_threshold
                     <= lastLocation.width * lastLocation.height);
+
                 if (area_to_npixels*this->straddeling_threshold
                     <= lastLocation.width * lastLocation.height) {
-                    boxTooSmallForStraddeling= true;
-                    break;
+                    boxTooSmallForStraddeling = true;
                 }
             }
 
@@ -88,26 +114,101 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
                                           rectInSmallImage.width <
                                           small_image.cols) &&
                 (rectInSmallImage.y+ rectInSmallImage.height <
-                 small_image.rows)&& (rectInSmallImage.x >= 0)
-                && ( rectInSmallImage.y >= 0);
+                 small_image.rows) && (rectInSmallImage.x >= 0)
+                && (rectInSmallImage.y >= 0);
 
-            if (rect_fits_small_image){
-                obj_predictions[i] = this->straddle.computeStraddling(
+            if (rect_fits_small_image) {
+                predictions_straddling[i] = this->straddle.computeStraddling(
                     rectInSmallImage);
+                predictions_edgeness[i] =
+                    edge.computeEdgeDensity(rectInSmallImage);
+            } else {
+                badBoxCount++;
             }
+        }
+
+        LOG(INFO) << "Number of bad boxes: " << badBoxCount << " out of " << predictions_straddling.size();
+
+        if (this->display == 3 ) {
+            uword maxBoxEdges;
+
+            predictions_edgeness.max(maxBoxEdges);
+
+            this->edgeDensity.addToHistory(
+                    predictions_edgeness[maxBoxEdges]);
+
+            LOG(INFO) << "Max Edgeness: " << predictions_edgeness[maxBoxEdges];
+            this->objPlot->addPoint(predictions_edgeness[maxBoxEdges], 0);
+
+            cv::Rect r = locationsOnaGrid[maxBoxEdges];
+
+            cv::Rect bestEdgesRect(r.x - x_min, r.y - y_min, r.width, r.height);
+
+            // convert gray to rgb
+            cv::cvtColor(edges, edges, cv::COLOR_GRAY2RGB);
+
+            // extract rectangle in the edge image
+            cv::rectangle(edges, bestEdgesRect, cv::Scalar(100, 255, 0), 2);
+
+            // find dimensions
+            int separation = 10;
+
+            cv::Rect r3(small_image.rows, image.cols + separation, small_image.rows,
+                        small_image.cols);
+
+            this->copyFromRectangleToImage(this->objectnessCanvas, edges, r3, 2,
+                                           cv::Vec3b(144, 144, 144));
+            // add objectness into the this->objectness canvas
+        }
+
+
+        if (this->display == 3 ) {
+            uword maxBoxStraddling;
+
+            predictions_straddling.max(maxBoxStraddling);
+            LOG(INFO) << "Max Straddling: " << predictions_straddling[maxBoxStraddling];
+            this->straddle.addToHistory(predictions_straddling[maxBoxStraddling]);
+
+            this->objPlot->addPoint(predictions_straddling[maxBoxStraddling], 1);
+
+            cv::Rect r = locationsOnaGrid[maxBoxStraddling];
+            cv::Rect bestStraddlingRect(r.x - x_min, r.y - y_min, r.width, r.height);
+
+            // convert gray to rgb
+            cv::cvtColor(straddle.canvas, straddle.canvas, cv::COLOR_GRAY2RGB);
+
+            cv::rectangle(straddle.canvas, bestStraddlingRect, cv::Scalar(100, 255, 0),
+                          2);
+
+            // find dimensions
+
+            int separation = 10;
+            cv::Rect r2(0, image.cols + separation, small_image.rows, small_image.cols);
+            this->copyFromRectangleToImage(this->objectnessCanvas, straddle.canvas, r2,
+                                           2, cv::Vec3b(144, 144, 144));
         }
 
         delete s;
     }
 
+    predictions = (predictions - arma::min(predictions))/
+                  arma::max(predictions);
 
+    if (useStraddling && !boxTooSmallForStraddeling
+        && updateTracker)  {
+        predictions_straddling = (predictions_straddling -
+                                  arma::min(predictions_straddling))/
+            arma::max(predictions_straddling);
+        predictions = predictions + this->lambda_straddeling *
+                                    predictions_straddling;
+    }
 
-    if (lambda > 0 && !boxTooSmallForStraddeling && updateTracker)  {
-        predictions = (predictions - arma::min(predictions))/
-            arma::max(predictions);
-        obj_predictions = (obj_predictions - arma::min(obj_predictions))/
-            arma::max(obj_predictions);
-        predictions = predictions + lambda* obj_predictions;
+    if (useEdgeness && updateTracker){
+        predictions_edgeness = (predictions_edgeness -
+                                  arma::min(predictions_edgeness))/
+                               arma::max(predictions_edgeness);
+        predictions = predictions + this->lambda_edgeness *
+                                    predictions_straddling;
     }
 
     uword groundTruth;
@@ -205,12 +306,14 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
 
         this->updateDebugImage(&this->canvas, image, this->lastLocation,
                                cv::Scalar(250, 0, 0));
+
+        LOG(INFO) << lastLocation;
     } else if (display == 3) {
         // only putting the ground truth rectangle shoud be happening here
         cv::Scalar color(255, 0, 0);
 
         cv::Mat plotImg;
-        if (this->useEdgeDensity || this->useStraddling) {
+        if (useEdgeness || useStraddling) {
             plotImg = this->objectnessCanvas;
         } else {
             plotImg = image.clone();
@@ -226,7 +329,7 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
         }
 
 
-        if (this->useEdgeDensity || this->useStraddling) {
+        if (useEdgeness || useStraddling) {
 
             cv::rectangle(plotImg, lastLocationObjectness, cv::Scalar(0, 204,
                                                                       102),
@@ -262,122 +365,16 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
     return lastLocation;
 }
 
-ObjDetectorStruck ObjDetectorStruck::getTracker(bool pretraining,
-                                                bool useFilter,
-                                                bool useEdgeDensity,
-                                                bool useStraddling,
-                                                bool scalePrior,
-                                                std::string kernelSTR,
-                                                std::string featureSTR,
-                                                std::string note_) {
 
-    // Parameters
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    params p;
-    p.C = 100;
-    p.n_O = 10;
-    p.n_R = 10;
-    int nRadial = 5;
-    int nAngular = 16;
-    int B = 100;
-
-    int nRadial_search = 12;
-    int nAngular_search = 30;
-
-    // RawFeatures* features=new RawFeatures(16);
-
-
-    Feature *features;
-    Kernel *kernel;
-
-    if (featureSTR == "hog") {
-        features = new HoG();
-    } else if (featureSTR == "hist") {
-        features = new HistogramFeatures(4, 16);
-    } else if (featureSTR == "haar"){
-        features = new Haar(2);
-    } else if (featureSTR == "hogANDhist"){
-        Feature* f1;
-        Feature* f2;
-        f1=new HistogramFeatures(4,16);
-        cv::Size winSize(32, 32);
-        cv::Size blockSize(16, 16);
-        cv::Size cellSize(4, 4); // was 8
-        cv::Size blockStride(16, 16);
-        int nBins = 8;          // was 5
-
-        f2= new HoG(winSize,blockSize,cellSize,blockSize,nBins);
-
-        std::vector<Feature*> mf;
-        mf.push_back(f1);
-        mf.push_back(f2);
-        features = new MultiFeature(mf);
-    }
-
-    else {
-        features = new RawFeatures(16);
-    }
-
-    if (kernelSTR == "int") {
-        kernel = new IntersectionKernel_fast;
-    } else if (kernelSTR == "gauss") {
-        kernel = new RBFKernel(0.2);
-    }else if (kernelSTR == "approxGauss") {
-
-        RBFKernel* rbf=new RBFKernel(0.2);
-        int pts=25;
-        kernel = new ApproximateKernel(pts,rbf);
-    } else {
-        kernel = new LinearKernel;
-    }
-
-    int verbose = 0;
-    int display = 0;
-    int m = features->calculateFeatureDimension();
-
-    OLaRank_old *olarank = new OLaRank_old(kernel);
-    olarank->setParameters(p, B, m, verbose);
-
-    int r_search = 45;
-    int r_update = 60;
-
-    bool useObjectness = (useEdgeDensity | useStraddling);
-
-
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    LocationSampler *samplerForUpdate =
-            new LocationSampler(r_update, nRadial, nAngular);
-    LocationSampler *samplerForSearch =
-            new LocationSampler(r_search, nRadial_search, nAngular_search);
-
-    ObjDetectorStruck tracker(olarank, features, samplerForSearch,
-                              samplerForUpdate,
-                   useObjectness, scalePrior, useFilter, pretraining, display);
-
-    tracker.useStraddling = useStraddling;
-    tracker.useEdgeDensity = useEdgeDensity;
-
-    int measurementSize = 6;
-    arma::colvec x_k(measurementSize, fill::zeros);
-    x_k(0) = 0;
-    x_k(1) = 0;
-    x_k(2) = 0;
-    x_k(3) = 0;
-
-    int robustConstant_b = 10;
-
-    int R_cov = 10;
-    int Q_cov = 13;
-    int P = 13;
-
-    KalmanFilter_my filter =
-            KalmanFilterGenerator::generateConstantVelocityFilter(
-                    x_k, 0, 0, R_cov, Q_cov, P, robustConstant_b);
-
-    tracker.setFilter(filter);
-
-    tracker.setNote(note_);
-
-    return tracker;
+std::ostream &operator<<(std::ostream &strm, const ObjDetectorStruck &s){
+    strm << static_cast<const Struck &>(s);
+    strm << "Object-aware structured tracker" << "\n";
+    strm << "========================================================" << "\n";
+    strm << "Straddeling lambda: " << s.lambda_straddeling << "\n";
+    strm << "Edge density lambda: " << s.lambda_edgeness << "\n";
+    strm << "Inner rectangle scale: " << s.inner <<"\n";
+    strm << "Straddling Min boundinb box threshold: "
+         << s.straddeling_threshold << "\n";
+    strm << "========================================================" << "\n";
+    return strm;
 }

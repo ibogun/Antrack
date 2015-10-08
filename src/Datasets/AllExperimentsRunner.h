@@ -15,8 +15,7 @@ class AllExperimentsRunner {
     Dataset *dataset;
 
 
-public:
-
+ public:
     AllExperimentsRunner(Dataset* d): dataset(d){}
 
     void run(std::string safeFolder, int nThreads, bool saveResults,
@@ -25,7 +24,8 @@ public:
              bool scalePrior,
              std::string kernel, std::string feature,
              int updateEveryNFrames,double b,int P, int R, int Q,
-             double lambda, double straddeling_threshold, int display = 0);
+             const std::unordered_map<std::string, double>& map,
+             int display = 0);
 
     void runSmall(std::string safeFolder, int nThreads, bool saveResults,
                   bool pretraining, bool useFilter, bool useEdgeDensity,
@@ -33,7 +33,8 @@ public:
                   bool scalePrior,
                   std::string kernel, std::string feature,
                   int updateEveryNFrames,double b,int P, int R, int Q,
-                  double lambda, double straddeling_threshold, int display=0);
+                  std::unordered_map<std::string, double> map,
+                  int display=0);
 
 
     static void createDirectory(std::string s);

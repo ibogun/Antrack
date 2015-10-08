@@ -164,7 +164,7 @@ class VisualizeAllExperiments(object):
 
             plt.show()
 
-    def barplotDefault(self, n = 1000, savefile=''):
+    def barplotDefault(self, n = 1000, savefile='',sort=False):
         plt.figure(figsize=(13,9))
 
         rotation = 90
@@ -234,8 +234,11 @@ class VisualizeAllExperiments(object):
         else:
             plt.subplot(1, 2, index)
 
-        idx_sorted = [i[0] for i in sorted(enumerate(bothMetrics), key=lambda x: x[1])]
-
+        #
+        if sort:
+            idx_sorted = [i[0] for i in sorted(enumerate(bothMetrics), key=lambda x: x[1])]
+        else:
+            idx_sorted = [i[0] for i in enumerate(bothMetrics)]
         successTrackerNames = [names[x] for x in idx_sorted]
         sorted_success = [success[x] for x in idx_sorted]
 
@@ -250,8 +253,8 @@ class VisualizeAllExperiments(object):
 
         plt.yticks(fontsize=xTicksFontSize)
 
-        mean_success = mean_success+ np.round(sum(success) / (1.0 * len(success)), 2)
-        mean_precision=mean_precision+ np.round(sum(precision) / (1.0 * len(precision)), 2)
+        mean_success = mean_success+ np.round(sum(success) / (1.0 * len(success)), 3)
+        mean_precision=mean_precision+ np.round(sum(precision) / (1.0 * len(precision)), 3)
         #plt.title("Success " + "[" + str(mean_success) + "]", fontsize=xTicksFontSize + 4)
 
         index = index + 1;
@@ -271,8 +274,8 @@ class VisualizeAllExperiments(object):
         ax3.grid(b=False)
 
 
-        sFinal=np.round(sum(sList) / (float(len(sList))),2)
-        pFinal = np.round(sum(pList) / (float(len(pList))), 2)
+        sFinal=np.round(sum(sList) / (float(len(sList))),3)
+        pFinal = np.round(sum(pList) / (float(len(pList))), 3)
 
         ax1.set_title(
             "Success " + "[" + str(sFinal) + "] / " + self.experiments.data['default'].trackerLabel,
@@ -290,6 +293,7 @@ class VisualizeAllExperiments(object):
             plt.show()
         else:
             plt.savefig(savefile)
+            plt.close()
 
 
 
@@ -484,7 +488,11 @@ def generateAllVizualiations():
     datasetType = 'wu2013'
     dataset = Dataset(wu2013GroundTruth, datasetType)
     runsNames = glob.glob('./Runs/upd=3*.p')
+    runsNames =['lambda_SE_s0_e0.2', 'lambda_SE_s0_e0.5',
+                'lambda_SE_s0.1_e0.3', 'lambda_SE_s0.2_e0.2', 'lambda_SE_s0.3_e0.4']
 
+    for i in range(0,len(runsNames)):
+        runsNames[i]="./Runs/"+runsNames[i]+".p"
     formatSave='pdf'
 
     regexp= re.compile("(.*\/)(.+)(.p)")
@@ -502,13 +510,13 @@ def generateAllVizualiations():
         viz = VisualizeAllExperiments(dataset, run)
         viz.barplot(savefile=folderForGraphs+name+"."+ formatSave)
 
-def generateDefaultVizualiations():
+def generateDefaultVizualiations(wildcard):
 
     wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
     folderForGraphs='./Visualizations/'
     datasetType = 'wu2013'
     dataset = Dataset(wu2013GroundTruth, datasetType)
-    runsNames = glob.glob('./Runs/lambda*.p')
+    runsNames = glob.glob("./Runs/" + wildcard + "*.p")
     #runsNames = glob.glob('./Runs/upd=3_hogANDhist_int*.p')
     formatSave='pdf'
 
@@ -528,7 +536,37 @@ def generateDefaultVizualiations():
         viz.barplotDefault(savefile=folderForGraphs+name+"."+ formatSave)
         #viz.precisionAndSuccessPlot(all=False)
 
+def compareDefaultPlots(wildcard="lambda_SE"):
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
+    datasetType = 'wu2013'
+    dataset = Dataset(wu2013GroundTruth, datasetType)
+    runsNames = glob.glob("./Runs/" + wildcard + "*.p")
+
+    formatSave='pdf'
+
+    regexp= re.compile("(.*\/)(.+)(.p)")
+    #s0_e0.2
+    #s0_e0.5
+    #s0.1_e0.3
+    #s0.2_e0.2
+    #s0.3_e0.4
+    d=dict()
+    runs=list()
+    for runName in runsNames:
+        m=re.match(regexp,runName)
+        name=m.group(2)
+        print name
+        run = loadPickle(runName)
+        run.trackerLabel=runName
+        run.data['TRE'].data=[]
+        run.data['SRE'].data=[]
+        d[runName] = run
+        runs.append(run)
+    evaluator = Evaluator(dataset, runs)
+    evaluator.evaluateSingleTracker(runs[0])
+
 
 if __name__ == "__main__":
-    generateAllVizualiations()
-    #generateDefaultVizualiations()
+    #generateAllVizualiations()
+    generateDefaultVizualiations("lambda_inner")
+    #compareDefaultPlots()

@@ -2,36 +2,46 @@
 // Created by Ivan Bogun on 9/18/15.
 //
 
-#ifndef ROBUST_TRACKING_BY_DETECTION_OBJDETECTORSTRUCK_H
-#define ROBUST_TRACKING_BY_DETECTION_OBJDETECTORSTRUCK_H
+#ifndef SRC_TRACKER_OBJDETECTORSTRUCK_H_
+#define SRC_TRACKER_OBJDETECTORSTRUCK_H_
 
+#include <string>
+#include <unordered_map>
 #include "Struck.h"
 
 class ObjDetectorStruck: public Struck {
-
-    double lambda = 0;
+    double lambda_straddeling = 0;
+    double lambda_edgeness = 0;
     double straddeling_threshold = 0.5;
+    double inner = 0.9;
 
-public:
+ protected:
+    friend std::ostream &operator<<(std::ostream &strm,
+                                    const ObjDetectorStruck &s);
 
-    ObjDetectorStruck(OLaRank_old* olarank_,Feature* feature_,
-                      LocationSampler* samplerSearch_,
-                      LocationSampler* samplerUpdate_,
-                      bool useObjectness_,bool scalePrior_,bool useFilter_,
-                      int usePretraining_,int display_):
-        Struck(olarank_,feature_,samplerSearch_, samplerUpdate_,
-               useObjectness_, scalePrior_, useFilter_,display_,
-               usePretraining_){}
+ public:
 
-    static ObjDetectorStruck getTracker(bool,bool,bool,bool,bool,std::string,
-                                        std::string,std::string);
-    cv::Rect track(cv::Mat& image);
+    using Struck::Struck;  // inherit all constructors from Struck
 
-    void setLambda( double lambda_){
-        this->lambda = lambda_;
+    cv::Rect track( cv::Mat& image);
+
+    void setParams(const std::unordered_map<std::string, double>& map) {
+        double lambda_s = map.find("lambda_straddling")->second;
+        double lambda_e = map.find("lambda_edgeness")->second;
+        double straddle = map.find("straddling_threshold")->second;
+        double inner_param = map.find("inner")->second;
+
+        this->inner = inner_param;
+        this->setLambda(lambda_s, lambda_e);
+        this->setMinStraddeling(straddle);
     }
 
-    void setMinStraddeling( double straddling_threshold_){
+    void setLambda(double lambda_straddling_, double lambda_edgeness_) {
+        this->lambda_straddeling = lambda_straddling_;
+        this->lambda_edgeness = lambda_edgeness_;
+    }
+
+    void setMinStraddeling(double straddling_threshold_) {
         this->straddeling_threshold = straddling_threshold_;
     }
 
@@ -39,8 +49,7 @@ public:
         cv::Mat image = cv::imread(image_name);
         return this->track(image);
     }
-
 };
 
 
-#endif //ROBUST_TRACKING_BY_DETECTION_OBJDETECTORSTRUCK_H
+#endif  // SRC_TRACKER_OBJDETECTORSTRUCK_H_

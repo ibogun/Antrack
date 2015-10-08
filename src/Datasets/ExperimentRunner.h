@@ -22,9 +22,9 @@ public:
              bool pretraining, bool useFilter, bool useEdgeDensity,
              bool useStraddling,
              bool scalePrior,
-             std::string kernel, std::string feature,int updateEveryNFrames,
-             double b,int P, int R, int Q, double lambda,
-             double straddeling_threshold);
+             std::string kernel, std::string feature, int updateEveryNFrames,
+             double b, int P, int R, int Q,
+             const std::unordered_map<std::string, double>& map);
 
     void runExample(int video,int startingFrame, int endingFrame,
                     std::string saveName,
@@ -32,8 +32,7 @@ public:
                     bool pretraining, bool useFilter, bool useEdgeDensity,
                     bool useStraddling, bool scalePrior,
                     std::string kernel, std::string feature, double b,
-                    double lambda,
-                    double straddeling_threshold,
+                    const std::unordered_map<std::string, double>& map,
                     int display);
 
 
@@ -47,8 +46,7 @@ public:
                                    std::string kernel, std::string feature,
                                    int updateEveryNFrames,double b, int P,
                                    int R, int Q,
-                                   double lambda,
-                                   double straddeling_threshold,
+                                   const std::unordered_map<std::string, double>& map,
                                    int display=0);
 };
 

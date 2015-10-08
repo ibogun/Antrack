@@ -45,8 +45,7 @@
 
 
 class Struck {
-
-protected:
+ protected:
     OLaRank_old* olarank;
     Feature* feature;
     LocationSampler* samplerForUpdate;
@@ -58,9 +57,9 @@ protected:
     EdgeDensity edgeDensity;
     Straddling straddle;
 
-    bool useEdgeDensity=false;
+    bool useEdgeDensity = false;
     bool useStraddling = false;
-    bool gtAvaliable=false;
+    bool gtAvaliable = false;
 
     cv::Rect lastLocation;
     cv::Rect lastLocationFilter;
@@ -68,43 +67,39 @@ protected:
     cv::Rect lastRectFilterAndDetectorAgreedOn;
     cv::Rect gtBox;
 
-    std::unordered_map<int,cv::Mat> frames;
+    std::unordered_map<int, cv::Mat> frames;
 
     // for plotting support vectors (used only if display==2)
     cv::Mat canvas;
 
     cv::Mat objectnessCanvas;
 
-    int gridSearch=2;
-    int R=30;
-    int framesTracked=0;
+    int gridSearch = 2;
+    int R = 30;
+    int framesTracked = 0;
 
     bool pretraining;
     bool useFilter;
     bool useObjectness;
     bool scalePrior;
 
-    bool updateTracker=true;
+    bool updateTracker = true;
+    int updateEveryNframes = 1;
+    int seed = 1;
 
-
-    int updateEveryNframes=1;
-
-
-    int seed=1;
-
-    std::string note="Objectness measures which add top\
+    std::string note = "Objectness measures which add top\
 10 bounding boxes on each scale (boxes addition)";
     friend std::ostream& operator<<(std::ostream&, const Struck&);
 
-public:
+ public:
 
-    void turnOffPreTraining(){
-        this->pretraining=false;
-    };
+    void turnOffPreTraining() {
+        this->pretraining = false;
+    }
     int display;
 
-    void setNote(std::string note_){
-        this->note=note_;
+    void setNote(std::string note_) {
+        this->note = note_;
     }
 
     std::vector<double> edge_params;
@@ -112,85 +107,95 @@ public:
 
     std::vector<cv::Rect> boundingBoxes;
 
-    Struck(){};
-    void setGroundTruthBox(cv::Rect box){
-        this->gtBox=box;
+    Struck() {}
+    void setGroundTruthBox(cv::Rect box) {
+        this->gtBox = box;
     }
 
-    void setRobustConstantInFilter(double b){
+    void setRobustConstantInFilter(double b) {
         this->filter.setBothB(b);
     }
 
-    cv::Mat getObjectnessCanvas(){
+    cv::Mat getObjectnessCanvas() {
         return objectnessCanvas;
     }
 
-    void setObjectnessCanvas(cv::Mat c){
-        this->objectnessCanvas=c;
+    void setObjectnessCanvas(cv::Mat c) {
+        this->objectnessCanvas = c;
     }
 
-    Struck(OLaRank_old* olarank_,Feature* feature_,
-           LocationSampler* samplerSearch_,LocationSampler* samplerUpdate_,
-           bool useObjectness_,bool scalePrior_,bool useFilter_,
-           int usePretraining_,int display_){
+    Struck(bool, bool, bool, bool, bool,
+                             std::string,
+                             std::string,
+                             std::string);
+
+    Struck(OLaRank_old* olarank_, Feature* feature_,
+           LocationSampler* samplerSearch_, LocationSampler* samplerUpdate_,
+           bool useObjectness_, bool scalePrior_, bool useFilter_,
+           int usePretraining_, int display_) {
         olarank = olarank_;
         feature = feature_;
-        samplerForSearch=samplerSearch_;
+        samplerForSearch = samplerSearch_;
         samplerForUpdate = samplerUpdate_;
-        useObjectness=useObjectness_;
-        scalePrior=scalePrior_;
-        useFilter=useFilter_;
+        useObjectness = useObjectness_;
+        scalePrior = scalePrior_;
+        useFilter = useFilter_;
         display = display_;
-        pretraining=usePretraining_;
-        objPlot=new Plot(500);
+        pretraining = usePretraining_;
+        objPlot = new Plot(500);
 
-    };
+    }
 
-    void setParameters(OLaRank_old* olarank_,Feature* feature_,
+    void setParameters(OLaRank_old* olarank_, Feature* feature_,
                        LocationSampler* samplerSearch_,
-                       LocationSampler* samplerUpdate_,bool useFilter_,
+                       LocationSampler* samplerUpdate_, bool useFilter_,
                        int display_){
-
-        this->olarank=olarank_;
-        this->feature=feature_;
-        this->samplerForSearch=samplerSearch_;
-        this->samplerForUpdate=samplerUpdate_;
-        this->useFilter=useFilter_;
-        this->display=display_;
-    };
-
+        this->olarank = olarank_;
+        this->feature = feature_;
+        this->samplerForSearch = samplerSearch_;
+        this->samplerForUpdate = samplerUpdate_;
+        this->useFilter = useFilter_;
+        this->display = display_;
+    }
 
     static Struck getTracker();
-    static Struck getTracker(bool,bool,bool,bool,bool);
-    static Struck getTracker(bool,bool,bool,bool,bool,std::string,std::string);
+    static Struck getTracker(bool, bool, bool, bool, bool);
+    static Struck getTracker(bool, bool, bool, bool, bool,
+                             std::string, std::string);
 
-    static Struck getTracker(bool,bool,bool,bool,bool,std::string,
-                             std::string,std::string);
+    static Struck getTracker(bool, bool, bool, bool, bool,
+                             std::string,
+                             std::string,
+                             std::string);
 
-    std::vector<cv::Rect> getBoundingBoxes(){
+    std::vector<cv::Rect> getBoundingBoxes() {
         return this->boundingBoxes;
-    };
+    }
 
     void videoCapture();
 
-    void initialize(std::string image_name, int x, int y, int width, int height){
+    void initialize(std::string image_name, int x, int y, int width,
+                    int height) {
         cv::Rect b(x, y, width, height);
         cv::Mat image = cv::imread(image_name, 0);
         this->initialize(image, b);
     }
 
-    void initialize(cv::Mat& image,cv::Rect& location);
+    void initialize(cv::Mat& image, cv::Rect& location);
 
     void initialize(cv::Mat& image, cv::Rect& location,
                     int updateEveryNFrames,double b, int P, int R, int Q);
 
     void allocateCanvas(cv::Mat&);
 
-    cv::Rect track(cv::Mat& image);
+    virtual cv::Rect track(cv::Mat& image);
 
-    cv::Rect track(std::string image_name) {
+    virtual cv::Rect track(std::string image_name) {
         cv::Mat image = cv::imread(image_name);
         return this->track(image);
+    }
+
+    virtual void setParams(const std::unordered_map<std::string, double>& map) {
     }
 
     void updateDebugImage(cv::Mat* canvas,cv::Mat& img,

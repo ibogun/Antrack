@@ -6,10 +6,17 @@
 //  Copyright (c) 2014 Ivan Bogun. All rights reserved.
 //
 
-#include <iostream>
-#include <opencv2/opencv.hpp>
 #include <ctime>
+#include <fstream>
+#include <iostream>
 #include <algorithm>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <pthread.h>
+#include <thread>
+#include <opencv2/opencv.hpp>
 
 #include <glog/logging.h>
 #include <gflags/gflags.h>
@@ -35,10 +42,7 @@
 
 #include "Superpixels/SuperPixels.h"
 
-#include <pthread.h>
-#include <thread>
 
-#include <fstream>
 
 #ifdef _WIN32
 // define something for Windows (32-bit and 64-bit, this part is common)
@@ -75,7 +79,6 @@
 #define NUM_THREADS 16
 
 // OPTLEX machine
-//#define wu2013RootFolder "/media/drive/UbuntuFiles/Datasets/Tracking/wu2013/"
 #define wu2013RootFolder \
   "/udrive/student/ibogun2010/Research/Data/Tracking_benchmark/"
 
@@ -95,8 +98,12 @@
 // POSIX
 #endif
 
-DEFINE_double(lambda, 0.1, "Lambda in ObjDetectorStruck()");
-DEFINE_double(straddling_threshold, 2, "Straddeling threshold.");
+DEFINE_int32(display, 1, "Display settings.");
+DEFINE_double(lambda_s, 0.3, "Straddling lambda in ObjDetectorTracker().");
+DEFINE_double(lambda_e, 0.3, "Edge density lambda in ObjDetectorTracker().");
+DEFINE_double(inner, 0.9, "Inner bounding box for objectness.");
+DEFINE_double(straddeling_threshold, 1.5,
+              "Straddeling threshold.");
 DEFINE_int32(video_index, -1, "Video to use for tracking.");
 DEFINE_string(video_name, "", "Video name to use.");
 DEFINE_int32(frame_from, 0, "Frame from");
@@ -254,12 +261,9 @@ int main(int argc, char *argv[]) {
   bool spatialPrior = false;
   std::string note = " Object Struck tracker";
 
-  ObjDetectorStruck tracker =
-      ObjDetectorStruck::getTracker(pretraining, filter, edgeness, straddling,
-                                    spatialPrior, kernel, feature, note);
 
-  tracker.setLambda(FLAGS_lambda);
-  tracker.setMinStraddeling(FLAGS_straddling_threshold);
+  // tracker.setLambda(FLAGS_lambda);
+  // tracker.setMinStraddeling(FLAGS_straddling_threshold);
   int frames = 10;
 
   std::string vidName = "basketball";
@@ -273,53 +277,71 @@ int main(int argc, char *argv[]) {
 
   // tracker.display=0;
 
-  tracker.display = 0;
 
-  vector<pair<string, vector<string>>> video_gt_images =
-      dataset->prepareDataset(wu2013RootFolder);
+
+  std::vector<std::pair<std::string, std::vector<std::string>>> video_gt_images =
+          dataset->prepareDataset(wu2013RootFolder);
 
   std::string save_base = wu2013SaveFolder;
-  std::string dirName = save_base + "/lambda_" + std::to_string(FLAGS_lambda);
+  std::string dirName = save_base + "/lambda_" + std::to_string(FLAGS_lambda_s);
   // AllExperimentsRunner::createDirectory(dirName);
 
-  pair<string, vector<string>> gt_images = video_gt_images[vidIndex];
+  //for (vidIndex = 0; vidIndex <51 ; ++vidIndex) {
 
-  vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
 
-  int display = 0;
+    pair<string, vector<string>> gt_images = video_gt_images[vidIndex];
 
-  double b = 10;
+    vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
 
-  int startingFrame = FLAGS_frame_from;
-  int endingFrame = MIN(FLAGS_frame_to, groundTruth.size());
 
-  cv::Mat image = cv::imread(gt_images.second[startingFrame]);
+    ObjDetectorStruck tracker(pretraining, filter, edgeness,
+                                 straddling,
+                                 spatialPrior, kernel, feature, note);
+    std::cout << tracker << std::endl;
 
-  std::cout << " Rect: " << groundTruth[startingFrame] << std::endl;
-  std::cout << gt_images.second[startingFrame] << std::endl;
-  cv::Rect rect = groundTruth[startingFrame];
-  if (rect.x + rect.width >= image.cols) {
-    rect.width = image.cols - rect.x - 1;
-  }
+    std::unordered_map<std::string, double> map;
+    map.insert(std::make_pair("lambda_straddling", FLAGS_lambda_s));
+    map.insert(std::make_pair("lambda_edgeness", FLAGS_lambda_e));
+    map.insert(std::make_pair("inner", FLAGS_inner));
+    map.insert(std::make_pair("straddling_threshold",
+                              FLAGS_straddeling_threshold));
+    tracker.setParams(map);
+    tracker.display = FLAGS_display;
 
-  if (rect.y + rect.height >= image.rows) {
-    rect.height = image.rows - rect.y - 1;
-  }
+    double b = 10;
 
-  std::cout << rect << std::endl;
-  std::cout << image.rows << " " << image.cols << std::endl;
+    int startingFrame = FLAGS_frame_from;
+    int endingFrame = MIN(FLAGS_frame_to, groundTruth.size());
 
-  tracker.initialize(image, rect);
+    cv::Mat image = cv::imread(gt_images.second[startingFrame]);
 
-  for (int i = startingFrame; i < endingFrame; i++) {
-    tracker.track(gt_images.second[i]);
-    std::cout << "Frame #" << i - startingFrame << " out of "
-              << endingFrame - startingFrame
-              << tracker.getBoundingBoxes()[i - startingFrame] << std::endl;
-  }
+    std::cout << " Rect: " << groundTruth[startingFrame] << std::endl;
+    std::cout << gt_images.second[startingFrame] << std::endl;
+    cv::Rect rect = groundTruth[startingFrame];
+    if (rect.x + rect.width >= image.cols) {
+      rect.width = image.cols - rect.x - 1;
+    }
+
+    if (rect.y + rect.height >= image.rows) {
+      rect.height = image.rows - rect.y - 1;
+    }
+
+      std::cout << rect << std::endl;
+      std::cout << image.rows << " " << image.cols << std::endl;
+
+      tracker.initialize(image, rect);
+
+      for (int i = startingFrame; i < endingFrame; i++) {
+        tracker.track(gt_images.second[i]);
+        std::cout << "Frame #" << i - startingFrame << " out of "
+                  << endingFrame - startingFrame
+                  << tracker.getBoundingBoxes()[i - startingFrame] << std::endl;
+      }
+
+  //}
 
   std::string tracker_save_file = dirName + "/" + dataset->videos[vidIndex];
-  // tracker.saveResults(tracker_save_file);
+  tracker.saveResults(tracker_save_file);
 
   delete vot2014;
   delete vot2015;

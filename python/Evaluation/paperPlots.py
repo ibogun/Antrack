@@ -438,7 +438,7 @@ def main():
 
     plotComparisonToOtherTrackers(dataset,saveResultsFolder,save)
     #plotFeatureKernel(paperPlot,saveResultsFolder,save)
-    plotSensitivity(paperPlot, baseLineRun,saveResultsFolder,save)
+    #plotSensitivity(paperPlot, baseLineRun,saveResultsFolder,save)
 
 
 if __name__ == "__main__":

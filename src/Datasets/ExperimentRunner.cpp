@@ -2,105 +2,149 @@
 // Created by Ivan Bogun on 4/2/15.
 //
 
-#include "ExperimentRunner.h"
-#include "../Tracker/Struck.h"
-#include "../Tracker/ObjDetectorStruck.h"
 #include <thread>
 #include <algorithm>
 
 #include <sstream>
 #include <random>
 #include <boost/filesystem.hpp>
-
-void ExperimentRunner::runOneThreadOneJob(int startingFrame,
-                                          cv::Rect initialBox,
-                                          std::vector<std::string> frameNames,
-                                          std::string saveName,
-                                          bool saveResults,
-                                          bool pretraining, bool useFilter,
-                                          bool useEdgeDensity,
-                                          bool useStraddling, bool scalePrior,
-                                          std::string kernel,
-                                          std::string feature,
-                                          int updateEveryNFrames,
-                                          double b,int P, int R, int Q,
-                                          double lambda,
-                                          double straddeling_threshold,
-                                          int display) {
+#include "ExperimentRunner.h"
 
 
+
+#include "../Tracker/Struck.h"
+#include "../Tracker/ObjDetectorStruck.h"
+#include "../Tracker/FilterBadBoxesStruck.h"
+
+
+
+void ExperimentRunner::
+runOneThreadOneJob(int startingFrame,
+                   cv::Rect initialBox,
+                   std::vector<std::string> frameNames,
+                   std::string saveName,
+                   bool saveResults,
+                   bool pretraining, bool useFilter,
+                   bool useEdgeDensity,
+                   bool useStraddling, bool scalePrior,
+                   std::string kernel,
+                   std::string feature,
+                   int updateEveryNFrames,
+                   double b, int P, int R, int Q,
+                   const std::unordered_map<std::string, double>& map,
+                   int display) {
     // forward run of the tracker
 
     std::string note = "Objectness tracker";
 
-    ObjDetectorStruck  forwardTracker =
-        ObjDetectorStruck::getTracker(pretraining, useFilter,
-                                      useEdgeDensity, useStraddling,
-                                      scalePrior,
-                                      kernel,
-                                      feature, note);
+    Struck* forwardTracker = nullptr;
+    Struck* backwardTracker = nullptr;
 
-    forwardTracker.setLambda(lambda);
-    forwardTracker.setMinStraddeling(straddeling_threshold);
+    int tracker_type = map.find("tracker_type")->second;
+    if (tracker_type == 0) {
+        forwardTracker = new
+                Struck(pretraining, useFilter,
+                       useEdgeDensity, useStraddling,
+                       scalePrior,
+                       kernel,
+                       feature, note);
 
-    forwardTracker.display=display;
+        backwardTracker =new
+                Struck(pretraining, useFilter,
+                       useEdgeDensity, useStraddling,
+                       scalePrior,
+                       kernel,
+                       feature, note);
+    }
+
+    if (tracker_type == 1) {
+        forwardTracker = new
+                ObjDetectorStruck(pretraining, useFilter,
+                                  useEdgeDensity, useStraddling,
+                                  scalePrior,
+                                  kernel,
+                                  feature, note);
+        backwardTracker = new
+                ObjDetectorStruck(pretraining, useFilter,
+                                  useEdgeDensity, useStraddling,
+                                  scalePrior,
+                                  kernel,
+                                  feature, note);
+
+        std::cout << "ObjDetectorStruck is being used!" << std::endl;
+
+    }
 
 
-    ObjDetectorStruck  backwardTracker =
-        ObjDetectorStruck::getTracker(pretraining, useFilter,
-                                      useEdgeDensity, useStraddling,
-                                      scalePrior,
-                                      kernel,
-                                      feature, note);
+    if (tracker_type == 2) {
+        forwardTracker = new
+                FilterBadBoxesStruck(pretraining, useFilter,
+                                     useEdgeDensity, useStraddling,
+                                     scalePrior,
+                                     kernel,
+                                     feature, note);
+        backwardTracker = new
+                FilterBadBoxesStruck(pretraining, useFilter,
+                                     useEdgeDensity, useStraddling,
+                                     scalePrior,
+                                     kernel,
+                                     feature, note);
+    }
 
-    backwardTracker.setLambda(lambda);
-    backwardTracker.setMinStraddeling(straddeling_threshold);
+    forwardTracker->setParams(map);
+    backwardTracker->setParams(map);
 
-    backwardTracker.display=display;
+    forwardTracker->display = display;
+    backwardTracker->display = display;
 
     std::string initalFrame = frameNames[startingFrame];
     cv::Mat im = cv::imread(initalFrame);
 
+    // TODO: FIX THIS
 
 
     if (startingFrame > 0) {
-        backwardTracker.initialize(im, initialBox, updateEveryNFrames, b, P, R, Q);
-        //backwardTracker.initialize(im, initialBox);
+        backwardTracker->initialize(im, initialBox, updateEveryNFrames, b, P,
+                                   R, Q);
+        // backwardTracker.initialize(im, initialBox);
         for (int i = startingFrame - 1; i >= 0; i--) {
-            //cv::Mat image = cv::imread(frameNames[i]);
-            //backwardTracker.track(image);
-            backwardTracker.track(frameNames[i]);
+            // cv::Mat image = cv::imread(frameNames[i]);
+            // backwardTracker.track(image);
+            backwardTracker->track(frameNames[i]);
         }
     }
 
     clock_t t1;
-    if (display!=0){
-        t1=clock();
+    if (display != 0) {
+        t1 = clock();
     }
     if (startingFrame <= frameNames.size() - 1) {
-        forwardTracker.initialize(im, initialBox,updateEveryNFrames,b,P,R,Q);
-        //forwardTracker.initialize(im, initialBox);
+        forwardTracker->initialize(im, initialBox, updateEveryNFrames, b, P,
+                                  R, Q);
+        // forwardTracker.initialize(im, initialBox);
         for (int i = startingFrame + 1; i < frameNames.size(); i++) {
-
             cv::Mat image = cv::imread(frameNames[i]);
-            forwardTracker.track(image);
-            //forwardTracker.track(frameNames[i]);
-            if (display!=0){
-                clock_t t2=clock();
+            forwardTracker->track(frameNames[i]);
+
+            std::cout<< frameNames[i] << std::endl;
+            // forwardTracker.track(frameNames[i]);
+            if (display != 0) {
+                clock_t t2 = clock();
                 double timeSec = (t2 - t1) / static_cast<double>(
-                    CLOCKS_PER_SEC );
-                timeSec=(i+1)/timeSec;
-                std::cout<<"FPS: "<<timeSec<<" frame "<<i<<" / "<<
-                    frameNames.size() << "  " << forwardTracker.getBoundingBoxes()[i - startingFrame - 1] << std::endl;
+                    CLOCKS_PER_SEC);
+                timeSec = (i + 1) / timeSec;
+                std::cout << "FPS: " << timeSec << " frame " << i << " / " <<
+                    frameNames.size() << "  " <<
+                    forwardTracker->getBoundingBoxes()[i - startingFrame - 1]
+                          << std::endl;
             }
         }
-
     }
 
     // combine trackers
 
-    std::reverse(std::begin(backwardTracker.boundingBoxes),
-                 std::end(backwardTracker.boundingBoxes));
+    std::reverse(std::begin(backwardTracker->boundingBoxes),
+                 std::end(backwardTracker->boundingBoxes));
 
     int j = 0;
 
@@ -108,17 +152,17 @@ void ExperimentRunner::runOneThreadOneJob(int startingFrame,
         j = 1;
     }
 
-    for (; j < forwardTracker.boundingBoxes.size(); ++j) {
-        backwardTracker.boundingBoxes.push_back(
-            forwardTracker.boundingBoxes[j]);
+    for (; j < forwardTracker->boundingBoxes.size(); ++j) {
+        backwardTracker->boundingBoxes.push_back(
+            forwardTracker->boundingBoxes[j]);
     }
 
     if (saveResults) {
-        backwardTracker.saveResults(saveName);
+        backwardTracker->saveResults(saveName);
     }
 
-    //forwardTracker.reset();
-    //backwardTracker.reset();
+    delete forwardTracker;
+    delete backwardTracker;
 }
 
 
@@ -132,8 +176,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<int, int, cv::Rect>> &jobs,
                               std::string kernel, std::string feature,
                               int updateEveryNFrames,double b, int P,
                               int R, int Q,
-                              double lambda,
-                              double straddeling_threshold) {
+                              const std::unordered_map<std::string, double>& map) {
 
     // run jobs from index 'from' to the index 'to', make sure to
     //create proper saveName
@@ -169,8 +212,7 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<int, int, cv::Rect>> &jobs,
                                              useStraddling, scalePrior, kernel,
                                              feature,updateEveryNFrames,
                                              b, P, R,Q,
-                                             lambda,
-                                             straddeling_threshold);
+                                             map);
     }
 
 }
@@ -186,8 +228,7 @@ void ExperimentRunner::run(std::string saveFolder, int n_threads,
                            std::string kernel, std::string feature,
                            int updateEveryNFrames, double b,int P,
                            int R, int Q,
-                           double lambda,
-                           double straddeling_threshold) {
+                           const std::unordered_map<std::string, double>& map) {
     using namespace std;
 
     // the vector below requires reshuffling
@@ -221,7 +262,6 @@ void ExperimentRunner::run(std::string saveFolder, int n_threads,
     bounds = arma::round(bounds);
 
     for (int i = 0; i < bounds.size() - 1; i++) {
-
         th.push_back(std::thread(
                 runOneThreadMultipleJobs, std::ref(jobs),
                 std::ref(video_gt_images), std::ref(saveFolder),
@@ -231,9 +271,9 @@ void ExperimentRunner::run(std::string saveFolder, int n_threads,
                 std::ref(useStraddling), std::ref(scalePrior),
                 std::ref(kernel), std::ref(feature),
                 std::ref(updateEveryNFrames),
-                std::ref(b),std::ref(P),
-                std::ref(R),std::ref(Q),
-                std::ref(lambda), std::ref(straddeling_threshold)));
+                std::ref(b), std::ref(P),
+                std::ref(R), std::ref(Q),
+                std::ref(map)));
     }
 
     for (auto &t : th) {
@@ -242,7 +282,7 @@ void ExperimentRunner::run(std::string saveFolder, int n_threads,
 
 
     std::time_t t2 = std::time(0);
-    //std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
+    // std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
 
     std::cout << this->experiment->getInfo() << std::endl;
     std::cout << "Time with threads: " << (t2 - t1) << std::endl;
@@ -271,8 +311,7 @@ void ExperimentRunner::runExample(int video, int startingFrame,int endingFrame,
                                   bool useStraddling, bool scalePrior,
                                   std::string kernel,
                                   std::string feature,double b,
-                                  double lambda,
-                                  double straddeling_threshold,
+                                  const std::unordered_map<std::string, double>& map,
                                   int display) {
 
 
@@ -299,8 +338,7 @@ void ExperimentRunner::runExample(int video, int startingFrame,int endingFrame,
     runOneThreadOneJob(startingFrame, gt, frames, saveName, saveResults,
                        pretraining, useFilter, useEdgeDensity,
                        useStraddling, scalePrior, kernel, feature,
-                       updateEveryNFrames,b,P,R,Q, lambda,
-                       straddeling_threshold,
+                       updateEveryNFrames,b,P,R,Q, map,
                        display);
 
 }

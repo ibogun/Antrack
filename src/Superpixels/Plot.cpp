@@ -74,7 +74,6 @@ void Plot::addPoint(double x,  int lineNumber){
         cv::Point currentPoint(currentLocation_y,currentLocation_x);
         
         if (debug) {
-            
             std::cout<<"Adding line from: "<<prevPoint<<" to "<<currentPoint<<std::endl;
         }
         

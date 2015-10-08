@@ -54,7 +54,7 @@ class EvaluatorAllExperiments(object):
 
 
 
-    def createHistogramPlot(self, plotMetricsDict, completeMetricDict, savefilename=''):
+    def createHistogramPlot(self, plotMetricsDict, completeMetricDict, alternativeNames=list(), savefilename=''):
 
         # x_pr_input, y_pr_input, x_s_input, y_s_input
 
@@ -73,7 +73,7 @@ class EvaluatorAllExperiments(object):
 
         evaluationTypes = ['default', 'SRE', 'TRE']
 
-        trackerNames = self.experimentNames
+
         labelsFontSize = 11
         idx = 1
 
@@ -89,7 +89,12 @@ class EvaluatorAllExperiments(object):
 
             p = list()
             s = list()
-            for name in self.experimentNames:
+            if len(alternativeNames)==0:
+                names_to_use=self.experimentNames
+            else:
+                names_to_use=alternativeNames
+            trackerNames = names_to_use
+            for name in names_to_use:
                 d = plotMetricsDict[name];
 
                 x_pr.append(d[expName][0])
@@ -183,6 +188,8 @@ class EvaluatorAllExperiments(object):
             plt.grid(b=False)
             idx = idx + 1
         plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+        #plt.figlegend( legend_list, names_to_use, loc = 'lower center', ncol=3, labelspacing=0.1, frameon=True)
         if savefilename == '':
             plt.show()
         else:
@@ -273,7 +280,7 @@ class EvaluatorAllExperiments(object):
         #self.createHistogramPlot(pr_x_all_list, pr_y_all_list, sc_x_all_list, sc_y_all_list,self.experimentNames, savefilename=histogramPlot)
 
 
-    def createPlot(self, plotMetricsDict, completeMetricDict, savefilename=''):
+    def createPlot(self, plotMetricsDict,  completeMetricDict, alternativeNames=list(),savefilename=''):
 
         cm = plt.get_cmap('gist_rainbow')
         NUM_COLORS = len(plotMetricsDict)
@@ -286,17 +293,13 @@ class EvaluatorAllExperiments(object):
         legendSize = 9;
 
         plt.figure(figsize=(13, 9))
-
+        plt.subplots_adjust(bottom=0.2)
         evaluationTypes = ['default', 'SRE', 'TRE']
 
         with plt.style.context('grayscale'):
             i = 2
 
             idx = 1
-
-
-
-
             for expName, index in zip(evaluationTypes, range(0, len(evaluationTypes))):
 
                 x_pr = list()
@@ -307,7 +310,13 @@ class EvaluatorAllExperiments(object):
 
                 p=list()
                 s=list()
-                for name in self.experimentNames:
+
+                if len(alternativeNames)==0:
+                    names_to_use=self.experimentNames
+                else:
+                    names_to_use=alternativeNames
+
+                for name in names_to_use:
                     d = plotMetricsDict[name];
 
 
@@ -331,10 +340,12 @@ class EvaluatorAllExperiments(object):
                 # p = np.ma.round([z[expName][4] for z in plotMetricsDict.values()], 2)
                 # s = np.ma.round([z[expName][5] for z in plotMetricsDict.values()], 2)
 
-                for ii in range(0, len(self.experimentNames)):
+                for ii in range(0, len(names_to_use)):
                     color = cm(1. * ii / NUM_COLORS)
                     if idx == 1:
-                        red_patch = mpatches.Patch(label=' [' + str(p[ii]) + '] ' + self.experimentNames[ii],
+                        #red_patch = mpatches.Patch(label=' [' + str(p[ii]) + '] ' + names_to_use[ii],
+                        #                           color=color)
+                        red_patch = mpatches.Patch(label=' [' + str(p[ii]) + '] ',
                                                    color=color)
                         # self.run.trackerLabel
                     else:
@@ -348,7 +359,7 @@ class EvaluatorAllExperiments(object):
                 # plt.suptitle(expName, fontsize=titleFontSize)
                 ax = plt.subplot(3, 2, idx)
 
-                for i in range(0, len(self.experimentNames)):
+                for i in range(0, len(names_to_use)):
                     ax.plot(x_s[i], y_s[i], linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
 
                 # if idx == 1:
@@ -365,18 +376,21 @@ class EvaluatorAllExperiments(object):
                 idx = idx + 1
                 ax.legend(handles=handlesLegendSuccess, prop={'size': legendSize})
                 plt.grid(b=False)
-                ax = plt.subplot(3, 2, idx)
+                ax = plt.subplot(3, 2, idx, frameon=True)
 
-                for i in range(0, len(self.experimentNames)):
-                    ax.plot(x_pr[i], y_pr[i], linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
+
+                legend_list=list()
+                for i in range(0, len(names_to_use)):
+                    l_legend, =ax.plot(x_pr[i], y_pr[i], linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
+                    legend_list.append(l_legend)
                 # plt.plot(x_pr, y_pr, linewidth=lineWidth, color=cm(1. * i / NUM_COLORS))
                 ax.set_ylim([0, 1])
-                ax.set_xlim([-0.5, 51])
+                ax.set_xlim([-0.5, 50])
 
-                if idx == 2:
-                    plt.title("precision", fontsize=headerFontSize)
-                plt.grid(b=False)
-
+                #if idx == 2:
+                #    plt.title("precision", fontsize=headerFontSize)
+                #plt.grid(b=False)
+                #plt.grid(axis='both')
                 if idx == 6:
                     plt.xlabel('Location error threshold', fontsize=axisFontSize)
 
@@ -385,11 +399,15 @@ class EvaluatorAllExperiments(object):
                 ax2 = plt.twinx()
                 ax2.set_ylabel(evaluationTypes[index], color='black')
                 ax2.grid(b=False)
+                #plt.grid(axis='both')
+                #plt.grid(b=False)
                 idx = idx + 1
                 ax.legend(handles=handlesLegendPrecision, prop={'size': legendSize}, loc=2)
 
             #plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
             #plt.set_tight_layout(True)
+
+        plt.figlegend( legend_list, names_to_use, loc = 'lower center', ncol=3, labelspacing=0.1, frameon=True)
         if savefilename == '':
             plt.show()
         else:
@@ -413,6 +431,9 @@ class EvaluatorAllExperiments(object):
 
             for expName, experiment in run.data.iteritems():
 
+                # if there is only one experiment
+                if len(experiment.data) == 0:
+                    continue
 
                 x_p_var = np.zeros(n)
                 y_p_var = np.zeros(n)
@@ -462,8 +483,12 @@ class EvaluatorAllExperiments(object):
 
                 experimentDict[expName] = (x_p_var, y_p_var, x_s_var, y_s_var, averageP, averageS)
 
-            fullP = fullP / (float(ll))
-            fullS = fullS / (float(ll))
+            if ll == 0:
+                fullP = 0
+                fullS = 0
+            else:
+                fullP = fullP / (float(ll))
+                fullS = fullS / (float(ll))
 
             completeMetricDict[experimentName] = (fullP, fullS)
 
@@ -596,18 +621,25 @@ class EvaluatorAllExperiments(object):
 
 
 
-    def evaluateFromSave(self,runs, successAndPrecisionPlotName='', histogramPlot=''):
+    def evaluateFromSave(self,runs, successAndPrecisionPlotName='', histogramPlot='', alternativeNames=list()):
         plotMetricsDict=dict()
         completeMetricDict=dict()
 
-        for r in runs:
-            plotMetricsDict[r.name]=r.plotMetricsDictEntry
-            completeMetricDict[r.name]=r.completeMetricDictEntry
+        if len(alternativeNames) == 0:
+            for r in runs:
+                plotMetricsDict[r.name]=r.plotMetricsDictEntry
+                completeMetricDict[r.name]=r.completeMetricDictEntry
+        else:
+            for r,name in zip(runs,alternativeNames):
+                plotMetricsDict[name]=r.plotMetricsDictEntry
+                completeMetricDict[name]=r.completeMetricDictEntry
 
-        self.createPlot(plotMetricsDict, completeMetricDict, savefilename=successAndPrecisionPlotName)
+        self.createPlot(plotMetricsDict, completeMetricDict,alternativeNames=alternativeNames,
+                        savefilename=successAndPrecisionPlotName)
 
         print "Generating histogram plot..."
-        self.createHistogramPlot(plotMetricsDict, completeMetricDict, savefilename=histogramPlot)
+        self.createHistogramPlot(plotMetricsDict, completeMetricDict,alternativeNames=alternativeNames,
+                                 savefilename=histogramPlot)
 
 class Evaluated(object):
     """"""
@@ -638,7 +670,12 @@ def createSavedEvaluations(wildcard):
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
     runsNames = glob.glob('./Runs/' + wildcard + '*.p')
+    runsNames =['lambda_SE_s0_e0.2', 'lambda_SE_s0_e0.5',
+                'lambda_SE_s0.1_e0.3', 'lambda_SE_s0.2_e0.2', 'lambda_SE_s0.3_e0.4']
 
+
+    for i in range(0,len(runsNames)):
+        runsNames[i]='./Runs/'+runsNames[i]+".p"
     runs = list()
     #
     names = list()
@@ -656,13 +693,24 @@ def createSavedEvaluations(wildcard):
 
     evaluator.calculateMetricsAndSave(strSave)
 
+
+def getRunsForCVPR2016():
+    runs=['SAMF', 'DSST', 'upd=3_hogANDhist_int_f1']
+    runsNames =['lambda_SE_s0_e0.2', 'lambda_SE_s0_e0.5',
+                'lambda_SE_s0.1_e0.3', 'lambda_SE_s0.2_e0.2', 'lambda_SE_s0.3_e0.4']
+    runs = runs + runsNames
+
+    for i in range(0,len(runs)):
+        runs[i]='./Results/'+runs[i]+".p"
+    return runs
+
 if __name__ == "__main__":
 
 
     # if you want to evaluate and save evaluations ( do this first)
 
 
-    wildcard = "lambda"
+    wildcard = "lambda_inner"
     #createSavedEvaluations(wildcard);
 
 
@@ -682,7 +730,7 @@ if __name__ == "__main__":
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
     runsNames = glob.glob('./Results/' + wildcard + '*.p')
-
+    runsNames= getRunsForCVPR2016()
     #runsNames = ['SAMF', 'Kernelized_filter', 'fk_hist_int_f0', 'fk_hist_int_f1','TLD']
     runs = list()
     #
@@ -707,14 +755,13 @@ if __name__ == "__main__":
     saveFigureToFolder = '/Users/Ivan/Code/Tracking/Antrack/doc/technical_reports/images/'
     #saveFormat = ['png', 'pdf']
     saveFormat=['png']
-    successAndPrecision = 'SuccessAndPrecision_wu2013'
-    histograms = 'histogram_wu2013'
+    successAndPrecision = 'cvpr2016_SuccessAndPrecision_wu2013'
+    histograms = 'cvpr2016_histogram_wu2013'
 
 
 
     for i in saveFormat:
-         evaluator.evaluateFromSave(runs,successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
+        evaluator.evaluateFromSave(runs,successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
                                                         i,histogramPlot=saveFigureToFolder+histograms+'.'+
                                                                                     i)
-
-    #evaluator.evaluateFromSave(runs)
+        #evaluator.evaluateFromSave(runs)

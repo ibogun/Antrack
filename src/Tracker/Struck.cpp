@@ -123,7 +123,7 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location,
     } else if (display == 3) {
 
         // initalize here...
-
+        this->objPlot->initialize();
     }
 
     framesTracked++;
@@ -1432,6 +1432,128 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
     tracker.setNote(note_);
 
     return tracker;
+}
+
+Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
+               bool useStraddling, bool scalePrior,
+               std::string kernelSTR,
+               std::string featureSTR, std::string note_) {
+
+    // Parameters
+    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    params p;
+    p.C = 100;
+    p.n_O = 10;
+    p.n_R = 10;
+    int nRadial = 5;
+    int nAngular = 16;
+    int B = 100;
+
+    int nRadial_search = 12;
+    int nAngular_search = 30;
+
+    Feature *features;
+    Kernel *kernel;
+
+    if (featureSTR == "hog") {
+        features = new HoG();
+    } else if (featureSTR == "hist") {
+        features = new HistogramFeatures(4, 16);
+    } else if (featureSTR == "haar"){
+        features = new Haar(2);
+    } else if (featureSTR == "hogANDhist"){
+        Feature* f1;
+        Feature* f2;
+        f1=new HistogramFeatures(4,16);
+
+        cv::Size winSize(32, 32);
+        cv::Size blockSize(16, 16);
+        cv::Size cellSize(4, 4); // was 8
+        cv::Size blockStride(16, 16);
+        int nBins = 8;          // was 5
+
+        f2= new HoG(winSize,blockSize,cellSize,blockSize,nBins);
+
+        std::vector<Feature*> mf;
+        mf.push_back(f1);
+        mf.push_back(f2);
+
+        features = new MultiFeature(mf);
+    }
+    else {
+        features = new RawFeatures(16);
+    }
+    if (kernelSTR == "int") {
+        kernel = new IntersectionKernel_fast;
+    } else if (kernelSTR == "gauss") {
+        kernel = new RBFKernel(0.2);
+    }else if (kernelSTR == "approxGauss") {
+
+        RBFKernel* rbf=new RBFKernel(0.2);
+        int pts=25;
+        kernel = new ApproximateKernel(pts,rbf);
+    } else {
+        kernel = new LinearKernel;
+    }
+
+    int verbose = 0;
+    int display = 0;
+    int m = features->calculateFeatureDimension();
+
+    OLaRank_old *olarank = new OLaRank_old(kernel);
+    olarank->setParameters(p, B, m, verbose);
+
+    int r_search = 45;
+    int r_update = 60;
+
+    bool useObjectness = (useEdgeDensity | useStraddling);
+
+
+    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    LocationSampler *samplerForUpdate =
+            new LocationSampler(r_update, nRadial, nAngular);
+    LocationSampler *samplerForSearch =
+            new LocationSampler(r_search, nRadial_search, nAngular_search);
+
+    this->olarank = olarank;
+    this->feature = features;
+    this->samplerForSearch = samplerForSearch;
+    this->samplerForUpdate = samplerForUpdate;
+    this->useObjectness = useObjectness;
+    this->scalePrior = scalePrior;
+    this->useFilter = useFilter;
+    this->pretraining = pretraining;
+    this->display = display;
+    this->objPlot = new Plot(100);
+
+    //Struck tracker(olarank, features, samplerForSearch, samplerForUpdate,
+    //               useObjectness, scalePrior, useFilter, pretraining, display);
+
+    this->useStraddling = useStraddling;
+    this->useEdgeDensity = useEdgeDensity;
+
+    int measurementSize = 6;
+    arma::colvec x_k(measurementSize, fill::zeros);
+    x_k(0) = 0;
+    x_k(1) = 0;
+    x_k(2) = 0;
+    x_k(3) = 0;
+
+    int robustConstant_b = 10;
+
+    int R_cov = 13;
+    int Q_cov = 13;
+    int P = 10;
+
+    KalmanFilter_my filter =
+            KalmanFilterGenerator::generateConstantVelocityFilter(
+                    x_k, 0, 0, R_cov, Q_cov, P, robustConstant_b);
+
+    this->setFilter(filter);
+
+    this->setNote(note_);
+
 }
 
 

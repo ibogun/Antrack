@@ -65,18 +65,18 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int,
                               std::string
                               kernel,
                               std::string feature,int updateEveryNFrames,
-                              double b, int P, int R, int Q, double lambda,
-                              double straddeling_threshold,
+                              double b, int P, int R, int Q,
+                              const std::unordered_map<std::string, double>& map,
                               int display) {
 
 // run jobs from index 'from' to the index 'to', make sure to create proper saveName
 
     for (int i = from; i < to; i++) {
 
+
         int videoNumber = std::get<1>(jobs[i]);
         int frame = std::get<2>(jobs[i]);
         cv::Rect bb = std::get<3>(jobs[i]);
-
         std::string saveName = std::get<0>(jobs[i]);
 
         std::string videoName = vidData[videoNumber].first;
@@ -91,17 +91,17 @@ void runOneThreadMultipleJobs(std::vector<std::tuple<std::string, int, int,
         std::string finalFilename = ss.str();
 
         std::cout<< "Current video: " <<  videoName << std::endl;;
-        ExperimentRunner::runOneThreadOneJob(frame, bb, frameNames,
-                                             finalFilename, saveResults,
-                                             pretraining, useFilter,
-                                             useEdgeDensity,
-                                             useStraddling, scalePrior, kernel,
-                                             feature,updateEveryNFrames,b,P,R,Q,
-                                             lambda, straddeling_threshold,
-                                             display
-            );
+        ExperimentRunner::
+            runOneThreadOneJob(frame, bb, frameNames,
+                               finalFilename, saveResults,
+                               pretraining, useFilter,
+                               useEdgeDensity,
+                               useStraddling, scalePrior, kernel,
+                               feature, updateEveryNFrames, b, P,
+                               R, Q,
+                               map,
+                               display);
     }
-
 }
 
 void AllExperimentsRunner::runSmall(std::string saveFolder, int nThreads,
@@ -110,8 +110,8 @@ void AllExperimentsRunner::runSmall(std::string saveFolder, int nThreads,
                                     bool useEdgeDensity, bool useStraddling,
                                     bool scalePrior, std::string kernel,
                                     std::string feature,int updateEveryNFrames,
-                                    double b, int P, int R, int Q, double lambda,
-                                    double straddeling_threshold, int display) {
+                                    double b, int P, int R, int Q,
+                                    std::unordered_map<std::string, double> map, int display) {
 
     ExperimentDefault ed;
 
@@ -197,24 +197,22 @@ void AllExperimentsRunner::runSmall(std::string saveFolder, int nThreads,
 
         runOneThreadMultipleJobs(jobs,video_gt_images,bounds[i],bounds[i + 1],
         saveResults,pretraining, useFilter, useEdgeDensity, useStraddling , scalePrior, kernel,
-        feature, updateEveryNFrames, b, P, R, Q, lambda, straddeling_threshold,display);
-        }else{
-
+                                 feature, updateEveryNFrames, b, P, R, Q, map, display);
+        } else {
         th.push_back(std::thread(
-                runOneThreadMultipleJobs, std::ref(jobs), std::ref(video_gt_images),
+                runOneThreadMultipleJobs, std::ref(jobs),
+                std::ref(video_gt_images),
                 std::ref(bounds[i]), std::ref(bounds[i + 1]),
                 std::ref(saveResults), std::ref(pretraining),
                 std::ref(useFilter), std::ref(useEdgeDensity),
-                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),
-                std::ref(updateEveryNFrames),std::ref(b),std::ref(P),
-                std::ref(R),std::ref(Q), std::ref(lambda),
-                std::ref(straddeling_threshold), std::ref(display)));
+                std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel),
+                std::ref(feature),
+                std::ref(updateEveryNFrames), std::ref(b), std::ref(P),
+                std::ref(R), std::ref(Q), std::ref(map), std::ref(display)));
         }
-
     }
 
-    if (nThreads != 1){
-
+    if (nThreads != 1) {
         for (auto &t : th) {
             t.join();
         }
@@ -235,8 +233,8 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads,
                                bool useEdgeDensity, bool useStraddling,
                                bool scalePrior, std::string kernel,
                                std::string feature,int updateEveryNFrames,
-                               double b, int P, int R, int Q, double lambda,
-                               double straddeling_threshold, int display) {
+                               double b, int P, int R, int Q,
+                               const std::unordered_map<std::string, double>& map,int display) {
 
     //ExperimentDefault ed;
     ExperimentSpatialRobustness es;
@@ -368,8 +366,8 @@ void AllExperimentsRunner::run(std::string saveFolder, int nThreads,
                 std::ref(useFilter), std::ref(useEdgeDensity),
                 std::ref(useStraddling), std::ref(scalePrior), std::ref(kernel), std::ref(feature),
                 std::ref(updateEveryNFrames),std::ref(b),std::ref(P),
-                std::ref(R),std::ref(Q), std::ref(lambda),
-                std::ref(straddeling_threshold), std::ref(display)));
+                std::ref(R),std::ref(Q), std::ref(map),
+                std::ref(display)));
     }
 
     for (auto &t : th) {

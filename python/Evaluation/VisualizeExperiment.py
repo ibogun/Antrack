@@ -316,6 +316,8 @@ class VisualizeExperiment(object):
 
             plt.show()
 
+
+
     def barplot(self, n=1000):
         """Plots barplot with precision and success for specific run
         
@@ -490,7 +492,7 @@ def main(argv=None):
         argv = sys.argv
 
 
-    wu2013GroundTruth = "/Users/Ivan/Files/Data/Tracking_benchmark"
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
 
     datasetType = 'wu2013'
 
@@ -503,7 +505,7 @@ def main(argv=None):
     #print run
 
     experimenType='default'
-
+    run=run.data[experimenType]
     #
     vidName='jogging-2'
 
@@ -514,8 +516,8 @@ def main(argv=None):
 
     #viz.show(vidName, experimenType)
 
-    viz.barplot()
-    #viz.precisionAndSuccessPlot(vidName)
+    #viz.barplot()
+    viz.precisionAndSuccessPlot(vidName)
     #viz.show(vidName)
     # vidData=[x for x in dataset.dictData if x['name']==vidName][0]
 

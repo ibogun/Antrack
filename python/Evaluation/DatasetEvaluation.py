@@ -297,7 +297,7 @@ class Evaluator(object):
 
     @staticmethod
     def getIntegralValues(x_pr,y_pr,x_s,y_s):
-        p = np.trapz(y_pr, x=x_pr) / 50
+        p = np.trapz(y_pr, x=x_pr) / 51
         s = np.trapz(y_s, x=x_s)
 
         return (p,s)
@@ -327,7 +327,7 @@ class Evaluator(object):
         names = list()
         plt.figure(figsize=(15, 10))
         for i in range(0, n_groups):
-            p = np.trapz(y_pr[i], x=x_pr[i]) / 50
+            p = np.trapz(y_pr[i], x=x_pr[i]) / 51
             s = np.trapz(y_s[i], x=x_s[i])
 
             precision.append(p)
@@ -386,7 +386,7 @@ class Evaluator(object):
             handlesLegendPrecision = list()
             handlesLegendSuccess = list()
             for i in range(0, len(x_s)):
-                p = np.trapz(y_pr[i], x=x_pr[i]) / 50
+                p = np.trapz(y_pr[i], x=x_pr[i]) / 51
                 s = np.trapz(y_s[i], x=x_s[i])
 
                 p = np.ma.round(p, 2)
@@ -500,19 +500,14 @@ class Evaluator(object):
     def evaluateSingleTracker(self, listRun, n=1000):
 
         listGT = self.dataset.data
-
         runs = listRun.data
-
         precision_x = np.zeros(n)
         precision_y = np.zeros(n)
 
         success_x = np.zeros(n)
         success_y = np.zeros(n)
 
-
         for video in runs:
-
-
             gt = [x for x in listGT if x[0] == video[0]][0]
             (x_pr, y_pr, x_s, y_s) = Evaluator.evaluateSingleVideo(video, gt, n=n)
 
@@ -612,7 +607,7 @@ if __name__ == "__main__":
     for runName in runsNames:
         run = loadPickle(runName)
 
-        #run=run.data[experimentType]
+        run=run.data[experimentType]
         runs.append(run)
 
     evaluator = Evaluator(dataset, runs)

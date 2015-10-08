@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     resultsPath="/Users/Ivan/Files/Results/Tracking/wu2013/Results/"
 
-    folderNameStarsWith='lambda'
+    folderNameStarsWith='lambda_inner'
 
 
 

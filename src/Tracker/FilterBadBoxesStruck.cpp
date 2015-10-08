@@ -1,13 +1,28 @@
-//
-// Created by Ivan Bogun on 9/18/15.
-//
+
+#include <glog/logging.h>
+#include <algorithm>
+#include <utility>
+#include <string>
+#include <vector>
 
 #include "FilterBadBoxesStruck.h"
-#include  <glog/logging.h>
 
-cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
 
-     std::vector<cv::Rect> locationsOnaGrid;
+template <typename T>
+vector<size_t> sort_indexes(const vector<T> &v) {
+    // initialize original index locations
+    vector<size_t> idx(v.size());
+    for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
+
+    // sort indexes based on comparing values in v
+    sort(idx.begin(), idx.end(),
+         [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+
+    return idx;
+}
+
+cv::Rect FilterBadBoxesStruck::track(cv::Mat& image) {
+    std::vector<cv::Rect> locationsOnaGrid;
     locationsOnaGrid.push_back(lastLocation);
 
     // Do the objectness stuff here
@@ -33,54 +48,66 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
                                                                         0, 0));
     }
 
-    // calculate integral images
-    //if (useStraddling) {
+    Straddling* s  = new Straddling(200, 0.9);
+    this->straddle = *s;
     this->straddle.preprocessIntegral(small_image);
-    //}
-
+    EdgeDensity edge(0.1, 0.5, this->inner, this->display);
     std::vector<int> radiuses;
     std::vector<int> heights;
     std::vector<int> widths;
 
-    std::vector<arma::mat> straddling_cube =
-            this->samplerForSearch->generateBoxesTensor(lastLocation, &radiuses,
-                                                        &widths, &heights);
+    // populate widths and heights
+    this->samplerForSearch->generateBoxesTensor(lastLocation, &radiuses,
+                                                &widths, &heights);
+    widths.erase(widths.begin());
+    heights.erase(heights.begin());
 
+    int c_x = lastLocation.x + lastLocation.width/2;
+    int c_y = lastLocation.y + lastLocation.height/2;
 
-    this->straddle.straddlingOnCube(small_image.rows, small_image.cols,
-                                    lastLocation.x - x_min,
-                                    lastLocation.y - y_min,
-                                    radiuses, widths, heights,
-                                    straddling_cube);
-    this->samplerForSearch->rearrangeByDimensionSimilarity(lastLocation,
-    radiuses,widths,heights);
-    int non_max_suppression_n = 3;
-    std::pair<std::vector<cv::Rect>, std::vector<double>> suppressed =
-        this->straddle.nonMaxSuppression(straddling_cube, non_max_suppression_n,
-                                         widths, heights);
+    for (int i = 0; i < widths.size(); i++) {
+        int width_i = widths[i];
+        int height_i = heights[i];
+        int top_left_x = c_x - width_i/2;
+        int top_left_y = c_y - height_i/2;
 
+        // generate bounding boxes
+        cv::Rect rect_i(top_left_x, top_left_y, width_i, height_i);
+        std::vector<cv::Rect> rects;
+        this->samplerForSearch->sampleEquiDistant(rect_i, rects);
 
-    std::vector<size_t > indices = LocationSampler::sort_indexes(suppressed.second);
-    std::vector<cv::Rect> rects_left;
+        std::vector<double> straddling;
 
-    for (int j = suppressed.second.size() - 2000; j < suppressed.second.size(); ++j) {
-        rects_left.push_back(suppressed.first[indices[j]]);
-    }
+        for (cv::Rect& e : rects) {
+            cv::Rect rectInSmallImage(e.x-x_min, e.y - y_min , e.width,
+                                      e.height);
 
-    std::cout<<"Number of boxes: " << rects_left.size()<<std::endl;
-    cv::Rect image_box(0,0, image.cols, image.rows);
+            // check if the bounding box fits in the image
+            bool rect_fits_small_image = (rectInSmallImage.x+
+                                          rectInSmallImage.width <
+                                          small_image.cols) &&
+                (rectInSmallImage.y+ rectInSmallImage.height <
+                 small_image.rows) && (rectInSmallImage.x >= 0)
+                && (rectInSmallImage.y >= 0);
 
-    for (int i =0 ; i< rects_left.size(); i++) {
-        cv::Rect rect(rects_left[i].x + x_min,
-                      rects_left[i].y + y_min,
-                      rects_left[i].width, rects_left[i].height);
+            double r = 0;
+            if (rect_fits_small_image) {
+                r = this->straddle.computeStraddling(rectInSmallImage);
+            }
+            straddling.push_back(r);
+        }
 
-        cv::Point top_left(rect.x, rect.y);
-        cv::Point bottom_right(rect.x + rect.width, rect.y + rect.height);
-        if(image_box.contains(top_left) && image_box.contains(bottom_right)){
-             locationsOnaGrid.push_back(rect);
+        std::vector<size_t> indices = sort_indexes<double>(straddling);
+
+        for (int j = 0; j < MIN(this->topK, rects.size()); j++) {
+            locationsOnaGrid.push_back(rects[rects.size() -1 -j]);
         }
     }
+
+    delete s;
+
+    this->samplerForSearch->sampleEquiDistant(lastLocation, locationsOnaGrid);
+    std::cout << "Number of boxes: " << locationsOnaGrid.size() << std::endl;
 
     if (useFilter && !updateTracker) {
         this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn,
@@ -88,7 +115,6 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
     }
 
     cv::Mat processedImage = this->feature->prepareImage(&image);
-
     arma::mat x =
             this->feature->calculateFeature(processedImage, locationsOnaGrid);
 
@@ -104,7 +130,6 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
      **/
     cv::Rect bestLocationFilter;
     if (useFilter) {
-
         arma::colvec z_k(4, arma::fill::zeros);
         z_k << bestLocationDetector.x << bestLocationDetector.y
         << bestLocationDetector.width << bestLocationDetector.height << endr;
@@ -115,23 +140,22 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
         arma::colvec x_k = filter.predict(z_k);
 
         bestLocationFilter = filter.getBoundingBox(this->lastLocation.width,
-                                                   this->lastLocation.height, x_k);
+                                                   this->lastLocation.height,
+                                                   x_k);
 
         this->lastLocationFilter = bestLocationFilter;
 
         double overlap =
                 (bestLocationFilter & bestLocationDetector).area() /
-                (double((bestLocationDetector | bestLocationFilter).area()));
+                (static_cast<double>((bestLocationDetector |
+                                      bestLocationFilter).area()));
 
         if (overlap > 0.5) {
             updateTracker = true;
-
             lastRectFilterAndDetectorAgreedOn = bestLocationDetector;
             filter.setB(filter.getGivenB());
         } else {
-
             updateTracker = false;
-
             filter.setB(filter.getGivenB()/2.0);
         }
         filter.predictAndCorrect(z_k);
@@ -149,7 +173,8 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
      Tracker Update
      **/
 
-    if (updateTracker && this->boundingBoxes.size() % this->updateEveryNframes==0) {
+    if (updateTracker && this->boundingBoxes.size() %
+        this->updateEveryNframes == 0) {
 
         // sample for updating the tracker
         std::vector<cv::Rect> locationsOnPolarPlane;
@@ -160,7 +185,8 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
 
         // calculate features
         arma::mat x_update =
-                feature->calculateFeature(processedImage, locationsOnPolarPlane);
+                feature->calculateFeature(processedImage,
+                                          locationsOnPolarPlane);
         arma::mat y_update = this->feature->reshapeYs(locationsOnPolarPlane);
         olarank->process(x_update, y_update, 0, framesTracked);
     }
@@ -174,7 +200,8 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
         cv::rectangle(plotImg, lastLocation, color, 2);
 
         if (useFilter) {
-            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100), 0);
+            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0,
+                                                                  255, 100), 0);
         }
 
         cv::imshow("Tracking window", plotImg);
@@ -199,21 +226,22 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
         cv::rectangle(plotImg, lastLocation, color, 2);
 
         if (useFilter) {
-
             cv::Rect bestLocationFilter = this->lastLocationFilter;
-            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100), 0);
+            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255,
+                                                                  100), 0);
         }
 
 
         if (this->useEdgeDensity || this->useStraddling) {
-
-            cv::rectangle(plotImg, lastLocationObjectness, cv::Scalar(0, 204, 102),
+            cv::rectangle(plotImg, lastLocationObjectness, cv::Scalar(0, 204,
+                                                                      102),
                           0);
 
             cv::Mat objPlot = this->objPlot->getCanvas();
             cv::resize(objPlot, objPlot, cv::Size(image.cols, image.rows));
 
-            cv::Rect bottomLeftRect(image.rows + 1, 0, objPlot.rows, objPlot.cols);
+            cv::Rect bottomLeftRect(image.rows + 1, 0, objPlot.rows,
+                                    objPlot.cols);
             cv::rectangle(plotImg, this->gtBox, cv::Scalar(0, 0, 255), 0);
             this->copyFromRectangleToImage(plotImg, objPlot, bottomLeftRect, 0,
                                            cv::Vec3b(0, 0, 0));
@@ -230,140 +258,9 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image){
 
             cv::imshow("Tracking window", plotImg);
             cv::waitKey(1);
-
         }
     }
-
     framesTracked++;
-
     return lastLocation;
 }
 
-FilterBadBoxesStruck FilterBadBoxesStruck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
-                                      bool useStraddling, bool scalePrior,
-                                      std::string kernelSTR, std::string featureSTR, std::string note_) {
-
-    // Parameters
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    params p;
-    p.C = 100;
-    p.n_O = 10;
-    p.n_R = 10;
-    int nRadial = 5;
-    int nAngular = 16;
-    int B = 100;
-
-    int nRadial_search = 12;
-    int nAngular_search = 30;
-
-    // RawFeatures* features=new RawFeatures(16);
-
-
-    Feature *features;
-    Kernel *kernel;
-
-    if (featureSTR == "hog") {
-        features = new HoG();
-    } else if (featureSTR == "hist") {
-        features = new HistogramFeatures(4, 16);
-    } else if (featureSTR == "haar"){
-        features = new Haar(2);
-    } else if (featureSTR == "hogANDhist"){
-
-
-
-        Feature* f1;
-        Feature* f2;
-        f1=new HistogramFeatures(4,16);
-        std::cout<<f1->calculateFeatureDimension()<<std::endl;
-
-        cv::Size winSize(32, 32);
-        cv::Size blockSize(16, 16);
-        cv::Size cellSize(4, 4); // was 8
-        cv::Size blockStride(16, 16);
-        int nBins = 8;          // was 5
-
-        f2= new HoG(winSize,blockSize,cellSize,blockSize,nBins);
-
-        std::cout<<f2->calculateFeatureDimension()<<std::endl;
-
-
-        std::vector<Feature*> mf;
-        mf.push_back(f1);
-        mf.push_back(f2);
-
-
-
-
-        features = new MultiFeature(mf);
-    }
-
-
-
-
-    else {
-        features = new RawFeatures(16);
-    }
-
-    if (kernelSTR == "int") {
-        kernel = new IntersectionKernel_fast;
-    } else if (kernelSTR == "gauss") {
-        kernel = new RBFKernel(0.2);
-    }else if (kernelSTR == "approxGauss") {
-
-        RBFKernel* rbf=new RBFKernel(0.2);
-        int pts=25;
-        kernel = new ApproximateKernel(pts,rbf);
-    } else {
-        kernel = new LinearKernel;
-    }
-
-    int verbose = 0;
-    int display = 0;
-    int m = features->calculateFeatureDimension();
-
-    OLaRank_old *olarank = new OLaRank_old(kernel);
-    olarank->setParameters(p, B, m, verbose);
-
-    int r_search = 45;
-    int r_update = 60;
-
-    bool useObjectness = (useEdgeDensity | useStraddling);
-
-
-    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    LocationSampler *samplerForUpdate =
-            new LocationSampler(r_update, nRadial, nAngular);
-    LocationSampler *samplerForSearch =
-            new LocationSampler(r_search, nRadial_search, nAngular_search);
-
-    FilterBadBoxesStruck tracker(olarank, features, samplerForSearch, samplerForUpdate,
-                   useObjectness, scalePrior, useFilter, pretraining, display);
-
-    tracker.useStraddling = useStraddling;
-    tracker.useEdgeDensity = useEdgeDensity;
-
-    int measurementSize = 6;
-    arma::colvec x_k(measurementSize, fill::zeros);
-    x_k(0) = 0;
-    x_k(1) = 0;
-    x_k(2) = 0;
-    x_k(3) = 0;
-
-    int robustConstant_b = 10;
-
-    int R_cov = 5;
-    int Q_cov = 5;
-    int P = 3;
-
-    KalmanFilter_my filter =
-            KalmanFilterGenerator::generateConstantVelocityFilter(
-                    x_k, 0, 0, R_cov, Q_cov, P, robustConstant_b);
-
-    tracker.setFilter(filter);
-
-    tracker.setNote(note_);
-
-    return tracker;
-}
