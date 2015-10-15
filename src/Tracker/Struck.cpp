@@ -157,6 +157,53 @@ bool comparator(const std::pair<double, int> &l,
     return l.first > r.first;
 }
 
+arma::mat Struck::calculateDiscriminativeFunction(cv::Mat& image){
+    std::vector<cv::Rect> locationsOnaGrid;
+
+    arma::mat discr(image.rows, image.cols, arma::fill::zeros);
+
+    // add bounding boxes in the neighborhood of the lastLocation
+    int half_width = lastLocation.width / 2;
+    int half_height = lastLocation.height / 2;
+    int c_x = lastLocation.x + half_width;
+    int c_y = lastLocation.y + half_height;
+    int R = 60;
+
+    std::vector<std::pair<int,int>> indices_mapping;
+
+    int counter = 0;
+    for (int x = MAX(half_width, c_x - R);
+         x < MIN(image.cols - half_width, c_x + R); x++) {
+        for (int y = MAX(half_height, c_y - R);
+             y < MIN(image.rows - half_height, c_y + R); y++) {
+
+            // create a bounding box centered at (x,y)
+            cv::Rect bb(x - half_width, y - half_height, lastLocation.width,
+                        lastLocation.height);
+            locationsOnaGrid.push_back(bb);
+
+            std::pair <int, int> ind;
+            ind = std::make_pair(x, y);
+            indices_mapping.push_back(ind);
+            counter++;
+        }
+    }
+
+
+    cv::Mat processedImage = this->feature->prepareImage(&image);
+
+    arma::mat x =
+        this->feature->calculateFeature(processedImage, locationsOnaGrid);
+
+    arma::rowvec predictions = this->olarank->predictAll(x);
+
+    for (int i = 0; i < predictions.size(); i++) {
+        std::pair<int,int> v = indices_mapping[i];
+        discr(v.first, v.second) = predictions[i];
+    }
+    return discr;
+}
+
 cv::Rect Struck::track(cv::Mat &image) {
 
     std::vector<cv::Rect> locationsOnaGrid;
@@ -438,6 +485,7 @@ cv::Rect Struck::track(cv::Mat &image) {
 
         cv::imshow("Tracking window", plotImg);
         cv::waitKey(1);
+        this->objectnessCanvas = plotImg;
 
     } else if (display == 2) {
         this->frames.insert({framesTracked, image});
@@ -614,7 +662,7 @@ void Struck::updateDebugImage(cv::Mat *canvas, cv::Mat &img,
     // cv::imshow("Support vectors", *canvas);
     cv::imshow("Support vectors", finalImageToShow);
     cv::waitKey(1);
-
+    this->objectnessCanvas = finalImageToShow;
     // delete whatever is not used anymore
 
     for (auto it = this->frames.begin(); it != this->frames.end(); ++it) {

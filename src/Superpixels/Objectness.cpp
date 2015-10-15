@@ -384,6 +384,61 @@ double Straddling::computeStraddling(cv::Rect &rect_big){
 }
 
 
+void EdgeDensity::edgeOnCube(int img_rows,
+                             int img_cols,
+                             int center_x,
+                             int center_y,
+                             const std::vector<int> &R,
+                             const std::vector<int> &w,
+                             const std::vector<int> &h,
+                             std::vector<arma::mat>& s){
+    cv::Rect image_box(0,0, img_cols, img_rows);
+
+    CHECK_EQ(s.size(), R.size());
+    CHECK_EQ(R.size(), w.size());
+    CHECK_EQ(w.size(), h.size());
+
+    for (int slice=0; slice < s.size(); slice++) {
+
+        int r = R[slice];
+        int width = w[slice];
+        int height = h[slice];
+
+        for (int x=0; x<s.at(slice).n_cols; x++) {
+
+            for (int y=0; y<s.at(slice).n_rows; y++) {
+
+                int x_norm = (x-center_x);
+                int y_norm = (y-center_y);
+                // only interested in the values in the shpere
+                //if (sqrt(x_norm*x_norm + y_norm*y_norm)>r) continue;
+
+
+
+                cv::Point top_left(x, y);
+                cv::Point bottom_right(x+width, y+height);
+
+                //continue;
+                if (image_box.contains(top_left) &&
+                    image_box.contains(bottom_right)) {
+
+                    int c_x = x + floor( width / 2.0);
+                    int c_y = y + floor(height / 2.0);
+                    cv::Rect rect(x, y,
+                                  width, height);
+                    double straddle = this->computeEdgeDensity(rect);
+                    s[slice](c_y, c_x) = straddle;
+                    // std::cout<< "Coordinates: " << slice <<" " << x << " "
+                    //         << y <<" "<< s[slice](x,y)<<std::endl;
+
+                }
+            }
+        }
+
+    }
+
+}
+
 void EdgeDensity::preprocessIntegral(cv::Mat& image){
     cv::Mat edges = this->getEdges(image);
     this->computeIntegrals(edges);

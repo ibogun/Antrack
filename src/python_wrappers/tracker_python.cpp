@@ -13,13 +13,11 @@
 #include "../../src/Kernels/IntersectionKernel_fast.h"
 
 class Antrack {
-
-public:
+ public:
     Struck* tracker;
 
 
-  boost::python::list track(std::string filename){
-
+  boost::python::list track(std::string filename) {
       boost::python::list output;
       cv::Rect r = this->tracker->track(filename);
 
@@ -30,12 +28,30 @@ public:
         return output;
   }
 
-  void initialize(std::string filename, int x, int y, int width, int height){
+  boost::python::list calculateDiscriminativeFunction(std::string filename){
 
-      this->tracker->initialize(filename,x,y,width,height);
+    boost::python::list output;
+
+    cv::Mat image = cv::imread(filename);
+    arma::mat discr = this->tracker->calculateDiscriminativeFunction(image);
+
+    for (int i = 0; i < discr.n_rows; i++) {
+      boost::python::list out;
+      for (int j = 0; j < discr.n_cols; j++) {
+        out.append(discr(i,j));
+      }
+      output.append(out);
+    }
+    return output;
   }
 
-  void initializeTracker(){
+  void initialize(std::string filename, int x, int y,
+                  int width, int height) {
+
+      this->tracker->initialize(filename, x, y, width, height);
+  }
+
+  void initializeTracker() {
       // Parameters
       // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       params p;
@@ -48,9 +64,6 @@ public:
 
       int nRadial_search = 12;
       int nAngular_search = 30;
-
-      // RawFeatures* features=new RawFeatures(16);
-
 
       Feature *features;
       Kernel *kernel;
@@ -82,8 +95,9 @@ public:
       LocationSampler *samplerForSearch =
               new LocationSampler(r_search, nRadial_search, nAngular_search);
 
-      this->tracker = new Struck(olarank, features, samplerForSearch, samplerForUpdate,
-                     false, false, true, false, false);
+      this->tracker = new Struck(olarank, features, samplerForSearch,
+                                 samplerForUpdate,
+                                 false, false, true, false, false);
 
 
       int measurementSize = 6;
@@ -95,9 +109,9 @@ public:
 
       int robustConstant_b = 10;
 
-      int R_cov = 5;
-      int Q_cov = 5;
-      int P = 3;
+      int R_cov = 13;
+      int Q_cov = 13;
+      int P = 10;
 
       KalmanFilter_my filter =
               KalmanFilterGenerator::generateConstantVelocityFilter(
@@ -122,20 +136,19 @@ public:
                                        int bins,
                                        int r_search,
                                        int r_update,
-                                       bool useObjectness,
-                                       int robustConstant_b,
-                                       int R_cov,
-                                       int Q_cov,
-                                       int P,
                                        int display) {
-
     // Parameters
       // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    int robustConstant_b = 10;
+    int R_cov = 13;
+    int Q_cov = 13;
+    int P = 10;
+
       params p;
       p.C = C;
       p.n_O = n_O;
       p.n_R = n_R;
-
+      bool useObjectness = false;
       Feature *features;
       Kernel *kernel;
 
@@ -157,8 +170,9 @@ public:
       LocationSampler *samplerForSearch =
               new LocationSampler(r_search, nRadial_search, nAngular_search);
 
-      this->tracker = new Struck(olarank, features, samplerForSearch, samplerForUpdate,
-                     false, false, true, false, false);
+      this->tracker = new Struck(olarank, features, samplerForSearch,
+                                 samplerForUpdate,
+                                 false, false, true, false, false);
 
 
       int measurementSize = 6;
@@ -194,6 +208,8 @@ BOOST_PYTHON_MODULE(tracker_python)
   class_<Antrack>("Antrack")
     .def("initialize",&Antrack::initialize)
     .def("track", &Antrack::track)
+    .def("initializeTrackerWithParameters", &Antrack::initializeTrackerWithParameters)
+    .def("calculateDiscriminativeFunction", &Antrack::calculateDiscriminativeFunction)
     .def("initializeTracker",&Antrack::initializeTracker)
       ;
 }

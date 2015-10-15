@@ -123,6 +123,15 @@ public:
     void computeIntegrals(cv::Mat& labels);
     double computeEdgeDensity(cv::Rect& rect);
     void preprocessIntegral(cv::Mat& image);
+
+    void edgeOnCube(int n,
+                    int m,
+                    int center_x,
+                    int center_y,
+                    const std::vector<int>& R,
+                    const std::vector<int>& w, const std::vector<int>& h,
+                    std::vector<arma::mat>& s);
+
     arma::rowvec findEdgeObjectness(std::vector<cv::Rect>& rects,
                                     int translate_x, int translate_y);
 };

@@ -120,6 +120,14 @@ class Struck {
         return objectnessCanvas;
     }
 
+    void setUpdateNFrames(int n){
+        this->updateEveryNframes = n;
+    }
+
+    void setBudget(int B){
+        this->olarank->B = B;
+    }
+
     void setObjectnessCanvas(cv::Mat c) {
         this->objectnessCanvas = c;
     }
@@ -189,6 +197,8 @@ class Struck {
     void allocateCanvas(cv::Mat&);
 
     virtual cv::Rect track(cv::Mat& image);
+
+    virtual arma::mat calculateDiscriminativeFunction(cv::Mat& image);
 
     virtual cv::Rect track(std::string image_name) {
         cv::Mat image = cv::imread(image_name);

@@ -98,6 +98,7 @@
 // POSIX
 #endif
 
+DEFINE_int32(budget, 100, "Budget");
 DEFINE_int32(display, 1, "Display settings.");
 DEFINE_double(lambda_s, 0.3, "Straddling lambda in ObjDetectorTracker().");
 DEFINE_double(lambda_e, 0.3, "Edge density lambda in ObjDetectorTracker().");
@@ -108,6 +109,11 @@ DEFINE_int32(video_index, -1, "Video to use for tracking.");
 DEFINE_string(video_name, "", "Video name to use.");
 DEFINE_int32(frame_from, 0, "Frame from");
 DEFINE_int32(frame_to, 5000, "Frame to");
+DEFINE_int32(tracker_type, 1,
+             "Type of the tracker (RobStruck - 0, ObjDet - 1, FilterBad - 2)");
+DEFINE_double(topK, 50, "Top K objectness boxes in FilterBadStruck tracker.");
+
+
 
 void runTrackerOnDatasetPart(
     vector<pair<string, vector<string>>> &video_gt_images, Dataset *dataset,
@@ -288,16 +294,49 @@ int main(int argc, char *argv[]) {
 
   //for (vidIndex = 0; vidIndex <51 ; ++vidIndex) {
 
-
+  int tracker_type = FLAGS_tracker_type;
     pair<string, vector<string>> gt_images = video_gt_images[vidIndex];
 
     vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
 
+    Struck* tracker = nullptr;
+    int useFilter = filter;
+    bool useStraddling = straddling;
+    bool useEdgeDensity = edgeness;
+    bool scalePrior = spatialPrior;
+    if (tracker_type == 0) {
+        tracker = new
+          Struck(pretraining, useFilter,
+                 useEdgeDensity, useStraddling,
+                 scalePrior,
+                 kernel,
+                 feature, note);
+    }
 
-    ObjDetectorStruck tracker(pretraining, filter, edgeness,
-                                 straddling,
-                                 spatialPrior, kernel, feature, note);
-    std::cout << tracker << std::endl;
+    if (tracker_type == 1) {
+      tracker = new
+        ObjDetectorStruck(pretraining, useFilter,
+                          useEdgeDensity, useStraddling,
+                          scalePrior,
+                          kernel,
+                          feature, note);
+    }
+
+
+    if (tracker_type == 2) {
+      tracker = new
+        FilterBadBoxesStruck(pretraining, useFilter,
+                             useEdgeDensity, useStraddling,
+                             scalePrior,
+                             kernel,
+                             feature, note);
+    }
+    tracker->setBudget(FLAGS_budget);
+    tracker->setUpdateNFrames(1);
+
+    //ObjDetectorStruck tracker(pretraining, filter, edgeness,
+    //                             straddling,
+    //                             spatialPrior, kernel, feature, note);
 
     std::unordered_map<std::string, double> map;
     map.insert(std::make_pair("lambda_straddling", FLAGS_lambda_s));
@@ -305,8 +344,9 @@ int main(int argc, char *argv[]) {
     map.insert(std::make_pair("inner", FLAGS_inner));
     map.insert(std::make_pair("straddling_threshold",
                               FLAGS_straddeling_threshold));
-    tracker.setParams(map);
-    tracker.display = FLAGS_display;
+    map.insert(std::make_pair("topK", FLAGS_topK));
+    tracker->setParams(map);
+    tracker->display = FLAGS_display;
 
     double b = 10;
 
@@ -318,6 +358,10 @@ int main(int argc, char *argv[]) {
     std::cout << " Rect: " << groundTruth[startingFrame] << std::endl;
     std::cout << gt_images.second[startingFrame] << std::endl;
     cv::Rect rect = groundTruth[startingFrame];
+
+
+    std::string saveTrackingImage = "/Users/Ivan/Documents/Papers/My_papers/CVPR_2016_Object-aware_tracking/images/tracking/";
+    std::string prefix = "tracking_";
     if (rect.x + rect.width >= image.cols) {
       rect.width = image.cols - rect.x - 1;
     }
@@ -329,19 +373,23 @@ int main(int argc, char *argv[]) {
       std::cout << rect << std::endl;
       std::cout << image.rows << " " << image.cols << std::endl;
 
-      tracker.initialize(image, rect);
+      tracker->initialize(image, rect);
 
       for (int i = startingFrame; i < endingFrame; i++) {
-        tracker.track(gt_images.second[i]);
+        tracker->track(gt_images.second[i]);
         std::cout << "Frame #" << i - startingFrame << " out of "
                   << endingFrame - startingFrame
-                  << tracker.getBoundingBoxes()[i - startingFrame] << std::endl;
+                  << tracker->getBoundingBoxes()[i - startingFrame] << std::endl;
+        cv::Mat tracking_image = tracker->getObjectnessCanvas();
+        std::string savefilename= saveTrackingImage+prefix +  std::to_string(1000+i) + ".png";
+        std::cout<< "saving to file: " << savefilename << std::endl;
+        cv::imwrite(savefilename, tracking_image);
       }
 
   //}
 
   std::string tracker_save_file = dirName + "/" + dataset->videos[vidIndex];
-  tracker.saveResults(tracker_save_file);
+  tracker->saveResults(tracker_save_file);
 
   delete vot2014;
   delete vot2015;

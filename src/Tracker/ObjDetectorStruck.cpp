@@ -75,9 +75,12 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
         Straddling* s  = new Straddling(200, this->inner);
         this->straddle = *s;
         this->straddle.preprocessIntegral(small_image);
+        cv::Mat gray_image;
+        cv::cvtColor(small_image, gray_image, CV_RGB2GRAY);
 
-        EdgeDensity edge(0.1, 0.5, this->inner, this->display);
-
+        cv::Scalar scalar = cv::mean(gray_image);
+        //EdgeDensity edge(0.1, 0.5, this->inner, this->display);
+        EdgeDensity edge(0.66*scalar[0], 1.33*scalar[0], this->inner, this->display);
         cv::Mat edges = edge.getEdges(small_image);
         edge.computeIntegrals(edges);
 
@@ -148,7 +151,7 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
             cv::cvtColor(edges, edges, cv::COLOR_GRAY2RGB);
 
             // extract rectangle in the edge image
-            cv::rectangle(edges, bestEdgesRect, cv::Scalar(100, 255, 0), 2);
+            //cv::rectangle(edges, bestEdgesRect, cv::Scalar(100, 255, 0), 2);
 
             // find dimensions
             int separation = 10;
@@ -177,8 +180,8 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
             // convert gray to rgb
             cv::cvtColor(straddle.canvas, straddle.canvas, cv::COLOR_GRAY2RGB);
 
-            cv::rectangle(straddle.canvas, bestStraddlingRect, cv::Scalar(100, 255, 0),
-                          2);
+            //cv::rectangle(straddle.canvas, bestStraddlingRect, cv::Scalar(100, 255, 0),
+            //              2);
 
             // find dimensions
 
@@ -196,17 +199,17 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
 
     if (useStraddling && !boxTooSmallForStraddeling
         && updateTracker)  {
-        predictions_straddling = (predictions_straddling -
-                                  arma::min(predictions_straddling))/
-            arma::max(predictions_straddling);
+        // predictions_straddling = (predictions_straddling -
+        //                          arma::min(predictions_straddling))/
+        //    arma::max(predictions_straddling);
         predictions = predictions + this->lambda_straddeling *
                                     predictions_straddling;
     }
 
     if (useEdgeness && updateTracker){
-        predictions_edgeness = (predictions_edgeness -
-                                  arma::min(predictions_edgeness))/
-                               arma::max(predictions_edgeness);
+        //predictions_edgeness = (predictions_edgeness -
+        //                          arma::min(predictions_edgeness))/
+        //                       arma::max(predictions_edgeness);
         predictions = predictions + this->lambda_edgeness *
                                     predictions_straddling;
     }

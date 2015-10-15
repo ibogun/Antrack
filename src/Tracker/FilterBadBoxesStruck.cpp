@@ -51,7 +51,14 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image) {
     Straddling* s  = new Straddling(200, 0.9);
     this->straddle = *s;
     this->straddle.preprocessIntegral(small_image);
-    EdgeDensity edge(0.1, 0.5, this->inner, this->display);
+
+    cv::Mat grey_small_image;
+    cv::cvtColor(small_image, grey_small_image, CV_BGR2GRAY);
+    cv::Scalar m = cv::mean(grey_small_image);
+
+    EdgeDensity edge(0.66*m[0], 1.33*m[0], this->inner, this->display);
+    edge.preprocessIntegral(grey_small_image);
+
     std::vector<int> radiuses;
     std::vector<int> heights;
     std::vector<int> widths;
@@ -92,7 +99,9 @@ cv::Rect FilterBadBoxesStruck::track(cv::Mat& image) {
 
             double r = 0;
             if (rect_fits_small_image) {
-                r = this->straddle.computeStraddling(rectInSmallImage);
+                r = this->lambda_straddeling *
+                    this->straddle.computeStraddling(rectInSmallImage);
+                r+= edge.computeEdgeDensity(rectInSmallImage);
             }
             straddling.push_back(r);
         }

@@ -213,6 +213,63 @@ public:
   }
 
 
+ boost::python::list processEdge(const int superpixels,
+                              const double inner,
+                              const int n,
+                              const int R, const int scale_R,
+                              const int min_size_half,
+                              const int min_scales, const int max_scales,
+                              const double downsample,
+                              const double shrink_one_side_scale,
+                              int x, int y, int width, int height){
+
+    cv::Rect lastLocation(x, y, width, height);
+    std::vector<int> radiuses;
+    std::vector<int> widths;
+    std::vector<int> heights;
+
+    EdgeDensity* edge = new EdgeDensity(0.66*100, 1.33*100, inner, 0);
+    // add boxes and stuff
+    std::vector<arma::mat> straddling_cube = LocationSampler::
+      generateBoxesTensor(R, scale_R, min_size_half, min_scales,
+                          max_scales, downsample, shrink_one_side_scale,
+                          this->small_image.rows,
+                          this->small_image.cols,
+                          lastLocation, &radiuses, &widths, &heights);
+
+    edge->preprocessIntegral(this->small_image);
+
+    CHECK_NOTNULL(&this->small_image);
+    edge->edgeOnCube(this->small_image.rows,
+                     this->small_image.cols,
+                     x - this->min_x,
+                     y - this->min_y,
+                     radiuses, widths, heights,
+                     straddling_cube);
+
+
+    // convert from vector<arma::mat> to python::list<nd a≈grray>
+    boost::python::list output;
+
+    for (int i = 0; i<straddling_cube.size(); i++) {
+      int rows = straddling_cube[i].n_rows;
+      int cols = straddling_cube[i].n_cols;
+
+      boost::python::list np_array;
+      for (int j = 0; j<rows; j++) {
+        boost::python::list output_row;
+        for (int k = 0; k< cols; k++) {
+          output_row.append(straddling_cube[i](j,k));
+        }
+        np_array.append(output_row);
+      }
+      output.append(np_array);
+    }
+
+    return output;
+
+  }
+
   void initializeStraddling(int superpixels, double inner){
 
         this->straddle=new Straddling(superpixels,inner);
@@ -289,6 +346,7 @@ BOOST_PYTHON_MODULE(objectness_python)
       //.add_property("getEdgeness", &Objectness::getEdgeness)
     .def("readImage",&Objectness::readImage)
     .def("smallImage", &Objectness::smallImage)
+    .def("processEdge", &Objectness::processEdge)
     .def("process", &Objectness::process)
     .def("initializeStraddling", &Objectness::initializeStraddling)
     .def("initializeEdgeDensity", &Objectness::initializeEdgeDensity)

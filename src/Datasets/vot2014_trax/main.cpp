@@ -9,6 +9,8 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <ctime>
+#include <glog/logging.h>
+#include <gflags/gflags.h>
 
 #include "../../Kernels/RBFKernel.h"
 #include "../../Kernels/IntersectionKernel.h"
@@ -48,7 +50,20 @@
 //#endif
 
 
-
+DEFINE_string(feature, "hogANDhist", "Feature (e.g. raw, hist, haar, hog).");
+DEFINE_string(kernel, "int", "Kernel to use (e.g. linear, gauss, int).");
+DEFINE_int32(filter, 1, "Use Robust Kalman filter on not.");
+DEFINE_int32(updateEveryNframes, 3,
+             "Update tracker every N frames.");
+DEFINE_int32(b, 10, "Robust constant.");
+DEFINE_int32(P, 10, "P in Robust Kalman filter.");
+DEFINE_int32(Q, 13, "Q in Robust Kalman filter.");
+DEFINE_int32(R, 13, "R in Robust Kalman filter.");
+DEFINE_double(lambda_s, 0.3, "Straddling lambda in ObjDetectorTracker().");
+DEFINE_double(lambda_e, 0.3, "Edge density lambda in ObjDetectorTracker().");
+DEFINE_double(inner, 0.9, "Inner bounding box for objectness.");
+DEFINE_double(straddeling_threshold, 1.5,
+              "Straddeling threshold.");
 
 #include <boost/program_options.hpp>
 
@@ -57,103 +72,20 @@ namespace po = boost::program_options;
 
 //#ifdef TRAX
 int main(int ac, char **av) {
-
-
-    namespace po = boost::program_options;
+    google::InitGoogleLogging(av[0]);
+    gflags::ParseCommandLineFlags(&ac, &av, true);
     try {
 
-        po::options_description desc("Allowed options");
-        desc.add_options()("help", "produce help message")(
-            "feature", po::value<std::string>(), "Feature (e.g. raw, hist, haar, hog)")(
-                "kernel", po::value<std::string>(), "Kernel (e.g. linear, gauss, int)")(
-                    "filter", po::value<bool>(), " Filter 1-on, 0-off")(
-                    "updateEveryNframes", po::value<int>(), "Update tracker every Nth frames")(
-                    "b", po::value<double>(), " Robust constant")(
-                    "P", po::value<int>(), "P")(
-                    "Q", po::value<int>(), "Q")(
-                    "lambda", po::value<double>(), "lambda")(
-                    "straddeling_threshold", po::value<double>(), "straddeling_threshold")(
-                     "R", po::value<int>(), "R");
+        int updateEveryNthFrames = FLAGS_updateEveryNframes;
+        double b = FLAGS_b;
+        int P = FLAGS_P;
+        int Q = FLAGS_Q;
+        int R = FLAGS_R;
 
-        po::variables_map vm;
-        po::store(po::parse_command_line(ac, av, desc), vm);
-        po::notify(vm);
+        bool filter = true;
 
-        if (vm.count("help")) {
-            cout << desc << "\n";
-            return 0;
-        }
-
-
-        int updateEveryNthFrames = 3;
-        double b = 10;
-        int P = 10;
-        int Q = 13;
-        int R = 13;
-        double lambda = 0;
-        double straddeling_threshold = 2;
-        bool filter;
-
-        std::string feature = "hogANDhist";
-        std::string kernel = "int";
-
-
-        if (vm.count("filter")) {
-            cout << "Filter is: " << vm["filter"].as<bool>() << ".\n";
-            filter = vm["filter"].as<bool>();
-        }
-
-        if (vm.count("feature")) {
-            cout << "Feature is: " << vm["feature"].as<std::string>() << ".\n";
-            feature = vm["feature"].as<std::string>();
-        }
-
-        if (vm.count("kernel")) {
-            cout << "Kernel is: " << vm["kernel"].as<std::string>() << ".\n";
-            kernel = vm["kernel"].as<std::string>();
-        }
-
-
-
-        if (vm.count("updateEveryNframes")) {
-            cout << "Tracker will be updated every frames: " <<
-                vm["updateEveryNframes"].as<int>() << ".\n";
-            updateEveryNthFrames = vm["updateEveryNframes"].as<int>();
-        }
-
-        if (vm.count("P")) {
-            cout << "P: " << vm["P"].as<int>() << ".\n";
-            P = vm["P"].as<int>();
-        }
-
-        if (vm.count("Q")) {
-            cout << "Q: " << vm["Q"].as<int>() << ".\n";
-            Q = vm["Q"].as<int>();
-        }
-
-        if (vm.count("R")) {
-            cout << "R: " << vm["R"].as<int>() << ".\n";
-            R = vm["R"].as<int>();
-        }
-
-
-        if (vm.count("b")) {
-            cout << "Robust constant is is: " << vm["b"].as<double>() << ".\n";
-            b = vm["b"].as<double>();
-        }
-
-        if (vm.count("lambda")) {
-            cout << "Straddeling lambda is: "
-                 << vm["lambda"].as<double>() << ".\n";
-            lambda = vm["lambda"].as<double>();
-        }
-
-        if (vm.count("straddeling_threshold")) {
-            cout << "Robust constant is is: " <<
-                vm["straddeling_threshold"].as<double>() << ".\n";
-            straddeling_threshold = vm["straddeling_threshold"].as<double>();
-        }
-
+        std::string feature = FLAGS_feature;
+        std::string kernel = FLAGS_kernel;
 
         bool pretraining = false;
         bool useEdgeDensity = false;
@@ -162,15 +94,18 @@ int main(int ac, char **av) {
 
         std::string note_ = "";
 
-        ObjDetectorStruck tracker = ObjDetectorStruck::
-            getTracker(pretraining, filter,
-                       useEdgeDensity, useStraddling,
-                       scalePrior, kernel,
-                       feature, note_);
+        ObjDetectorStruck tracker(pretraining, filter,
+                                  useEdgeDensity, useStraddling,
+                                  scalePrior, kernel,
+                                  feature, note_);
 
-        tracker.setLambda(lambda);
-        tracker.setMinStraddeling(straddeling_threshold);
+        std::unordered_map<std::string, double> map;
 
+        map.insert(std::make_pair("lambda_straddling", FLAGS_lambda_s));
+        map.insert(std::make_pair("lambda_edgeness", FLAGS_lambda_e));
+        map.insert(std::make_pair("inner", FLAGS_inner));
+        map.insert(std::make_pair("straddling_threshold",
+                                  FLAGS_straddeling_threshold));
         trax_image *img = NULL;
         trax_region *reg = NULL;
         trax_region *mem = NULL;
