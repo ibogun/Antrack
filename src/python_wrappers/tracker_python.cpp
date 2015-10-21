@@ -144,30 +144,30 @@ class Antrack {
     int Q_cov = 13;
     int P = 10;
 
-      params p;
-      p.C = C;
-      p.n_O = n_O;
-      p.n_R = n_R;
-      bool useObjectness = false;
-      Feature *features;
-      Kernel *kernel;
+    params p;
+    p.C = C;
+    p.n_O = n_O;
+    p.n_R = n_R;
+    bool useObjectness = false;
+    Feature *features;
+    Kernel *kernel;
 
-      features = new HistogramFeatures(L, bins);
+    features = new HistogramFeatures(L, bins);
 
-      kernel = new IntersectionKernel_fast;
+    kernel = new IntersectionKernel_fast;
 
-      int verbose = 0;
+    int verbose = 0;
 
-      int m = features->calculateFeatureDimension();
+    int m = features->calculateFeatureDimension();
 
-      OLaRank_old *olarank = new OLaRank_old(kernel);
-      olarank->setParameters(p, B, m, verbose);
+    OLaRank_old *olarank = new OLaRank_old(kernel);
+    olarank->setParameters(p, B, m, verbose);
 
-      // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-      LocationSampler *samplerForUpdate =
-              new LocationSampler(r_update, nRadial, nAngular);
-      LocationSampler *samplerForSearch =
+    LocationSampler *samplerForUpdate =
+      new LocationSampler(r_update, nRadial, nAngular);
+    LocationSampler *samplerForSearch =
               new LocationSampler(r_search, nRadial_search, nAngular_search);
 
       this->tracker = new Struck(olarank, features, samplerForSearch,

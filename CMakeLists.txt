@@ -18,7 +18,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 find_package(OpenCV REQUIRED )
 find_package(Armadillo REQUIRED)
 find_package (Threads REQUIRED)
-find_package( Boost COMPONENTS program_options filesystem system)
+find_package( Boost COMPONENTS program_options python filesystem system)
 find_package(gflags REQUIRED)
 find_library(GLOG_LIBRARY glog)
 
@@ -162,7 +162,6 @@ if(python)
 
     PYTHON_ADD_MODULE(objectness_python ${SOURCE_FILES} ${PYTHON_FILES_Objectness} ${Superpixels})
 target_link_libraries(objectness_python
-    boost_python
     ${PYTHON_LIBRARIES}
     ${Boost_LIBRARIES}
 	${OpenCV_LIBS}
@@ -176,7 +175,6 @@ target_link_libraries(objectness_python
     PYTHON_ADD_MODULE(tracker_python ${SOURCE_FILES}
       ${PYTHON_FILES_Tracker} ${Superpixels})
     target_link_libraries(tracker_python
-      boost_python
       ${PYTHON_LIBRARIES}
       ${Boost_LIBRARIES}
       ${OpenCV_LIBS}

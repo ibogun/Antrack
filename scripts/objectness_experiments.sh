@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#PBS -l nodes=3:ppn=24,walltime=72:00:00,pmem=900mb
+#PBS -l nodes=2:ppn=24,walltime=72:00:00,pmem=900mb
 #PBS -N struck_filter
 
 cd /udrive/student/ibogun2010/Research/Code/Antrack/build/bin/
@@ -10,8 +10,6 @@ datasetSaveLocation="/udrive/student/ibogun2010/Research/Results"
 #nThreads=$((${nNodes}*24))
 
 
-echo "Arguments recieved..."
-echo "----------------------------------------------------"
 echo "updateEveryNthFrames: ${updateEveryNFrames}"
 echo "b: ${b}"
 echo "P: ${P_param}"
@@ -37,7 +35,7 @@ echo "Top K: ${topK}"
            --lambda_s=${lambda_s} \
            --lambda_e=${lambda_e} \
            --inner=${inner} \
-           --straddeling_threshold=${straddeling_threshold} \
-           --experiment_type=${experiment_type} \
+           --straddeling_threshold=${straddeling_threshold}\
+           --experiment_type=${experiment_type}\
            --tracker_type=${tracker_type}\
            --topK=${topK}
