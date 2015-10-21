@@ -1,6 +1,8 @@
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
+    
     set -x
     export DEBIAN_FRONTEND=noninteractive
+    add-apt-repository -y ppa:tuleu/precise-backports
     sudo apt-get update && sudo apt-get upgrade -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
     sudo apt-get -qq install libopencv-dev
     sudo apt-get -qq install liblapack-dev
