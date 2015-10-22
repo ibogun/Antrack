@@ -30,7 +30,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     unzip master.zip
     cd gflags-master
     mkdir build && cd build
-    export CXXFLAGS="-fPIC" && /usr/local/bin/cmake .. && make VERBOSE=1
+    export CXXFLAGS="-fPIC" && cmake .. && make VERBOSE=1
     make && sudo make install
     cd ..
     
