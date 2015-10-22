@@ -24,6 +24,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     cd glog-0.3.3
     ./configure
     make && make install
+    export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
     cd ..
     # gflags
     wget https://github.com/schuhschuh/gflags/archive/master.zip
