@@ -26,7 +26,7 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     tar zxvf glog-0.3.3.tar.gz
     cd glog-0.3.3
     ./configure
-    make && make install
+    make && sudo make install
     export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
     cd ../..
     # gflags
@@ -42,9 +42,9 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     wget https://github.com/Itseez/opencv/archive/2.4.11.zip
     unzip 2.4.11.zip
     cd opencv-2.4.11
-    cmake ..
     mkdir build && cd build
-    make && make install
+    cmake ..
+    make && sudo make install
     cd ../..
     
     # ...

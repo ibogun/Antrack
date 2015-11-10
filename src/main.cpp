@@ -26,7 +26,6 @@
 #include "Tracker/LocationSampler.h"
 #include "Tracker/OLaRank_old.h"
 #include "Tracker/Struck.h"
-#include "Tracker/ObjStruck.h"
 #include "Tracker/ObjDetectorStruck.h"
 #include "Tracker/FilterBadBoxesStruck.h"
 
@@ -114,130 +113,6 @@ DEFINE_int32(tracker_type, 1,
 DEFINE_double(topK, 50, "Top K objectness boxes in FilterBadStruck tracker.");
 
 
-
-void runTrackerOnDatasetPart(
-    vector<pair<string, vector<string>>> &video_gt_images, Dataset *dataset,
-    int from, int to, std::string saveFolder, bool saveResults, int nFrames) {
-  std::time_t t1 = std::time(0);
-
-  int frameNumber = 0;
-  // paralelize this loop
-  for (int videoNumber = from; videoNumber < to; videoNumber++) {
-    Struck tracker = Struck::getTracker();
-    tracker.display = 0;
-    pair<string, vector<string>> gt_images = video_gt_images[videoNumber];
-
-    std::cout << gt_images.first << std::endl;
-
-    vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
-
-    frameNumber += gt_images.second.size();
-    cv::Mat image = cv::imread(gt_images.second[0]);
-
-    tracker.initialize(image, groundTruth[0]);
-
-    nFrames = MIN(nFrames, gt_images.second.size());
-
-    for (int i = 1; i < nFrames; i++) {
-      cv::Mat image = cv::imread(gt_images.second[i]);
-
-      tracker.track(image);
-    }
-
-    if (saveResults) {
-      std::string saveFileName =
-          saveFolder + "/" + dataset->videos[videoNumber] + ".dat";
-
-      tracker.saveResults(saveFileName);
-    }
-
-    EvaluationRun r;
-
-    r.evaluate(groundTruth, tracker.boundingBoxes);
-
-    std::cout << dataset->videos[videoNumber] << std::endl;
-    std::cout << r << std::endl;
-
-    // tracker.reset();
-  }
-
-  std::time_t t2 = std::time(0);
-  std::cout << "Frames per second: " << frameNumber / (1.0 * (t2 - t1))
-            << std::endl;
-  // std::cout<<"No threads: "<<(t2-t1)<<std::endl;
-}
-
-vector<EvaluationRun> applyTrackerOnDataset(Dataset *dataset,
-                                            std::string rootFolder,
-                                            std::string saveFolder,
-                                            int frames = 10) {
-  vector<EvaluationRun> results;
-
-  vector<pair<string, vector<string>>> video_gt_images =
-      dataset->prepareDataset(rootFolder);
-
-  std::time_t t1 = std::time(0);
-
-#pragma omp parallel for
-  for (int i = 0; i < video_gt_images.size(); i++) {
-    std::string feature = "hist";
-    std::string kernel = "int";
-
-    Struck tracker =
-        Struck::getTracker(true, true, true, true, false, kernel, feature);
-
-    tracker.display = 0;
-    int n = MIN(frames, video_gt_images[i].second.size());
-    EvaluationRun r = tracker.applyTrackerOnVideoWithinRange(
-        dataset, rootFolder, saveFolder, i, 0, n);
-
-    results.push_back(r);
-  }
-
-  std::time_t t2 = std::time(0);
-  // std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
-  std::cout << "Time with threads: " << (t2 - t1) << std::endl;
-
-  return results;
-}
-
-void applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
-                           std::string saveFolder, bool saveResults,
-                           int n_threads, int nFrames = 5000) {
-  using namespace std;
-
-  vector<pair<string, vector<string>>> video_gt_images =
-      dataset->prepareDataset(rootFolder);
-
-  std::time_t t1 = std::time(0);
-
-  std::vector<std::thread> th;
-
-  arma::rowvec bounds = arma::linspace<rowvec>(
-      0, video_gt_images.size(), MIN(n_threads, video_gt_images.size()));
-
-  bounds = arma::round(bounds);
-
-  for (int i = 0; i < n_threads; i++) {
-    th.push_back(std::thread(runTrackerOnDatasetPart, std::ref(video_gt_images),
-                             std::ref(dataset), std::ref(bounds[i]),
-                             std::ref(bounds[i + 1]), std::ref(saveFolder),
-                             std::ref(saveResults), std::ref(nFrames)));
-  }
-
-  for (auto &t : th) {
-    t.join();
-  }
-
-  std::time_t t2 = std::time(0);
-  // std::cout<<"Frames per second: "<<frameNumber/(1.0*(t2-t1))<<std::endl;
-  std::cout << "Time with threads: " << (t2 - t1) << std::endl;
-
-  std::ofstream out(saveFolder + "/" + "tracker_info.txt");
-  out << Struck::getTracker();
-  out.close();
-}
-
 int main(int argc, char *argv[]) {
   google::InitGoogleLogging(argv[0]);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -299,40 +174,17 @@ int main(int argc, char *argv[]) {
 
     vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
 
-    Struck* tracker = nullptr;
     int useFilter = filter;
     bool useStraddling = straddling;
     bool useEdgeDensity = edgeness;
     bool scalePrior = spatialPrior;
-    if (tracker_type == 0) {
-        tracker = new
-          Struck(pretraining, useFilter,
-                 useEdgeDensity, useStraddling,
-                 scalePrior,
-                 kernel,
-                 feature, note);
-    }
 
-    if (tracker_type == 1) {
-      tracker = new
+    Struck* tracker = new
         ObjDetectorStruck(pretraining, useFilter,
                           useEdgeDensity, useStraddling,
                           scalePrior,
                           kernel,
                           feature, note);
-    }
-
-
-    if (tracker_type == 2) {
-      tracker = new
-        FilterBadBoxesStruck(pretraining, useFilter,
-                             useEdgeDensity, useStraddling,
-                             scalePrior,
-                             kernel,
-                             feature, note);
-    }
-    tracker->setBudget(FLAGS_budget);
-    tracker->setUpdateNFrames(1);
 
     //ObjDetectorStruck tracker(pretraining, filter, edgeness,
     //                             straddling,

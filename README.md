@@ -20,9 +20,9 @@ To compile use:
 
 # Using
 ## C++ interface
-    #include <opencv2/opencv.hpp>  
+Coming soon 
 
-## Python
+## Python interface
 Coming soon.
 
 ## Reproducing VOT 2015
@@ -59,4 +59,4 @@ See more examples in the ``scripts/`` folder.
         --inner=${inner} \ # inner scale parameter; best - 0.9
         --straddeling_threshold=${straddeling_threshold} \ # threshold defining when to cutoff straddling; best: 1.5
         --experiment_type=${experiment_type} \ # 0 if evaluation should be performed on 50 videos, 1 if SRE+TRE should be performed (1632 video runs)
-        --tracker_type=${tracker_type}\ # 0 - Struck, 1 - RobStruck, 2 - ObjStruck
+        --tracker_type=${tracker_type}\ # 0 - RobStruck, 1 - ObjStruck

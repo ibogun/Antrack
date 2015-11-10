@@ -84,7 +84,7 @@ class Struck {
     bool scalePrior;
 
     bool updateTracker = true;
-    int updateEveryNframes = 1;
+    int updateEveryNframes = 3;
     int seed = 1;
 
     std::string note = "Objectness measures which add top\
