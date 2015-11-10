@@ -20,7 +20,7 @@ before_script:
   - cd build
   - cmake -Dtest=on ..
   
-script: make test
+script: make && ./build/bin/RunUnitTests
 
 branches:
   only:
