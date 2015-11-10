@@ -12,15 +12,9 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     # install cmake 3.x
     sudo apt-get install build-essential
 
-    wget https://github.com/Itseez/opencv/archive/2.4.11.zip
-    unzip 2.4.11.zip
-    cd opencv-2.4.11
-    mkdir build && cd build
-    make && make install
-    cd ../..
 
 
-    wget http://www.cmake.org/files/v3.2/cmake-3.2.2.tar.gz
+    wget --no-check-certificate http://www.cmake.org/files/v3.2/cmake-3.2.2.tar.gz
     tar xf cmake-3.2.2.tar.gz
     cd cmake-3.2.2/
     ./configure
@@ -42,6 +36,15 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     mkdir build && cd build
     export CXXFLAGS="-fPIC" && cmake .. && make VERBOSE=1
     make && sudo make install
+    cd ../..
+
+
+    wget https://github.com/Itseez/opencv/archive/2.4.11.zip
+    unzip 2.4.11.zip
+    cd opencv-2.4.11
+    cmake ..
+    mkdir build && cd build
+    make && make install
     cd ../..
     
     # ...

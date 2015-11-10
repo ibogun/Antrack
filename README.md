@@ -42,8 +42,10 @@ For further details see how to integrate the tracker with the tookit [click here
     cd build
     cmake -DCVPR2016=ON ..
     make -j8
- ### Running
- See more examples in the ``scripts/`` folder.
+
+### Running
+
+See more examples in the ``scripts/`` folder.
 
     ./cvpr2016 \        
         --datasetSaveLocation=${datasetSaveLocation}\ --filter=${filter} \ # use robust filter or not RobStruck/Struck
