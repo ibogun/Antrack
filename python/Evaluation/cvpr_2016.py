@@ -2,7 +2,7 @@ import sys
 from DatasetEvaluation import Dataset, loadPickle, Evaluator
 from generatePythonFilePickle import AllExperiments
 from DatasetEvaluationAllExperiments import EvaluatorAllExperiments
-
+from paperPlots import PaperPlots
 import pandas as pd
 
 from matplotlib import rc
@@ -26,7 +26,7 @@ from matplotlib.widgets import Slider, Button
 import re
 import seaborn as sns
 from DatasetEvaluationAllExperiments import Evaluated
-sns.set(font_scale=1.7)
+sns.set(font_scale=1.9)
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 #sns.set_context("paper")
@@ -69,9 +69,15 @@ def reshuffleStraddlingEdgeOPEData(d):
             else:
                 value = [(0 +0.1*j,x[1]) for x in s_row if e in x[0]][0]
 
+            pr=value[1][0]
+            su=value[1][1]
+
+            if (i == 0) and (j == 0):
+               su = 0.59  # These are values of the RobStruck tracker with filter on
+               pr = 0.749 #
             s_row_sorted.append(value)
-            precision.append(value[1][0])
-            success.append(value[1][1])
+            precision.append(pr)
+            success.append(su)
 
 
         s_list.append((0.1*i, s_row_sorted))
@@ -83,9 +89,225 @@ def reshuffleStraddlingEdgeOPEData(d):
     return (df1, df2)
 
 
+def getPrecisionSuccessGivenWildCard(paperPlot, wildcard):
+    (plotMetricsDict, completeMetricDict) = paperPlot.getRuns(wildcard)
+    runNames = plotMetricsDict.keys()
+
+    regExp=re.compile("([\D|=]+)(\d+)")
+    xValues=list()
+
+    for r in runNames:
+        m=regExp.match(r)
+        xValues.append((float)(m.group(2)))
+
+    idx_sorted = [i[0] for i in sorted(enumerate(xValues), key=lambda x: x[1])]
+
+    xValues=sorted(xValues)
+    correctNames = [runNames[x] for x in idx_sorted]
+    p=list()
+    s=list()
+
+    for name in  correctNames:
+        p.append(completeMetricDict[name][0])
+        s.append(completeMetricDict[name][1])
+
+    return (p,s, xValues)
 
 
-def plotStraddelingEdgeOPE(wildcard="lambda_inner", savefilename='', format='pdf'):
+def plotSensitivityUpd(paperPlot, baselineRun, wildcard, savefile=''):
+
+    (p,s, xValues) = getPrecisionSuccessGivenWildCard(paperPlot, wildcard)
+    run = loadPickle(baselineRun)
+
+    baseline_p=run.completeMetricDictEntry[0]
+    baseline_s = run.completeMetricDictEntry[1]
+
+    titleFontSize = paperPlot.titleFontSize;
+    headerFontSize = paperPlot.headerFontSize;
+    axisFontSize = paperPlot.axisFontSize;
+    lineWidth = paperPlot.lineWidth;
+
+    legendSize = paperPlot.legendSize;
+    labelsFontSize = paperPlot.labelsFontSize
+
+    minY=paperPlot.minY
+    maxY=paperPlot.maxY
+
+    deltaPrecision=paperPlot.deltaPrecision
+
+    cm = plt.get_cmap('gist_rainbow')
+    NUM_COLORS =3
+    max_yticks = 5
+    # now everything is sorted
+    fig, ax = plt.subplots(nrows=1, ncols=2, sharex=True,  figsize=(5,4))
+    fig.subplots_adjust(hspace=5)
+    #plt.suptitle('Sensitivity analysis for parameter: '+wildcard,fontsize=paperPlot.axisFontSize+4)
+    i  = 0
+    ax[0].plot(xValues,p, paperPlot.sensitivityColorAndPoints,  linewidth=lineWidth, color=cm(1.*i/NUM_COLORS))
+    ax[0].plot([min(min(xValues),1), max(xValues)], [baseline_p, baseline_p], color='k', linestyle='--', linewidth=lineWidth)
+    ax[0].set_ylim(minY+0.05+ deltaPrecision,maxY+ deltaPrecision-0.05)
+
+    title = wildcard.replace("=",'')
+    yloc = plt.MaxNLocator(max_yticks)
+
+    ax[i].set_ylabel('Precision', color='black')
+    ax[i].yaxis.set_major_locator(yloc)
+        #plt.ylim((minY+ deltaPrecision,maxY+ deltaPrecision))
+    #plt.ylim((minY+ deltaPrecision,maxY+ deltaPrecision))
+
+    #ax2 = ax[0,3].twinx()
+    #ax2.set_ylabel('Precision', color='black')
+    #plt.xlabel(wildcard, fontsize=axisFontSize)
+    #plt.ylabel("Precision", fontsize=axisFontSize)
+
+    #plt.legend(['filter on','filter off'])
+    #plt.subplot(2, 4, 5)
+
+    ax[1].plot(xValues,s, paperPlot.sensitivityColorAndPoints,  linewidth=lineWidth, color=cm(1.*i/NUM_COLORS))
+    ax[1].plot([min(min(xValues),1), max(xValues)], [baseline_s, baseline_s], color='k', linestyle='--', linewidth=lineWidth)
+    ax[1].set_ylim(minY+0.05,maxY-0.05)
+
+    title = wildcard.replace("=",'')
+    yloc = plt.MaxNLocator(max_yticks)
+    i  = 0
+    ax[1].set_ylabel('Success', color='black')
+    ax[1].yaxis.set_major_locator(yloc)
+    #for xValues, s,i in zip(xvalsList, slist, range(0,len(wildcards))):
+    #    plt.plot(xValues,s, paperPlot.sensitivityColorAndPoints, linewidth=lineWidth, color=cm(1.*i/NUM_COLORS))
+
+    #plt.plot([min(min(xvalsList[0]), 0), max(xvalsList[0])], [baseline_s, baseline_s], color='k', linestyle='--',
+    #        linewidth=lineWidth)
+
+    #plt.ylim((minY, maxY))
+    #plt.xlabel(wildcard, fontsize=axisFontSize)
+    #plt.ylabel("Success", fontsize=axisFontSize)
+    if savefile == '':
+        plt.show()
+    else:
+        plt.savefig(savefile)
+
+def plotSensitivitySpecific(paperPlot, baselineRun,wildcards,savefile=''):
+
+    plist=list()
+    slist=list()
+    xvalsList=list()
+
+    for wildcard in wildcards:
+        (ps,ss, xValuess) = getPrecisionSuccessGivenWildCard(paperPlot, wildcard)
+        plist.append(ps)
+        slist.append(ss)
+        xvalsList.append(xValuess)
+
+
+    run = loadPickle(baselineRun)
+
+    baseline_p=run.completeMetricDictEntry[0]
+    baseline_s = run.completeMetricDictEntry[1]
+
+    cm = plt.get_cmap('gist_rainbow')
+    NUM_COLORS = len(wildcards)+ 1
+
+    titleFontSize = paperPlot.titleFontSize;
+    headerFontSize = paperPlot.headerFontSize;
+    axisFontSize = paperPlot.axisFontSize;
+    lineWidth = paperPlot.lineWidth;
+
+    legendSize = paperPlot.legendSize;
+    labelsFontSize = paperPlot.labelsFontSize
+
+    minY=paperPlot.minY
+    maxY=paperPlot.maxY
+
+    deltaPrecision=paperPlot.deltaPrecision
+
+        # this should be just regular plot: value vs b
+
+        # get values from names
+
+    max_yticks = 5
+    # now everything is sorted
+    fig, ax = plt.subplots(nrows=2, ncols=4, sharex=True, figsize=(13,5))
+    #plt.suptitle('Sensitivity analysis for parameter: '+wildcard,fontsize=paperPlot.axisFontSize+4)
+    for xValues, p, i in zip(xvalsList, plist, range(0,len(wildcards))):
+        #ax[0,i].subplot(2,4,i+1 )
+        ax[0,i].plot(xValues,p, paperPlot.sensitivityColorAndPoints,  linewidth=lineWidth, color=cm(1.*i/NUM_COLORS))
+        ax[0,i].plot([min(min(xvalsList[0]),0), max(xvalsList[0])], [baseline_p, baseline_p], color='k', linestyle='--', linewidth=lineWidth)
+        ax[0,i].set_ylim(minY+0.05+ deltaPrecision,maxY+ deltaPrecision-0.05)
+
+        title = wildcards[i].replace("=",'')
+        yloc = plt.MaxNLocator(max_yticks)
+
+        if i != 0:
+            ax[0, i].get_xaxis().set_visible(False)
+            ax[0,i].get_yaxis().set_visible(False)
+            ax[0,i].set_title(title.upper())
+        else:
+            ax[0,i].set_ylabel('Precision', color='black')
+            ax[0,i].set_title(title)
+        ax[0,i].yaxis.set_major_locator(yloc)
+        #plt.ylim((minY+ deltaPrecision,maxY+ deltaPrecision))
+    #plt.ylim((minY+ deltaPrecision,maxY+ deltaPrecision))
+
+    #ax2 = ax[0,3].twinx()
+    #ax2.set_ylabel('Precision', color='black')
+    #plt.xlabel(wildcard, fontsize=axisFontSize)
+    #plt.ylabel("Precision", fontsize=axisFontSize)
+
+    #plt.legend(['filter on','filter off'])
+    #plt.subplot(2, 4, 5)
+
+    for xValues, s, i in zip(xvalsList, slist, range(0,len(wildcards))):
+        #ax[0,i].subplot(2,4,i+1 )
+        ax[1,i].plot(xValues,s, paperPlot.sensitivityColorAndPoints,  linewidth=lineWidth, color=cm(1.*i/NUM_COLORS))
+        ax[1,i].plot([min(min(xvalsList[0]),0), max(xvalsList[0])], [baseline_s, baseline_s], color='k', linestyle='--', linewidth=lineWidth)
+        ax[1,i].set_ylim(minY+0.05,maxY-0.05)
+        title = wildcards[i].replace("=",'')
+        yloc = plt.MaxNLocator(max_yticks)
+        if i != 0:
+
+            ax[1,i].get_yaxis().set_visible(False)
+        else:
+            ax[1,i].set_ylabel('Success', color='black')
+        ax[1,i].yaxis.set_major_locator(yloc)
+    #for xValues, s,i in zip(xvalsList, slist, range(0,len(wildcards))):
+    #    plt.plot(xValues,s, paperPlot.sensitivityColorAndPoints, linewidth=lineWidth, color=cm(1.*i/NUM_COLORS))
+
+    #plt.plot([min(min(xvalsList[0]), 0), max(xvalsList[0])], [baseline_s, baseline_s], color='k', linestyle='--',
+    #        linewidth=lineWidth)
+
+    #plt.ylim((minY, maxY))
+    #plt.xlabel(wildcard, fontsize=axisFontSize)
+    #plt.ylabel("Success", fontsize=axisFontSize)
+    if savefile == '':
+        plt.show()
+    else:
+        plt.savefig(savefile)
+
+def plotSensitivity(paperPlot, baselineRun, saveResultsFolders, save):
+    print "Results are averaged across all runs: TRE and SRE ( default not included)"
+
+    wildcards = list()
+
+    wildcards.append('b=')
+    wildcards.append('r=')
+    wildcards.append('q=')
+    wildcards.append('p=')
+    #wildcards.append('lambda')
+    if save:
+        for i in saveResultsFolders:
+
+            saveResultsFolder = i + "/sensitivity.pdf"
+
+            print "Generating figure for feature-kernel comparison...", saveResultsFolder
+            plotSensitivitySpecific(paperPlot,baselineRun,wildcards,saveResultsFolder)
+    else:
+
+
+
+        plotSensitivitySpecific(paperPlot,baselineRun,wildcards)
+
+
+def plotStraddelingEdgeOPE(wildcard, savefilename='', format='pdf'):
     wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
     folderForGraphs='./Visualizations/'
     datasetType = 'wu2013'
@@ -112,7 +334,7 @@ def plotStraddelingEdgeOPE(wildcard="lambda_inner", savefilename='', format='pdf
     grid = sns.FacetGrid(df1, col="$\lambda_e$", hue="$\lambda_e$", col_wrap=3, size=3)
 
     # Draw a horizontal line to show the starting point
-    grid.map(plt.axhline, y=0.753958, ls=":", c=".5")
+    grid.map(plt.axhline, y=0.749, ls=":", c=".5")
 
     # Draw a line plot to show the trajectory of each random walk
     grid.map(plt.plot, "$\lambda_s$", "Precision", marker="o", ms=4)
@@ -138,10 +360,9 @@ def plotStraddelingEdgeOPE(wildcard="lambda_inner", savefilename='', format='pdf
     else:
         plt.savefig(savefilename+"success."+format)
 
-def getRunsForCVPR2016():
+def getRunsForCVPR2016_old():
     runs=['SAMF', 'DSST', 'upd=3_hogANDhist_int_f1']
-    runsNames =['lambda_SE_s0_e0.2', 'lambda_SE_s0_e0.5',
-                'lambda_SE_s0.1_e0.3', 'lambda_SE_s0.2_e0.2', 'lambda_SE_s0.3_e0.4']
+    runsNames =['a30_hogANDhist_int_f0', 'mshogANDhist_int_f0']
     runs = runs + runsNames
 
     names=list()
@@ -153,6 +374,41 @@ def getRunsForCVPR2016():
     names.append('ObjStruck with $\lambda_s=0.1, \lambda_e=0.3$')
     names.append('ObjStruck with $\lambda_s=0.2, \lambda_e=0.2$')
     names.append('ObjStruck with $\lambda_s=0.3, \lambda_e=0.4$')
+    for i in range(0,len(runs)):
+        runs[i]='./Results/'+runs[i]+".p"
+    return (runs, names)
+
+def getRunsForCVPR2016_robust():
+    runs=['SAMF', 'DSST', 'TGPR']
+    runsNames =['Rob_Struck_filter_f0','Rob_Struck_filter_f1']
+    runs = runs + runsNames
+
+    names=list()
+    names.append('SAMF')
+    names.append('DSST')
+    names.append('TGPR')
+    names.append('RobStruck filter off')
+    names.append('RobStruck filter on')
+    for i in range(0,len(runs)):
+        runs[i]='./Results/'+runs[i]+".p"
+    return (runs, names)
+
+def getRunsForCVPR2016():
+    runs=['SAMF', 'DSST', 'TGPR','Rob_Struck_filter_f1']
+    runsNames =['lambda_gray_s0_e0.4', 'lambda_gray_s0.2_e0.4',
+            'lambda_gray_s0.3_e0.3', 'lambda_gray_s0.4_e0.4', 'lambda_gray_s0.5_e0.3']
+    runs = runs + runsNames
+
+    names=list()
+    names.append('SAMF')
+    names.append('DSST')
+    names.append('TGPR')
+    names.append('RobStruck')
+    names.append('ObjStruck with $\lambda_s=0, \lambda_e=0.4$')
+    names.append('ObjStruck with $\lambda_s=0.2, \lambda_e=0.4$')
+    names.append('ObjStruck with $\lambda_s=0.3, \lambda_e=0.3$')
+    names.append('ObjStruck with $\lambda_s=0.4, \lambda_e=0.4$')
+    names.append('ObjStruck with $\lambda_s=0.5, \lambda_e=0.3$')
     for i in range(0,len(runs)):
         runs[i]='./Results/'+runs[i]+".p"
     return (runs, names)
@@ -211,8 +467,48 @@ def plot_OPE_comparison():
 
     plt.show()
 
+def plotOPE_SRE_TRE_Robust(saveFigureToFolder = '/Users/Ivan/Code/Tracking/Antrack/doc/technical_reports/images/',
+                    format='png'):
+    wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
 
-def plotOPE_SRE_TRE():
+    vot2014Results = "/Users/Ivan/Files/Results/Tracking/vot2014"
+    vot2014GrounTruth = "/Users/Ivan/Files/Data/vot2014"
+
+    datasetType = 'wu2013'
+    dataset = Dataset(wu2013GroundTruth, datasetType)
+
+    (runsNames, corrected_names)= getRunsForCVPR2016_robust()
+
+    runs = list()
+    names=list()
+    for runName in runsNames:
+        run = loadPickle(runName)
+        names.append(runName)
+        #run = run.data[experimentType]
+        runs.append(run)
+
+    # run=loadPickle('./Runs/TLD.p')
+    # runs.append(run)
+    # names.append('./Runs/TLD.p')
+
+    save = True
+    evaluator = EvaluatorAllExperiments(dataset, list(), names)
+
+    successAndPrecision = 'cvpr2016_SuccessAndPrecision_wu2013'
+    histograms = 'cvpr2016_histogram_wu2013'
+
+
+    i = format
+    if save:
+        evaluator.evaluateFromSave(runs,successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
+                                                        i,histogramPlot=saveFigureToFolder+histograms+'.'+
+                                                                                       i, alternativeNames=corrected_names)
+    else:
+        evaluator.evaluateFromSave(runs, alternativeNames=corrected_names)
+
+def plotOPE_SRE_TRE(saveFigureToFolder = '/Users/Ivan/Code/Tracking/Antrack/doc/technical_reports/images/',
+                    format='png'):
     wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
     wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
 
@@ -238,27 +534,54 @@ def plotOPE_SRE_TRE():
 
 
     evaluator = EvaluatorAllExperiments(dataset, list(), names)
-    #evaluator.experimentNames=corrected_names
-    #saveFigureToFolder = '/Users/Ivan/Code/personal-website/Projects/Object_aware_tracking/images/multiScale/'
-    saveFigureToFolder = '/Users/Ivan/Code/Tracking/Antrack/doc/technical_reports/images/'
-    #saveFormat = ['png', 'pdf']
-    saveFormat=['png']
+
     successAndPrecision = 'cvpr2016_SuccessAndPrecision_wu2013'
     histograms = 'cvpr2016_histogram_wu2013'
 
 
-    for i in saveFormat:
-        evaluator.evaluateFromSave(runs,successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
-                                                       i,histogramPlot=saveFigureToFolder+histograms+'.'+
+    i = format
+    evaluator.evaluateFromSave(runs,successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
+                                                    i,histogramPlot=saveFigureToFolder+histograms+'.'+
                                                                                    i, alternativeNames=corrected_names)
         #evaluator.evaluateFromSave(runs,alternativeNames=corrected_names)
 
     #evaluator.evaluateFromSave(runs, alternativeNames=corrected_names)
-def main():
-    savefilename="/Users/Ivan/Code/Tracking/Antrack/doc/technical_reports/images/straddeling_edge_OPE"
+
+def robustKalman():
+    savefilename="/Users/Ivan/Documents/Papers/My_papers/CVPR_2016_Robust_tracking/images/"
     format='png'
-    #plotStraddelingEdgeOPE(savefilename=savefilename,format=format)
-    #plotOPE_SRE_TRE()
-    plot_OPE_comparison()
+
+    folder='./Results/'
+
+    wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
+    saveResultsFolder=list()
+
+    bookChapter="/Users/Ivan/Documents/Papers/My_papers/Tracking_book_chapter/images"
+    paper="/Users/Ivan/Documents/Papers/My_papers/CVPR_2016_Robust_tracking/images"
+
+    #saveResultsFolder.append(bookChapter)
+    saveResultsFolder.append(paper)
+    save=True
+
+    datasetType = 'wu2013'
+    dataset = Dataset(wu2013GroundTruth, datasetType)
+    paperPlot=PaperPlots(dataset,folder)
+
+    # this has to changeop
+    baseLineRun= folder+'Rob_Struck_filter_f0'+".p"
+
+    plotOPE_SRE_TRE_Robust(saveFigureToFolder=savefilename, format='pdf')
+    plotSensitivity(paperPlot,baseLineRun,saveResultsFolder,save)
+    #saveUpdName =saveResultsFolder+"/update.pdf"
+    #plotSensitivityUpd(paperPlot,baseLineRun,"upd=",savefile='')
+def objectAware():
+    savefilename="/Users/Ivan/Code/Tracking/Antrack/doc/technical_reports/images/"
+    savefilename="/Users/Ivan/Documents/Papers/My_papers/CVPR_2016_Object-aware_tracking/images/"
+    format='png'
+    plotStraddelingEdgeOPE("lambda_gray", savefilename=savefilename+'straddeling_edge_OPE',format=format)
+    plotOPE_SRE_TRE(saveFigureToFolder=savefilename)
+    #plot_OPE_comparison()
+
 if __name__ == "__main__":
-    main()
+    robustKalman()
+    objectAware()

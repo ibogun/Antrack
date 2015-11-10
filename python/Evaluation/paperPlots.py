@@ -27,10 +27,10 @@ class PaperPlots(object):
         self.legendSize = 6;
         self.labelsFontSize = 7
 
-        self.minY = 0.4
-        self.maxY = 0.6
+        self.minY = 0.47
+        self.maxY = 0.65
 
-        self.deltaPrecision = 0.15
+        self.deltaPrecision = 0.18
 
         self.sensitivityColorAndPoints='bo-'
 
@@ -418,13 +418,10 @@ def main():
     saveResultsFolder=list()
 
     bookChapter="/Users/Ivan/Documents/Papers/My_papers/Tracking_book_chapter/images"
-    paper="/Users/Ivan/Documents/Papers/My_papers/Tracking_with_Robust_Kalman/images"
+    paper="/Users/Ivan/Documents/Papers/My_papers/CVPR_2016_Robust_tracking/images"
 
-    saveResultsFolder.append(bookChapter)
+    #saveResultsFolder.append(bookChapter)
     saveResultsFolder.append(paper)
-
-
-
     save=True
 
     datasetType = 'wu2013'
@@ -438,7 +435,7 @@ def main():
 
     plotComparisonToOtherTrackers(dataset,saveResultsFolder,save)
     #plotFeatureKernel(paperPlot,saveResultsFolder,save)
-    #plotSensitivity(paperPlot, baseLineRun,saveResultsFolder,save)
+    plotSensitivity(paperPlot, baseLineRun,saveResultsFolder,save)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 __author__ = 'Ivan'
 import objectness_python
+import tracker_python
 from Dataset import VOT2015Dataset
 import numpy as np
 import matplotlib.pyplot as plt
@@ -69,6 +70,10 @@ class ObjectnessVizualizer(object):
         ax0.imshow(full_image)
         ax0.axis('off')
         zvals = np.array(H)
+
+        #min_z = np.min(zvals.flatten(1))
+        #max_z = np.max(zvals.flatten(1))
+        #zvals = (zvals - min_z)/(max_z - min_z)
         zvals2 = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
         #zvals = np.transpose(zvals)
@@ -364,7 +369,97 @@ class ObjectnessVizualizer(object):
 
         plt.close()
 
-    def evaluateVideo(self, video_number, saveFolder=None):
+
+    def evaluateDiscriminativeFunction(self, video_number, together=False, saveFolder=None):
+        video = self.dataset.video_folders[video_number]
+        boxes = self.dataset.readGroundTruthAll(video)
+
+        print video
+        print len(boxes)
+        images = self.dataset.getListOfImages(video)
+        bbox = boxes[0]
+
+        R = 60
+        scale_R = 60
+        min_size_half = 10
+        min_scales=0
+        max_scales =0
+        downsample=1.05
+        shrink_one_size = 0
+
+        s=re.split('/',video)
+        video_name = s[len(s)-1]
+
+        tracker = tracker_python.Antrack()
+        tracker.initializeTracker()
+        print images[0], bbox
+        tracker.initialize(images[0], bbox[0], bbox[1], bbox[2], bbox[3])
+        fig = plt.figure(figsize=(8, 6))
+        plt.ion()
+        plt.show()
+        for i in range(1, len(images)):
+
+            print "processing image: ", " " , i ,"/", len(images)
+            if saveFolder is not None:
+                directory = saveFolder + "/" + video_name+"/"
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                saveImage = directory+ str(1000 + i) + ".png"
+
+                if(os.path.isfile(saveImage)):
+                    continue
+            else:
+                saveImage = None
+
+            box=boxes[i]
+            im_name = images[i]
+            img = cv2.imread(im_name,1)
+
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            height = img.shape[0]
+            width = img.shape[1]
+
+            (min_x, min_y, max_x, max_y) = self.correctDims(box, width, height, R)
+
+            small_image = img[min_y:max_y, min_x :max_x]
+
+            im_name = images[i]
+            out = tracker.track(im_name)
+
+            if i == 100:
+                if together:
+                    obj = objectness_python.Objectness()
+                    obj.readImage(im_name)
+                    obj.smallImage(R, box[0], box[1], box[2], box[3])
+                    a_s = obj.processEdge(self.superpixels,self.inner, 0,
+                                R, scale_R, min_size_half, min_scales, max_scales,
+                                downsample, shrink_one_size,
+                                box[0], box[1], box[2], box[3])
+
+                    a_e = obj.processEdge(self.superpixels,self.inner, 0,
+                                R, scale_R, min_size_half, min_scales, max_scales,
+                                downsample, shrink_one_size,
+                                box[0], box[1], box[2], box[3])
+
+                    H_s=np.array(a_s[0])
+                    H_e=np.array(a_e[0])
+
+                a = tracker.calculateDiscriminativeFunction(im_name)
+                H=np.array(a)
+                H=H[min_x:max_x, min_y :max_y]
+                H = np.transpose(H)
+
+                if together:
+                    min_z = np.min(H.flatten(1))
+                    max_z = np.max(H.flatten(1))
+                    H = (H - min_z)/(max_z - min_z)
+                    H = H + 0.3* H_s + 0.3 * H_e
+
+                print H.shape
+                self.combinePlots(img, H, small_image, saveImage)
+
+    def evaluateVideoEdge(self, video_number, saveFolder=None):
         video = self.dataset.video_folders[video_number]
         boxes = self.dataset.readGroundTruthAll(video)
 
@@ -423,6 +518,76 @@ class ObjectnessVizualizer(object):
             small_image = self.drawRectangle(small_image, box , R)
             obj.smallImage(R, box[0], box[1], box[2], box[3])
 
+            a = obj.processEdge(self.superpixels,self.inner, 0,
+                            R, scale_R, min_size_half, min_scales, max_scales,
+                            downsample, shrink_one_size,
+                            box[0], box[1], box[2], box[3])
+
+            #obj.plot()
+            H = a[0]
+
+            print len(H), len(H[0])
+            self.combinePlots(img, H, small_image, saveImage)
+
+    def evaluateVideo(self, video_number, saveFolder=None):
+        video = self.dataset.video_folders[video_number]
+        boxes = self.dataset.readGroundTruthAll(video)
+
+        print video
+        print len(boxes)
+        images = self.dataset.getListOfImages(video)
+
+        R = 60
+        scale_R = 60
+        min_size_half = 10
+        min_scales=0
+        max_scales =0
+        downsample=1.05
+        shrink_one_size = 0
+
+        s=re.split('/',video)
+        video_name = s[len(s)-1]
+
+
+        fig = plt.figure(figsize=(8, 6))
+        plt.ion()
+        plt.show()
+        for i in range(0, len(images)):
+
+            print "processing image: ", " " , i ,"/", len(images)
+            if saveFolder is not None:
+                directory = saveFolder + "/" + video_name+"/"
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                saveImage = directory+ str(1000 + i) + ".png"
+
+                if(os.path.isfile(saveImage)):
+                    continue
+            else:
+                saveImage = None
+
+            obj = objectness_python.Objectness()
+            box=boxes[i]
+            im_name = images[i]
+            img = cv2.imread(im_name,1)
+
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            height = img.shape[0]
+            width = img.shape[1]
+
+            (min_x, min_y, max_x, max_y) = self.correctDims(box, width, height, R)
+
+            small_image = img[min_y:max_y, min_x :max_x]
+            obj.readImage(im_name)
+
+            pt1=(box[0] - min_x, box[1] - min_y)
+            pt2=(box[0] - min_x + box[2], box[1] -min_y + box[3])
+            cv2.rectangle(small_image, pt1,pt2, (100,0,150), 2)
+            cv2.rectangle(img, (min_x, min_y), (max_x, max_y), (0,255,200),2)
+            #small_image = self.drawRectangle(small_image, box , R)
+            obj.smallImage(R, box[0], box[1], box[2], box[3])
+
             a = obj.process(self.superpixels,self.inner, 0,
                             R, scale_R, min_size_half, min_scales, max_scales,
                             downsample, shrink_one_size,
@@ -434,7 +599,7 @@ class ObjectnessVizualizer(object):
 
 
 def straddlingInTime(save = False):
-    root_folder = '/Users/Ivan/Code/Tracking/Antrack/matlab/vot-toolkit/antrack/sequences'
+    root_folder = '/Users/Ivan/Code/Tracking/Antrack/matlab/vot-toolkit/vot2015/sequences'
     vot = VOT2015Dataset(root_folder)
 
     superpixels = 200
@@ -450,8 +615,40 @@ def straddlingInTime(save = False):
     for v in videos:
         obj.evaluateVideo(v, saveOutputFolder)
 
+def edgeDensityInTime(save = False):
+    root_folder = '/Users/Ivan/Code/Tracking/Antrack/matlab/vot-toolkit/vot2015/sequences'
+    vot = VOT2015Dataset(root_folder)
+
+
+    obj = ObjectnessVizualizer(vot)
+
+    #videos = [3, 30, 25]
+    videos = [3]
+    if save:
+        saveOutputFolder =  '/Users/Ivan/Files/Results/Tracking/VOT2015_edgeDensity_in_time'
+    else:
+        saveOutputFolder = None
+    for v in videos:
+        obj.evaluateVideoEdge(v, saveOutputFolder)
+
+def discriminativeFunctionInTime(together = True, save = False):
+    root_folder = '/Users/Ivan/Code/Tracking/Antrack/matlab/vot-toolkit/vot2015/sequences'
+    vot = VOT2015Dataset(root_folder)
+
+
+    obj = ObjectnessVizualizer(vot)
+
+    #videos = [3, 30, 25]
+    videos = [3]
+    if save:
+        saveOutputFolder =  '/Users/Ivan/Files/Results/Tracking/VOT2015_discriminative_in_time'
+    else:
+        saveOutputFolder = None
+    for v in videos:
+        obj.evaluateDiscriminativeFunction(v,together=together, saveFolder=saveOutputFolder)
+
 def straddlingInSpace( save = False):
-    root_folder = '/Users/Ivan/Code/Tracking/Antrack/matlab/vot-toolkit/antrack/sequences'
+    root_folder = '/Users/Ivan/Code/Tracking/Antrack/matlab/vot-toolkit/vot2015/sequences'
     vot = VOT2015Dataset(root_folder)
 
     superpixels = 200
@@ -467,7 +664,7 @@ def straddlingInSpace( save = False):
         obj.evaluateImage(v, saveFolder=saveOutputFolder)
 
 def straddelingAverageInSpace(save = False):
-    root_folder = '/Users/Ivan/Code/Tracking/Antrack/matlab/vot-toolkit/antrack/sequences'
+    root_folder = '/Users/Ivan/Code/Tracking/Antrack/matlab/vot-toolkit/vot2015/sequences'
     vot = VOT2015Dataset(root_folder)
     superpixels = 200
     obj = ObjectnessVizualizer(vot, superpixels)
@@ -480,5 +677,8 @@ def straddelingAverageInSpace(save = False):
     for v in videos:
         obj.evaluateImageAverageStraddling(v, saveFolder=saveOutputFolder)
 
+
 if __name__ == "__main__":
-    straddelingAverageInSpace(False)
+    discriminativeFunctionInTime(together=True, save=True)
+    #straddlingInTime(True)
+    #edgeDensityInTime(False)

@@ -488,8 +488,12 @@ def generateAllVizualiations():
     datasetType = 'wu2013'
     dataset = Dataset(wu2013GroundTruth, datasetType)
     runsNames = glob.glob('./Runs/upd=3*.p')
-    runsNames =['lambda_SE_s0_e0.2', 'lambda_SE_s0_e0.5',
-                'lambda_SE_s0.1_e0.3', 'lambda_SE_s0.2_e0.2', 'lambda_SE_s0.3_e0.4']
+    runsNames =['lambda_nonorm_s0_e0.5', 'lambda_nonorm_s0.2_e0.2',
+                'lambda_nonorm_s0.3_e0.4', 'lambda_nonorm_s0.4_e0.4', 'lambda_nonorm_s0.5_e0.3']
+
+
+    #runsNames =['lambda_SE_s0_e0.2', 'lambda_SE_s0_e0.5',
+    #            'lambda_SE_s0.1_e0.3', 'lambda_SE_s0.2_e0.2', 'lambda_SE_s0.3_e0.4']
 
     for i in range(0,len(runsNames)):
         runsNames[i]="./Runs/"+runsNames[i]+".p"
@@ -568,5 +572,5 @@ def compareDefaultPlots(wildcard="lambda_SE"):
 
 if __name__ == "__main__":
     #generateAllVizualiations()
-    generateDefaultVizualiations("lambda_inner")
+    generateDefaultVizualiations("TGPR")
     #compareDefaultPlots()

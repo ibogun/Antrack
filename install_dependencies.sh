@@ -1,5 +1,7 @@
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
-    sudo apt-get update && sudo apt-get upgrade
+    set -x
+    export DEBIAN_FRONTEND=noninteractive
+    sudo apt-get update && sudo apt-get upgrade -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
     sudo apt-get -qq install libopencv-dev
     sudo apt-get -qq install liblapack-dev
     sudo apt-get -qq install libblas-dev

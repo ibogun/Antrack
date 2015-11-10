@@ -63,7 +63,7 @@ class EvaluatorAllExperiments(object):
         cm = plt.get_cmap('gist_rainbow')
 
         titleFontSize = 16;
-        headerFontSize = 13;
+        headerFontSize = 16;
         axisFontSize = 12;
         lineWidth = 1.8;
 
@@ -74,7 +74,7 @@ class EvaluatorAllExperiments(object):
         evaluationTypes = ['default', 'SRE', 'TRE']
 
 
-        labelsFontSize = 11
+        labelsFontSize = 14
         idx = 1
 
         import seaborn as sn
@@ -282,12 +282,13 @@ class EvaluatorAllExperiments(object):
 
     def createPlot(self, plotMetricsDict,  completeMetricDict, alternativeNames=list(),savefilename=''):
 
+        plotLegends = False
         cm = plt.get_cmap('gist_rainbow')
         NUM_COLORS = len(plotMetricsDict)
 
         titleFontSize = 16;
         headerFontSize = 14;
-        axisFontSize = 13;
+        axisFontSize = 16;
         lineWidth = 1.8;
 
         legendSize = 9;
@@ -326,6 +327,9 @@ class EvaluatorAllExperiments(object):
                     x_s.append(d[expName][2])
                     y_s.append(d[expName][3])
 
+                    #print d[expName][0][400], d[expName][2][500]
+                    #p.append(np.round(d[expName][1][400],3))
+                    #s.append(np.round(d[expName][3][500],3))
                     p.append(np.round(d[expName][4],3))
                     s.append(np.round(d[expName][5],3))
                 # x_pr = [z[expName][0] for z in plotMetricsDict.values()]
@@ -374,7 +378,8 @@ class EvaluatorAllExperiments(object):
                 ax.set_ylabel('Success rate', fontsize=axisFontSize)
 
                 idx = idx + 1
-                ax.legend(handles=handlesLegendSuccess, prop={'size': legendSize})
+                if plotLegends:
+                    ax.legend(handles=handlesLegendSuccess, prop={'size': legendSize})
                 plt.grid(b=False)
                 ax = plt.subplot(3, 2, idx, frameon=True)
 
@@ -402,7 +407,8 @@ class EvaluatorAllExperiments(object):
                 #plt.grid(axis='both')
                 #plt.grid(b=False)
                 idx = idx + 1
-                ax.legend(handles=handlesLegendPrecision, prop={'size': legendSize}, loc=2)
+                if plotLegends:
+                    ax.legend(handles=handlesLegendPrecision, prop={'size': legendSize}, loc=2)
 
             #plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
             #plt.set_tight_layout(True)
@@ -669,14 +675,15 @@ def createSavedEvaluations(wildcard):
 
     dataset = Dataset(wu2013GroundTruth, datasetType)
 
-    runsNames = glob.glob('./Runs/' + wildcard + '*.p')
-    runsNames =['lambda_SE_s0_e0.2', 'lambda_SE_s0_e0.5',
-                'lambda_SE_s0.1_e0.3', 'lambda_SE_s0.2_e0.2', 'lambda_SE_s0.3_e0.4']
 
+    #runsNames =['lambda_gray_s0_e0.4', 'lambda_gray_s0.2_e0.4',
+    #        'lambda_gray_s0.3_e0.3', 'lambda_gray_s0.4_e0.4', 'lambda_gray_s0.5_e0.3']
 
+    runsNames=list()
     for i in range(0,len(runsNames)):
         runsNames[i]='./Runs/'+runsNames[i]+".p"
     runs = list()
+    runsNames = glob.glob('./Runs/' + wildcard + '*.p')
     #
     names = list()
     for runName in runsNames:
@@ -695,9 +702,10 @@ def createSavedEvaluations(wildcard):
 
 
 def getRunsForCVPR2016():
-    runs=['SAMF', 'DSST', 'upd=3_hogANDhist_int_f1']
-    runsNames =['lambda_SE_s0_e0.2', 'lambda_SE_s0_e0.5',
-                'lambda_SE_s0.1_e0.3', 'lambda_SE_s0.2_e0.2', 'lambda_SE_s0.3_e0.4']
+    runs=['SAMF', 'DAT', 'TGPR', 'DSST', 'upd=3_hogANDhist_int_f1']
+
+    runsNames =['lambda_gray_s0_e0.4', 'lambda_gray_s0.2_e0.4',
+                'lambda_gray_s0.3_e0.3', 'lambda_gray_s0.4_e0.4', 'lambda_gray_s0.5_e0.3']
     runs = runs + runsNames
 
     for i in range(0,len(runs)):
@@ -710,9 +718,8 @@ if __name__ == "__main__":
     # if you want to evaluate and save evaluations ( do this first)
 
 
-    wildcard = "lambda_inner"
-    #createSavedEvaluations(wildcard);
-
+    wildcard = "Rob_"
+    createSavedEvaluations(wildcard)
 
     wu2013results = "/Users/Ivan/Files/Results/Tracking/wu2013"
     wu2013GroundTruth = "/Users/Ivan/Files/Data/wu2013"
@@ -731,6 +738,7 @@ if __name__ == "__main__":
 
     runsNames = glob.glob('./Results/' + wildcard + '*.p')
     runsNames= getRunsForCVPR2016()
+
     #runsNames = ['SAMF', 'Kernelized_filter', 'fk_hist_int_f0', 'fk_hist_int_f1','TLD']
     runs = list()
     #
@@ -760,8 +768,9 @@ if __name__ == "__main__":
 
 
 
-    for i in saveFormat:
-        evaluator.evaluateFromSave(runs,successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
-                                                        i,histogramPlot=saveFigureToFolder+histograms+'.'+
-                                                                                    i)
+    #for i in saveFormat:
+    #    evaluator.evaluateFromSave(runs,successAndPrecisionPlotName=saveFigureToFolder+successAndPrecision+'.'+
+    #                                                    i,histogramPlot=saveFigureToFolder+histograms+'.'+
+    #                                                                                i)
         #evaluator.evaluateFromSave(runs)
+    #evaluator.evaluateFromSave(runs, alternativeNames=names)
