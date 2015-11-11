@@ -3,6 +3,7 @@ language: cpp
 before_install:
  #- sudo apt-get install -qq libyajl-dev libxml2-dev libxqilla-dev
  # clang 3.4
+- sudo apt-get update -qq
 - if [ "$CXX" == "clang++" ]; then sudo add-apt-repository -y ppa:h-rayflood/llvm; fi
 - if [ "$CXX" == "g++" ]; then  sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y; fi
 # gcc 4.9
@@ -17,8 +18,14 @@ compiler:
 sudo: required
 dist: trusty
 
-install:
-  - if [ "$CXX" == "clang++" ]; then sudo apt-get install --allow-unauthenticated -qq clang-3.4; fi
+install: ./install_dependencies.sh
+
+
+before_script:
+  - mkdir build 
+  - cd build
+  - cmake -Dtest=on ..
+   - if [ "$CXX" == "clang++" ]; then sudo apt-get install --allow-unauthenticated -qq clang-3.4; fi
   - if [ "$CXX" == "clang++" ]; then export CXXFLAGS="-std=c++0x -stdlib=libc++"; fi
   - if [ "$CXX" == "clang++" ]; then svn co --quiet http://llvm.org/svn/llvm-project/libcxx/trunk libcxx; fi
 
@@ -30,13 +37,7 @@ install:
   - if [ "$CXX" == "clang++" ]; then sudo ln -sf libc++.so.1.0 libc++.so.1 && cd $cwd; fi
 
   - if [ "$CXX" == "clang++" ]; then export CXX="clang++-3.4"; fi
-  - ./install_dependencies.sh
 
-before_script:
-  - mkdir build 
-  - cd build
-  - cmake -Dtest=on ..
-  
 script: make && ./bin/RunUnitTests
 
 branches:
