@@ -1,4 +1,4 @@
-# Antrack
+# Antrack [![Build Status](https://travis-ci.org/ibogun/Antrack.svg?branch=master)](https://travis-ci.org/ibogun/Antrack)
 Antrack is an open source implementation of the Structured Tracker and tracking evaluation suite. The original structured tracker was introduced by Hare et. al. 2011 and achieved state-of-the-art in the benchmark by Wu et. al 2012. This implementation extends the structured tracker by adding [Robust Kalman](http://my.fit.edu/~ibogun2010/Projects/Robust_tracking_by_detection/index.html) filter and [objectness priors](http://my.fit.edu/~ibogun2010/Projects/Object_aware_tracking/index.html). Each extension is independent of each other and improves tracking metrics on Wu et. al. 2012 dataset.
 
 # Installation
