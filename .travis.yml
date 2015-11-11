@@ -25,7 +25,7 @@ install: ./install_dependencies.sh
 before_script:
   - mkdir build 
   - cd build
-  - cmake -Dtest=on ..
+  - export PROJECT_HOME=$(pwd)
   - if [ "$CXX" == "clang++" ]; then sudo apt-get install --allow-unauthenticated -qq clang-3.4; fi
   - if [ "$CXX" == "clang++" ]; then export CXXFLAGS="-std=c++0x -stdlib=libc++"; fi
   - if [ "$CXX" == "clang++" ]; then svn co --quiet http://llvm.org/svn/llvm-project/libcxx/trunk libcxx; fi
@@ -38,6 +38,8 @@ before_script:
   - if [ "$CXX" == "clang++" ]; then sudo ln -sf libc++.so.1.0 libc++.so.1 && cd $cwd; fi
 
   - if [ "$CXX" == "clang++" ]; then export CXX="clang++-3.4"; fi
+  - cd ${PROJECT_HOME}
+  - cmake -Dtest=on ..
 
 script: make && ./bin/RunUnitTests
 
