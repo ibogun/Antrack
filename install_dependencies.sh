@@ -2,14 +2,14 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
 
     set -x
     export DEBIAN_FRONTEND=noninteractive
-    sudo apt-get update && sudo apt-get upgrade -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
-    sudo apt-get -qq install libopencv-dev
-    sudo apt-get -qq install liblapack-dev
-    sudo apt-get -qq install libblas-dev
-    sudo apt-get -qq install libboost-dev
-    sudo apt-get -qq install libarmadillo-dev
-    sudo apt-get -qq install libboost-all-dev
-    sudo apt-get -qq install libgoogle-glog-dev
+  #  sudo apt-get update && sudo apt-get upgrade -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
+    sudo apt-get -y install libopencv-dev
+    sudo apt-get -y install liblapack-dev
+    sudo apt-get -y install libblas-dev
+    sudo apt-get -y install libboost-dev
+    sudo apt-get -y install libarmadillo-dev
+    sudo apt-get -y install libboost-all-dev
+    sudo apt-get -y install libgoogle-glog-dev
     # install cmake 3.x
     sudo apt-get install build-essential
 
