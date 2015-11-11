@@ -9,27 +9,13 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     sudo apt-get -qq install libboost-dev
     sudo apt-get -qq install libarmadillo-dev
     sudo apt-get -qq install libboost-all-dev
+    sudo apt-get -qq install libgoogle-glog-dev
     # install cmake 3.x
     sudo apt-get install build-essential
 
 
 
-    wget --no-check-certificate http://www.cmake.org/files/v3.2/cmake-3.2.2.tar.gz
-    tar xf cmake-3.2.2.tar.gz
-    cd cmake-3.2.2/
-    ./configure
-    make && sudo make install
-    cd ..
-    
-    # install glog
-    wget https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
-    tar zxvf glog-0.3.3.tar.gz
-    cd glog-0.3.3
-    ./configure
-    make && sudo make install
-    export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
-    cd ../..
-    # gflags
+     # gflags
     wget https://github.com/schuhschuh/gflags/archive/master.zip
     unzip master.zip
     cd gflags-master
@@ -38,15 +24,6 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     make && sudo make install
     cd ../..
 
-
-    wget https://github.com/Itseez/opencv/archive/2.4.11.zip
-    unzip 2.4.11.zip
-    cd opencv-2.4.11
-    mkdir build && cd build
-    cmake ..
-    make && sudo make install
-    cd ../..
-    
     # ...
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     brew update && brew upgrade && brew tap homebrew/science && \
