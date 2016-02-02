@@ -20,7 +20,7 @@ before_script:
   - cd build
   - export PROJECT_HOME=$(pwd)
   - cd ${PROJECT_HOME}
-  - cmake -Dtest=on ..
+  - cmake -Dtest=on -DDeepFeatures=OFF ..
 
 script: make && ./bin/RunUnitTests
 

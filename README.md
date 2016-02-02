@@ -2,17 +2,17 @@
 Antrack is an open source implementation of the Structured Tracker and tracking evaluation suite. The original structured tracker was introduced by Hare et. al. 2011 and achieved state-of-the-art in the benchmark by Wu et. al 2012. This implementation extends the structured tracker by adding [Robust Kalman](http://my.fit.edu/~ibogun2010/Projects/Robust_tracking_by_detection/index.html) filter and [objectness priors](http://my.fit.edu/~ibogun2010/Projects/Object_aware_tracking/index.html). Each extension is independent of each other and improves tracking metrics on Wu et. al. 2012 dataset.
 
 # Installation
-Dependencies instllation was tested on Ubuntu 14.04. Mac OS X 10.11 support is experimental.
+Dependencies installation was tested on Ubuntu 14.04. Mac OS X 10.11 support is experimental.
 ## Ubuntu 14.04
 Script ``install_dependencies.sh`` will install all dependencies automatically. To compile the code it is neccessary to have compiler which
  accepts ``c++11`` flag (gcc > 4.9). To install necessary compiler see [gist](https://gist.github.com/ibogun/ec0a4005c25df57a1b9d).
- ## Mac OS X 10.11
- Script ``install_dependencies.sh`` will try to install dependencies using ``homebrew``. 
 
+To compile do:
 
-To compile use:
+    ./install_dependencies.sh
+## Mac OS X 10.11
+ Script ``install_dependencies.sh`` will try to install dependencies using ``homebrew``.
 
-        ./install_dependencies.sh
 ## List of dependencies
 * [OpenCV 2.4.11](http://opencv.org/)
 * [Armadillo C++](http://arma.sourceforge.net/)
@@ -23,7 +23,7 @@ To compile use:
 
 # Using
 ## C++ interface
-Coming soon 
+Coming soon
 
 ## Python interface
 Coming soon.
