@@ -48,6 +48,8 @@ public:
         ss<<"60 videos\n";
         return ss.str();
     }
+
+    ~DatasetVOT2015(){}
 };
 
 #endif /* defined(__Robust_tracking_by_detection__DatasetVOT2015__) */

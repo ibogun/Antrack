@@ -1,12 +1,12 @@
 //
-//  DataSetWu2013.cpp
+//  DatasetWu2013.cpp
 //  Robust Struck
 //
 //  Created by Ivan Bogun on 10/7/14.
 //  Copyright (c) 2014 Ivan Bogun. All rights reserved.
 //
 
-#include "DataSetWu2013.h"
+#include "DatasetWu2013.h"
 #include <fstream>
 #include <regex>
 
@@ -18,7 +18,7 @@
  *
  *  @return array of ground truth bounding boxes
  */
-std::vector<cv::Rect> DataSetWu2013::readGroundTruth(std::string fileName){
+std::vector<cv::Rect> DatasetWu2013::readGroundTruth(std::string fileName){
     
     using namespace std;
     std::ifstream infile(fileName);
@@ -26,7 +26,7 @@ std::vector<cv::Rect> DataSetWu2013::readGroundTruth(std::string fileName){
     int num=0;
     std::regex e ("[[:digit:]]+");
     
-    
+
     vector<cv::Rect> gtRects;
     
     cv::Rect varRect;
@@ -89,7 +89,7 @@ std::vector<cv::Rect> DataSetWu2013::readGroundTruth(std::string fileName){
  *
  *  @return array <array<images>> where array<images> is a video
  */
-std::vector<std::pair<std::string, std::vector<std::string>>> DataSetWu2013::prepareDataset(std::string rootFolder){
+std::vector<std::pair<std::string, std::vector<std::string>>> DatasetWu2013::prepareDataset(std::string rootFolder){
     
     using namespace std;
 

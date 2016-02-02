@@ -21,8 +21,6 @@ class Dataset {
 
     std::string root_folder;
 public:
-
-
     hashtable vidToIndex;
     std::vector<std::string> videos;
 
@@ -43,6 +41,7 @@ public:
 
     virtual std::vector<cv::Rect> readGroundTruth(std::string)=0;
     virtual std::string getInfo()=0;
+    virtual ~Dataset(){}
 };
 
 #endif /* defined(__Robust_Struck__Dataset__) */

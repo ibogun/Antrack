@@ -7,41 +7,31 @@
 //
 
 #include <iostream>
-#include <opencv2/opencv.hpp>
 #include <ctime>
-#include <glog/logging.h>
-#include <gflags/gflags.h>
 
-#include "../../Kernels/RBFKernel.h"
-#include "../../Kernels/IntersectionKernel.h"
-#include "../../Kernels/IntersectionKernel_fast.h"
-#include "../../Kernels/ApproximateKernel.h"
-#include "../../Kernels/LinearKernel.h"
-
-#include "../../Features/RawFeatures.h"
-#include "../../Features/Haar.h"
-#include "../../Features/Histogram.h"
-#include "../../Features/HoG.h"
-
-#include "../../Tracker/ObjDetectorStruck.h"
-#include "../../Tracker/LocationSampler.h"
-#include "../../Tracker/OLaRank_old.h"
-#include "../../Tracker/Struck.h"
-#include "../../Datasets/DataSetWu2013.h"
-#include "../../Datasets/DatasetALOV300.h"
-#include "../../Datasets/DatasetVOT2014.h"
-#include "../../Datasets/DatasetVOT2015.h"
-
-#include <pthread.h>
-#include <thread>
 
 #include <fstream>
 
+#include <pthread.h>
+#include <thread>
+#include <stdio.h>
+
+
+
+#include <glog/logging.h>
+#include <gflags/gflags.h>
+
+#include "../../Kernels/AllKernels.h"
+
+#include "../../Features/AllFeatures.h"
+
+#include "../../Tracker/AllTrackers.h"
+#include "../../Datasets/AllDatasets.h"
+
+#include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <iostream>
-#include <stdio.h>
 
 //#ifdef TRAX
 #include "trax.h"

@@ -4,6 +4,7 @@ option(test "Build all tests." OFF) # Makes boolean 'test' available.
 option(VOT2015 "Build VOT2015-friendly" OFF)
 option(experiments "Build all experiments." OFF) # Makes boolean 'test' available.
 
+option(DeepFeatures "Use features extracted using deep convnet()" OFF)
 option(python "Build python wrappers." OFF)
 
 option(PAMI "Build evaluation for PAMI paper." OFF)
@@ -13,6 +14,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY bin)
 
 set(PROJECT_NAME Robust_tracking_by_detection)
 project(${PROJECT_NAME})
+
+
+IF (DeepFeatures)
+  add_definitions(-DCPU_ONLY=1)
+  add_definitions(-DUSE_ACCELERATE)
+  add_definitions(-DUSE_OPENCV)
+  add_definitions(-DUSE_DEEP_FEATURES)
+ENDIF()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 find_package(OpenCV REQUIRED )
@@ -106,12 +115,19 @@ if (test)
   ##############
   # Unit Tests
   ##############
-  add_executable(RunUnitTests ${SOURCE_FILES} ${TEST_FILES} ${Superpixels})
+  add_executable(RunUnitTests  ${Superpixels} ${SOURCE_FILES} ${TEST_FILES})
   #add_executable(RunUnitTests ${SOURCE_FILES})
   # Standard linking to gtest stuff.
+
+  if (DeepFeatures)
   target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS}
     ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}
+    ${GLOG_LIBRARY} gflags caffe)
+  else()
+    target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS}
+    ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}
     ${GLOG_LIBRARY} gflags)
+  endif()
 
   # Extra linking for the project.
   #target_link_libraries(runUnitTests project1_lib)
@@ -136,10 +152,15 @@ if(VOT2015)
 	find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
 
 	include_directories( ${Boost_INCLUDE_DIR} )
-	add_executable(struck_vot2014 ${Superpixels} ${SOURCE_FILES} ${TRAX_FILES})
-    target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES}
-      ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  ${GLOG_LIBRARY} gflags )
+    add_executable(struck_vot2014 ${Superpixels} ${SOURCE_FILES} ${TRAX_FILES})
 
+    if (DeepFeatures)
+    target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  ${GLOG_LIBRARY} gflags caffe)
+    else()
+       target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES}
+         ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  ${GLOG_LIBRARY} gflags)
+    endif()
 	set_target_properties(struck_vot2014 PROPERTIES
 				RUNTIME_OUTPUT_DIRECTORY ${VOT2015_DESTINATION})
 endif()
@@ -198,9 +219,19 @@ add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJE
 include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 include_directories (${Boost_INCLUDE_DIRS})
-target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
-  ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
-    ${Boost_LIBRARIES} ${GLOG_LIBRARY} gflags)
+# include_directories(${CAFFE_include})
+# include_directories(${CAFFE_include_2})
+
+
+  if (DeepFeatures)
+    target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
+      ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+      ${Boost_LIBRARIES} ${GLOG_LIBRARY} gflags caffe)
+    else()
+    target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
+      ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+      ${Boost_LIBRARIES} ${GLOG_LIBRARY} gflags)
+  endif()
 
 
 if (PAMI)
@@ -221,5 +252,5 @@ if (CVPR2016)
     include_directories( ${Boost_INCLUDE_DIRS} )
     add_executable(cvpr2016 ${Superpixels} ${SOURCE_FILES} ${cvpr2016_main})
     target_link_libraries(cvpr2016 ${Boost_LIBRARIES}
-      ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}  ${GLOG_LIBRARY} gflags)
+      ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}  ${GLOG_LIBRARY} gflags caffe)
 endif()

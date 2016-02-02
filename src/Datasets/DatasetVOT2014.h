@@ -42,6 +42,8 @@ public:
         ss<<"25 videos\n";
         return ss.str();
     }
+
+    ~DatasetVOT2014(){}
 };
 
 #endif /* defined(__Robust_tracking_by_detection__DatasetVOT2014__) */

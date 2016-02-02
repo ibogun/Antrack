@@ -110,7 +110,7 @@ TEST(ApproximateKernel, SplineApproximation){
 
 // Test case must be called the class above
 // Also note: use TEST_F instead of TEST to access the test fixture (from google test primer)
-TEST_F(IntersectionKernelTest, DISABLED_KernelCalculation) {
+TEST_F(IntersectionKernelTest, KernelCalculation) {
 
     double loopKernelValue=0;
     double kernelFast=0;
@@ -190,7 +190,7 @@ TEST_F(IntersectionKernel_tracking_test, DISABLED_Tracking){
                    useObjectness, false, useFilter, false, display);
 
 
-    std::string rootFolder="/Users/Ivan/Files/Data/Tracking_benchmark/";
+    std::string rootFolder="/Users/Ivan/Files/Data/wu2013/";
     std::string saveFolder="";
     DataSetWu2013* datasetWu2013=new DataSetWu2013;
 

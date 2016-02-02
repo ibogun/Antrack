@@ -1,18 +1,18 @@
 //
-//  DataSetWu2013.h
+//  DatasetWu2013.h
 //  Robust Struck
 //
 //  Created by Ivan Bogun on 10/7/14.
 //  Copyright (c) 2014 Ivan Bogun. All rights reserved.
 //
 
-#ifndef __Robust_Struck__DataSetWu2013__
-#define __Robust_Struck__DataSetWu2013__
+#ifndef __Robust_Struck__DatasetWu2013__
+#define __Robust_Struck__DatasetWu2013__
 
 #include <stdio.h>
 #include "Dataset.h"
 
-class DataSetWu2013:public Dataset{
+class DatasetWu2013:public Dataset{
 
 
 public:
@@ -29,7 +29,8 @@ public:
         ss<<"50 videos\n";
         return ss.str();
     }
-    
+
+    ~DatasetWu2013(){}
 };
 
-#endif /* defined(__Robust_Struck__DataSetWu2013__) */
+#endif /* defined(__Robust_Struck__DatasetWu2013__) */

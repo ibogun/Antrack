@@ -31,6 +31,7 @@
 #include "../Features/Histogram.h"
 #include "../Features/HoG.h"
 #include "../Features/HoG_PCA.h"
+#include "../Features/DeepFeatures.h"
 #include "../Features/HoGandRawFeatures.h"
 #include "../Features/MultiFeature.h"
 
@@ -206,6 +207,10 @@ class Struck {
     }
 
     virtual void setParams(const std::unordered_map<std::string, double>& map) {
+    }
+
+    virtual void setFeatureParams(const std::unordered_map<std::string, std::string> & map) {
+        this->feature->setParams(map);
     }
 
     void updateDebugImage(cv::Mat* canvas,cv::Mat& img,

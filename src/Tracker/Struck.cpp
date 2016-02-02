@@ -1,5 +1,5 @@
 //
-//  Struck.cpp
+//  struck.cpp
 //  Robust Struck
 //
 //  Created by Ivan Bogun on 10/6/14.
@@ -108,10 +108,12 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location,
     // add images, in case we want to show support vectors
 
     if (display == 1) {
-        cv::Scalar color(255, 0, 0);
+        cv::Scalar color(0, 255, 0);
         cv::Mat plotImg = image.clone();
+
         cv::rectangle(plotImg, lastLocation, color, 2);
         cv::imshow("Tracking window", plotImg);
+        this->objectnessCanvas = plotImg;
         cv::waitKey(1);
 
     } else if (display == 2) {
@@ -486,6 +488,7 @@ cv::Rect Struck::track(cv::Mat &image) {
         cv::imshow("Tracking window", plotImg);
         cv::waitKey(1);
         this->objectnessCanvas = plotImg;
+
 
     } else if (display == 2) {
         this->frames.insert({framesTracked, image});
@@ -1509,8 +1512,12 @@ Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
         features = new HistogramFeatures(4, 16);
     } else if (featureSTR == "haar"){
         features = new Haar(2);
-    } else if (featureSTR == "hogANDhist"){
-        Feature* f1;
+#ifdef USE_DEEP_FEATURES
+    } else if (featureSTR == "deep") {
+      features = new DeepFeatures();
+#endif
+    } else if (featureSTR == "hogANDhist") {
+      Feature *f1;
         Feature* f2;
         f1=new HistogramFeatures(4,16);
 

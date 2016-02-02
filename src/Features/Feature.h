@@ -10,6 +10,7 @@
 #define Robust_Struck_Feature_h
 
 #include <iostream>
+#include <unordered_map>
 #include <opencv2/opencv.hpp>
 #include "armadillo"
 
@@ -29,7 +30,10 @@ public:
     virtual int calculateFeatureDimension()=0;
     
     virtual std::string getInfo()=0;
-    
+
+    virtual void setParams(const std::unordered_map<std::string, std::string> & map) {
+    }
+
     arma::mat reshapeYs(std::vector<cv::Rect>& locations){
         
         arma::mat y((int)locations.size(),5,arma::fill::zeros);

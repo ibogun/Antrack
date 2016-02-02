@@ -21,18 +21,9 @@
 #include "Superpixels/SuperPixels.h"
 
 
-#include "Tracker/LocationSampler.h"
-#include "Tracker/OLaRank_old.h"
 #include "Tracker/Struck.h"
 
-#include "Datasets/DataSetWu2013.h"
-#include "Datasets/DatasetALOV300.h"
-#include "Datasets/DatasetVOT2014.h"
-#include "Datasets/EvaluationRun.h"
-#include "Datasets/ExperimentTemporalRobustness.h"
-#include "Datasets/ExperimentSpatialRobustness.h"
-#include "Datasets/ExperimentRunner.h"
-#include "Datasets/AllExperimentsRunner.h"
+#include "Datasets/AllDatasets.h"
 
 
 #include <boost/program_options.hpp>
@@ -50,7 +41,7 @@
 #ifdef _WIN32
 // define something for Windows (32-bit and 64-bit, this part is common)
 #ifdef _WIN64
-//define something for Windows (64-bit only)
+// define something for Windows (64-bit only)
 #endif
 #elif __APPLE__
 
@@ -80,8 +71,7 @@
 #define NUM_THREADS         16
 
 // OPTLEX machine
-//#define wu2013RootFolder    "/media/drive/UbuntuFiles/Datasets/Tracking/wu2013/"
-#define wu2013RootFolder "/udrive/student/ibogun2010/Research/Data/Tracking_benchmark/"
+#define wu2013RootFolder "/udrive/student/ibogun2010/Research/Data/wu2013/"
 
 #define alovRootFolder      "/Users/Ivan/Files/Data/Tracking_alov300/"
 #define vot2014RootFolder   "/media/drive/UbuntuFiles/Datasets/Tracking/vot2014"
@@ -158,7 +148,7 @@ void experiment(int n_threads, std::string datasetTempSaveLocation,
     bool useStraddling = false;
     bool scalePrior = false;
     std::string trackerID = "";
-    DataSetWu2013 *wu2013 = new DataSetWu2013;
+    DatasetWu2013 *wu2013 = new DatasetWu2013;
 
     std::vector<std::pair<std::string, std::vector<std::string>>> wuPrepared =
         wu2013->prepareDataset(wu2013_dataset_folder);
@@ -190,8 +180,9 @@ void experiment(int n_threads, std::string datasetTempSaveLocation,
 
 
     std::cout<< "Flags given: "<< std::endl;
-    std::cout<<"===========================================================" <<std::endl;
-    std::cout<< "datasetSaveLocation: " << FLAGS_datasetSaveLocation <<std::endl;
+    std::cout<< "=================================================" <<std::endl;
+    std::cout<< "datasetSaveLocation: " <<
+        FLAGS_datasetSaveLocation <<std::endl;
     std::cout<< "feature: " << FLAGS_feature <<std::endl;
     std::cout<< "kernel: " << FLAGS_kernel <<std::endl;
     std::cout<< "nThreads: " << FLAGS_nThreads <<std::endl;
@@ -206,13 +197,14 @@ void experiment(int n_threads, std::string datasetTempSaveLocation,
     std::cout<< "lambda_s: " << FLAGS_lambda_s <<std::endl;
     std::cout<< "lambda_e: " << FLAGS_lambda_e <<std::endl;
     std::cout<< "inner: " << FLAGS_inner <<std::endl;
-    std::cout<< "straddeling_threshold: " << FLAGS_straddeling_threshold <<std::endl;
+    std::cout<< "straddeling_threshold: "
+             << FLAGS_straddeling_threshold <<std::endl;
     std::cout<< "display: " << FLAGS_display <<std::endl;
     std::cout<< "prefix: " << FLAGS_prefix <<std::endl;
     std::cout<< "experiment_type: " << FLAGS_experiment_type <<std::endl;
     std::cout<< "tracker_type: " << FLAGS_tracker_type <<std::endl;
     std::cout<< "topK: " << FLAGS_topK <<std::endl;
-    std::cout<<"===========================================================" <<std::endl;
+    std::cout<< "===============================================" <<std::endl;
 
     wu2013->setRootFolder(wu2013_dataset_folder);
     AllExperimentsRunner run(wu2013);
