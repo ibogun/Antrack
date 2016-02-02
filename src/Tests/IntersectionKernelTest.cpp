@@ -192,7 +192,7 @@ TEST_F(IntersectionKernel_tracking_test, DISABLED_Tracking){
 
     std::string rootFolder="/Users/Ivan/Files/Data/wu2013/";
     std::string saveFolder="";
-    DataSetWu2013* datasetWu2013=new DataSetWu2013;
+    DatasetWu2013* datasetWu2013=new DatasetWu2013;
 
 
     //tracker.applyTrackerOnDataset(datasetWu2013, rootFolder,6);

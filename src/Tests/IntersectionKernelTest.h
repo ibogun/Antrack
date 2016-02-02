@@ -15,7 +15,7 @@
 #include "../Tracker/Struck.h"
 #include "../Tracker/LocationSampler.h"
 
-#include "../Datasets/DataSetWu2013.h"
+#include "../Datasets/DatasetWu2013.h"
 #include "../Datasets/DatasetVOT2014.h"
 #include "../Datasets/DatasetALOV300.h"
 
