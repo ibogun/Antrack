@@ -1,0 +1,3 @@
+[submodule "python/visual-tracking-benchmark"]
+	path = python/visual-tracking-benchmark
+	url = https://github.com/ibogun/visual-tracking-benchmark

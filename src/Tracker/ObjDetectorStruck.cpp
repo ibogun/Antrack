@@ -130,8 +130,6 @@ cv::Rect ObjDetectorStruck::track(cv::Mat& image){
             }
         }
 
-        LOG(INFO) << "Number of bad boxes: " << badBoxCount << " out of " << predictions_straddling.size();
-
         if (this->display == 3 ) {
             uword maxBoxEdges;
 

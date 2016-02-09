@@ -21,6 +21,7 @@ IF (DeepFeatures)
   add_definitions(-DUSE_ACCELERATE)
   add_definitions(-DUSE_OPENCV)
   add_definitions(-DUSE_DEEP_FEATURES)
+  find_package(Caffe REQUIRED)
 ENDIF()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -174,36 +175,47 @@ if(python)
 
 	find_package(PythonLibs)
     find_package( Boost COMPONENTS python filesystem system)
-	set(PYTHON_INCLUDE_DIRS /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/Headers)
-	set(pyconfig /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/include/python2.7)
-	set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
 
+    PYTHON_ADD_MODULE(antrack ${SOURCE_FILES}
+      ${PYTHON_FILES_Tracker} ${Superpixels})
 
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+      # Hack to make it work on my machine. Very likely you need to edit paths
+      set(PYTHON_INCLUDE_DIRS /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/Headers)
+      set(pyconfig /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/include/python2.7)
+      set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
+    endif()
+
+    if (UNIX)
+     set(pyconfig ~/local/include/python2.7)
+    endif (UNIX)
 	include_directories (${Boost_INCLUDE_DIRS} ${pyconfig})
 
-    PYTHON_ADD_MODULE(objectness_python ${SOURCE_FILES} ${PYTHON_FILES_Objectness} ${Superpixels})
-target_link_libraries(objectness_python
-    ${PYTHON_LIBRARIES}
-    ${Boost_LIBRARIES}
-	${OpenCV_LIBS}
-	${ARMADILLO_LIBRARIES}
-    ${CMAKE_THREAD_LIBS_INIT}
-     ${GLOG_LIBRARY}
-	)
-    set_target_properties(objectness_python PROPERTIES
-      LIBRARY_OUTPUT_DIRECTORY ${PYTHON_DESTINATION})
 
-    PYTHON_ADD_MODULE(tracker_python ${SOURCE_FILES}
-      ${PYTHON_FILES_Tracker} ${Superpixels})
-    target_link_libraries(tracker_python
-      ${PYTHON_LIBRARIES}
-      ${Boost_LIBRARIES}
-      ${OpenCV_LIBS}
-      ${ARMADILLO_LIBRARIES}
-      ${CMAKE_THREAD_LIBS_INIT}
-       ${GLOG_LIBRARY}
-      )
-    set_target_properties(tracker_python PROPERTIES
+
+    if (DeepFeatures)
+      target_link_libraries(antrack
+        ${PYTHON_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${OpenCV_LIBS}
+        ${ARMADILLO_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${GLOG_LIBRARY}
+        gflags
+        caffe
+        )
+      else()
+     target_link_libraries(antrack
+        ${PYTHON_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${OpenCV_LIBS}
+        ${ARMADILLO_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT}
+        ${GLOG_LIBRARY}
+        gflags
+        )
+    endif()
+    set_target_properties(antrack PROPERTIES
       LIBRARY_OUTPUT_DIRECTORY ${PYTHON_DESTINATION})
 
 	#FILE(COPY Antrack.so DESTINATION ${PYTHON_DESTINATION})

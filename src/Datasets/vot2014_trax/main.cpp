@@ -78,8 +78,8 @@ int main(int ac, char **av) {
         std::string kernel = FLAGS_kernel;
 
         bool pretraining = false;
-        bool useEdgeDensity = false;
-        bool useStraddling = false;
+        bool useEdgeDensity = true;
+        bool useStraddling = true;
         bool scalePrior = false;
 
         std::string note_ = "";
@@ -154,7 +154,11 @@ int main(int ac, char **av) {
 
                 cv::Rect rect = tracker.track(image);
 
-                trax_region *result = trax_region_create_rectangle(rect.x, rect.y, rect.width, rect.height);
+                trax_region *result =
+                    trax_region_create_rectangle(static_cast<double>(rect.x),
+                                                 static_cast<double>(rect.y),
+                                                 static_cast<double>(rect.width),
+                                                 static_cast<double>(rect.height));
 
                 trax_server_reply(trax, result, NULL);
 
