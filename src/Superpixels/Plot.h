@@ -39,21 +39,21 @@ public:
 class Plot {
     int numPts;
     
-    bool debug=false;
+    bool debug;
     
     cv::Mat canvas;
     
     int origin_x;
     int origin_y;
     
-    int time=0;
-    double const origin_param=0.08;
+    int time;
+    double const origin_param;
     
     std::unordered_map<int,DataPoints> lines_dictionary;
 public:
     
     
-    Plot(int numPts_):numPts(numPts_),canvas(320,480,CV_8UC3,cv::Scalar(255,255,255)){}
+Plot(int numPts_):debug(false),time(0),origin_param(0.08),numPts(numPts_),canvas(320,480,CV_8UC3,cv::Scalar(255,255,255)){}
 
     void initialize();
     

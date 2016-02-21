@@ -258,6 +258,10 @@ class RobStruck {
     CHECK_NOTNULL(tracker);
     this->tracker->display = display;
   }
+
+  void killDisplay() {
+    cv::destroyAllWindows();
+  }
 };
 
 class ObjStruck {
@@ -334,6 +338,10 @@ class ObjStruck {
     CHECK_NOTNULL(tracker);
     this->tracker->display = display;
   }
+
+  void killDisplay() {
+    cv::destroyAllWindows();
+  }
 };
 
 using namespace boost::python;
@@ -354,6 +362,7 @@ BOOST_PYTHON_MODULE(antrack)
     .def("createTracker", &RobStruck::createTracker)
     .def("track", &RobStruck::track)
     .def("setDisplay", &RobStruck::setDisplay)
+    .def("killDisplay", &RobStruck::killDisplay)
     ;
 
   class_<ObjStruck>("ObjStruck")
@@ -361,6 +370,7 @@ BOOST_PYTHON_MODULE(antrack)
     .def("createTracker", &ObjStruck::createTracker)
     .def("track", &ObjStruck::track)
     .def("setDisplay", &ObjStruck::setDisplay)
+    .def("killDisplay", &ObjStruck::killDisplay)
     ;
 }
 // find how to write functions which return some values in c++/python boost

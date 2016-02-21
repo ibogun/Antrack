@@ -123,7 +123,7 @@ if (test)
   if (DeepFeatures)
   target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS}
     ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}
-    ${GLOG_LIBRARY} gflags caffe)
+     caffe)
   else()
     target_link_libraries(RunUnitTests gtest gtest_main ${OpenCV_LIBS}
     ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}
@@ -157,7 +157,7 @@ if(VOT2015)
 
     if (DeepFeatures)
     target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES}
-      ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  ${GLOG_LIBRARY} gflags caffe)
+      ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  caffe)
     else()
        target_link_libraries(struck_vot2014 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES}
          ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  ${GLOG_LIBRARY} gflags)
@@ -171,7 +171,7 @@ endif()
 
 
 if(python)
-	set(PYTHON_DESTINATION "../python/Tracker_wrapper/")
+    set(PYTHON_DESTINATION "../python/visual-tracking-benchmark/trackers/Antrack/")
 
 	find_package(PythonLibs)
     find_package( Boost COMPONENTS python filesystem system)
@@ -181,18 +181,10 @@ if(python)
 
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
       # Hack to make it work on my machine. Very likely you need to edit paths
-      set(PYTHON_INCLUDE_DIRS /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/Headers)
-      set(pyconfig /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/include/python2.7)
-      set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.10_2/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
+      set(PYTHON_INCLUDE_DIRS /usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/Headers)
+      set(PYTHON_LIBRARIES /usr/local/Cellar/python/2.7.11/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib)
     endif()
-
-    if (UNIX)
-     set(pyconfig ~/local/include/python2.7)
-    endif (UNIX)
-	include_directories (${Boost_INCLUDE_DIRS} ${pyconfig})
-
-
-
+    include_directories (${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
     if (DeepFeatures)
       target_link_libraries(antrack
         ${PYTHON_LIBRARIES}
@@ -200,8 +192,6 @@ if(python)
         ${OpenCV_LIBS}
         ${ARMADILLO_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT}
-        ${GLOG_LIBRARY}
-        gflags
         caffe
         )
       else()
@@ -217,45 +207,30 @@ if(python)
     endif()
     set_target_properties(antrack PROPERTIES
       LIBRARY_OUTPUT_DIRECTORY ${PYTHON_DESTINATION})
-
-	#FILE(COPY Antrack.so DESTINATION ${PYTHON_DESTINATION})
 endif()
-
-
 
 find_package( Boost COMPONENTS filesystem system REQUIRED )
 add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJECT_MAIN})
 
-
-
 include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 include_directories (${Boost_INCLUDE_DIRS})
-# include_directories(${CAFFE_include})
-# include_directories(${CAFFE_include_2})
 
-
-  if (DeepFeatures)
-    target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
-      ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
-      ${Boost_LIBRARIES} ${GLOG_LIBRARY} gflags caffe)
-    else()
-    target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
-      ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
-      ${Boost_LIBRARIES} ${GLOG_LIBRARY} gflags)
-  endif()
+if (DeepFeatures)
+  target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
+    ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES}  caffe)
+else()
+  target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}
+    ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES} ${GLOG_LIBRARY} gflags)
+endif()
 
 
 if (PAMI)
-
-	find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
-
+    find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
     include_directories( ${Boost_INCLUDE_DIRS} )
-
-  	#add_executable(parallel_main ${Superpixels} ${SOURCE_FILES} ${PARALLEL_MAIN})
-	#target_link_libraries(parallel_main ${Boost_LIBRARIES} ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-
-	add_executable(struck_filter_experiments ${Superpixels} ${SOURCE_FILES} ${FILTER_PRETRAINING_MAIN})
+    add_executable(struck_filter_experiments ${Superpixels} ${SOURCE_FILES} ${FILTER_PRETRAINING_MAIN})
 	target_link_libraries(struck_filter_experiments ${Boost_LIBRARIES} ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
@@ -264,5 +239,5 @@ if (CVPR2016)
     include_directories( ${Boost_INCLUDE_DIRS} )
     add_executable(cvpr2016 ${Superpixels} ${SOURCE_FILES} ${cvpr2016_main})
     target_link_libraries(cvpr2016 ${Boost_LIBRARIES}
-      ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}  ${GLOG_LIBRARY} gflags caffe)
+      ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}  ${GLOG_LIBRARY} gflags)
 endif()

@@ -209,7 +209,7 @@ class Struck {
     virtual void setParams(const std::unordered_map<std::string, double>& map) {
     }
 
-    virtual void setFeatureParams(const std::unordered_map<std::string, std::string> & map) {
+   virtual void setFeatureParams(const std::unordered_map<std::string, std::string> & map) {
         this->feature->setParams(map);
     }
 
