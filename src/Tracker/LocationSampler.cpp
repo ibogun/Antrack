@@ -11,6 +11,33 @@
 
 #include <glog/logging.h>
 #include <gflags/gflags.h>
+#include <unordered_set>
+#include <boost/functional/hash.hpp>
+
+namespace sampler {
+
+struct KeyHash {
+    std::size_t operator()(const cv::Rect &k) const {
+
+        std::size_t seed = 0;
+        boost::hash_combine(seed, k.x);
+        boost::hash_combine(seed, k.y);
+        boost::hash_combine(seed, k.width);
+        boost::hash_combine(seed, k.height);
+        return seed;
+    }
+};
+
+struct KeyEqual {
+    bool operator()(const cv::Rect &lhs, const cv::Rect &rhs) const {
+
+        bool isEqual = (lhs.x == rhs.x) && (lhs.y == rhs.y) &&
+                       (lhs.width == rhs.width) && (lhs.height == rhs.height);
+
+        return isEqual;
+    }
+};
+}
 
 /**
  *  Samples rectangles in polar coordinates
@@ -21,6 +48,9 @@
 void LocationSampler::sampleEquiDistant(cv::Rect &currentLocation,
                                         std::vector<cv::Rect> &locations) {
 
+    std::unordered_set<cv::Rect, sampler::KeyHash, sampler::KeyEqual> set;
+    set.insert(currentLocation);
+
     double centerX = currentLocation.x + currentLocation.width / 2;
     double centerY = currentLocation.y + currentLocation.height / 2;
 
@@ -28,7 +58,8 @@ void LocationSampler::sampleEquiDistant(cv::Rect &currentLocation,
     //    std::vector<double> angularValues=linspace(0, 2*M_PI, nAngular+1);
 
     arma::vec radialValues = arma::linspace<arma::vec>(0, radius, nRadial + 1);
-    arma::vec angularValues = arma::linspace<arma::vec>(0, 2 * M_PI, nAngular + 1);
+    arma::vec angularValues =
+        arma::linspace<arma::vec>(0, 2 * M_PI, nAngular + 1);
     int bb_x, bb_y = 0;
 
     cv::Rect imageBox(0, 0, this->n, this->m);
@@ -40,18 +71,25 @@ void LocationSampler::sampleEquiDistant(cv::Rect &currentLocation,
         for (int j = 1; j < angularValues.size(); ++j) {
 
             // get the top left corner
-            bb_x = centerX + (radialValues(i) * cos(angularValues(j))) - halfWidth;
-            bb_y = centerY + (radialValues(i) * sin(angularValues(j))) - halfHeight;
+            bb_x =
+                centerX + (radialValues(i) * cos(angularValues(j))) - halfWidth;
+            bb_y = centerY + (radialValues(i) * sin(angularValues(j))) -
+                   halfHeight;
 
             cv::Point topLeft(bb_x, bb_y);
-            cv::Point bottomRight(bb_x + currentLocation.width, bb_y + currentLocation.height);
+            cv::Point bottomRight(bb_x + currentLocation.width,
+                                  bb_y + currentLocation.height);
 
             if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
+                cv::Rect rect(bb_x, bb_y, currentLocation.width,
+                              currentLocation.height);
 
-                cv::Rect rect(bb_x, bb_y, currentLocation.width, currentLocation.height);
-                locations.push_back(rect);
+                auto it = set.find(rect);
+                if (it == set.end()) {
+                    locations.push_back(rect);
+                    set.insert(rect);
+                }
             }
-
         }
     }
 }
@@ -62,8 +100,11 @@ void LocationSampler::sampleEquiDistant(cv::Rect &currentLocation,
  *  @param currentLocation current bounding box
  *  @param locations       vector of sampled bounding boxes
  */
-void LocationSampler::sampleEquiDistantMultiScale(cv::Rect &currentLocation,
-                                                  std::vector<cv::Rect> &locations) {
+void LocationSampler::sampleEquiDistantMultiScale(
+    cv::Rect &currentLocation, std::vector<cv::Rect> &locations) {
+
+    std::unordered_set<cv::Rect, sampler::KeyHash, sampler::KeyEqual> set;
+    set.insert(currentLocation);
 
     double centerX = currentLocation.x + currentLocation.width / 2;
     double centerY = currentLocation.y + currentLocation.height / 2;
@@ -72,7 +113,8 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect &currentLocation,
     //    std::vector<double> angularValues=linspace(0, 2*M_PI, nAngular+1);
 
     arma::vec radialValues = arma::linspace<arma::vec>(0, radius, nRadial + 1);
-    arma::vec angularValues = arma::linspace<arma::vec>(0, 2 * M_PI, nAngular + 1);
+    arma::vec angularValues =
+        arma::linspace<arma::vec>(0, 2 * M_PI, nAngular + 1);
     int bb_x, bb_y = 0;
 
     cv::Rect imageBox(0, 0, this->n, this->m);
@@ -84,69 +126,74 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect &currentLocation,
         for (int j = 1; j < angularValues.size(); ++j) {
 
             // get the top left corner
-            bb_x = centerX + (radialValues(i) * cos(angularValues(j))) - halfWidth;
-            bb_y = centerY + (radialValues(i) * sin(angularValues(j))) - halfHeight;
-
+            bb_x =
+                centerX + (radialValues(i) * cos(angularValues(j))) - halfWidth;
+            bb_y = centerY + (radialValues(i) * sin(angularValues(j))) -
+                   halfHeight;
 
             cv::Point topLeft(bb_x, bb_y);
-            cv::Point bottomRight(bb_x + currentLocation.width, bb_y + currentLocation.height);
+            cv::Point bottomRight(bb_x + currentLocation.width,
+                                  bb_y + currentLocation.height);
 
             if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
 
-                cv::Rect rect(bb_x, bb_y, currentLocation.width, currentLocation.height);
-                locations.push_back(rect);
+                cv::Rect rect(bb_x, bb_y, currentLocation.width,
+                              currentLocation.height);
+                auto it = set.find(rect);
+                if (it == set.end()) {
+                    locations.push_back(rect);
+                    set.insert(rect);
+                }
             }
-
         }
     }
 
     // CAREFUL!
-    //return;
+    // return;
 
-
-
-    //auto div = [](double x, double y) {return x/y;};
+    // auto div = [](double x, double y) {return x/y;};
 
     int scaleR = this->radius;
 
-    //halfWidth=cvRound(this->objectWidth/2.0);
-    //halfHeight=cvRound(this->objectHeight/2.0);
+    // halfWidth=cvRound(this->objectWidth/2.0);
+    // halfHeight=cvRound(this->objectHeight/2.0);
 
-
-    //halfWidth=cvRound(currentLocation.width/2.0);
-    //halfHeight=cvRound(currentLocation.height/2.0);
+    // halfWidth=cvRound(currentLocation.width/2.0);
+    // halfHeight=cvRound(currentLocation.height/2.0);
 
     double downsample = 1.05;
     radialValues = arma::linspace<arma::vec>(0, scaleR, nRadial / 3 + 1);
     angularValues = arma::linspace<arma::vec>(0, 2 * M_PI, nAngular / 3 + 1);
-    //radialValues=arma::linspace<arma::vec>(0,scaleR,3);
-    //angularValues=arma::linspace<arma::vec>(0,2*M_PI, 3);
+    // radialValues=arma::linspace<arma::vec>(0,scaleR,3);
+    // angularValues=arma::linspace<arma::vec>(0,2*M_PI, 3);
 
     int scale = 8;
-    int shrinkOneSideScale=2;
+    int shrinkOneSideScale = 2;
 
-    //return;
+    // return;
     std::vector<int> scale_half_width;
     std::vector<int> scale_half_height;
 
-
-    //for (int scale_w=-MIN(2, scale); scale_w<=scale; scale_w++) {
+    // for (int scale_w=-MIN(2, scale); scale_w<=scale; scale_w++) {
 
     double downsample_2 = 1.05;
 
-    for (int scale_h = -shrinkOneSideScale+1; scale_h <= shrinkOneSideScale; scale_h++) {
+    for (int scale_h = -shrinkOneSideScale + 1; scale_h <= shrinkOneSideScale;
+         scale_h++) {
         int scale_w = scale_h;
 
-        for (int scale_w = -shrinkOneSideScale+1; scale_w <= shrinkOneSideScale; scale_w++) {
+        for (int scale_w = -shrinkOneSideScale + 1;
+             scale_w <= shrinkOneSideScale; scale_w++) {
 
-
-            //continue;
+            // continue;
             if ((scale_w == 0 && scale_h == 0)) {
                 continue;
             }
 
-            int halfWidth_scale = cvRound(halfWidth * pow(downsample_2, scale_w));
-            int halfHeight_scale = cvRound(halfHeight * pow(downsample_2, scale_h));
+            int halfWidth_scale =
+                cvRound(halfWidth * pow(downsample_2, scale_w));
+            int halfHeight_scale =
+                cvRound(halfHeight * pow(downsample_2, scale_h));
 
             if (halfWidth_scale <= 10 || halfHeight_scale <= 10) {
                 continue;
@@ -157,15 +204,17 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect &currentLocation,
         }
     }
 
-    for (int scale_h = -scale+5; scale_h <= scale; scale_h++) {
+    for (int scale_h = -scale + 5; scale_h <= scale; scale_h++) {
         int scale_w = scale_h;
 
-        if (scale_w == 0 && scale_h == 0 ) {
+        if (scale_w == 0 && scale_h == 0) {
             continue;
         }
 
-        int halfWidth_scale = cvRound((this->objectWidth/2.0) * pow(downsample, scale_w));
-        int halfHeight_scale = cvRound((this->objectHeight/2.0) * pow(downsample, scale_h));
+        int halfWidth_scale =
+            cvRound((this->objectWidth / 2.0) * pow(downsample, scale_w));
+        int halfHeight_scale =
+            cvRound((this->objectHeight / 2.0) * pow(downsample, scale_h));
 
         if (halfWidth_scale <= 10 || halfHeight_scale <= 10) {
             continue;
@@ -173,52 +222,38 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect &currentLocation,
 
         scale_half_width.push_back(halfWidth_scale);
         scale_half_height.push_back(halfHeight_scale);
-
     }
 
-
     for (int s = 0; s < scale_half_width.size(); s++) {
-
-
         int width_scale = scale_half_width[s] * 2;
         int height_scale = scale_half_height[s] * 2;
 
-        //double widthRatio=((double)width_scale)/this->objectWidth;
-        //double heightRatio=((double)height_scale)/this->objectHeight;
-
-        //            if (widthRatio<=0.6 || heightRatio<=0.6) {
-        //                continue;
-        //            }
-
-        //            if (std::abs(div(width_scale,height_scale)-div(this->objectWidth,this->objectHeight))*(div(height_scale,width_scale)-div(this->objectHeight,this->objectWidth))>1) {
-        //                continue;
-        //            }
-
         for (int i = 0; i < radialValues.size(); ++i) {
             for (int j = 0; j < angularValues.size(); ++j) {
-
                 // get the top left corner
-                bb_x = centerX + (radialValues(i) * cos(angularValues(j))) - scale_half_width[s];
-                bb_y = centerY + (radialValues(i) * sin(angularValues(j))) - scale_half_height[s];
+                bb_x = centerX + (radialValues(i) * cos(angularValues(j))) -
+                       scale_half_width[s];
+                bb_y = centerY + (radialValues(i) * sin(angularValues(j))) -
+                       scale_half_height[s];
 
                 cv::Point topLeft(bb_x, bb_y);
                 cv::Point bottomRight(bb_x + width_scale, bb_y + height_scale);
 
-                if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
-
+                if (imageBox.contains(topLeft) &&
+                    imageBox.contains(bottomRight)) {
                     cv::Rect rect(bb_x, bb_y, width_scale, height_scale);
-                    locations.push_back(rect);
-                }
 
+                    auto it = set.find(rect);
+                    if (it == set.end()) {
+                        locations.push_back(rect);
+                        set.insert(rect);
+                    }
+                }
             }
             // }
-
         }
-
     }
-
 }
-
 
 /**
  *  Sample on a grid
@@ -229,7 +264,8 @@ void LocationSampler::sampleEquiDistantMultiScale(cv::Rect &currentLocation,
  *  @param step            how spread should locations be, default=1
  */
 void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation,
-                                    std::vector<cv::Rect> &locations, int R, int step) {
+                                    std::vector<cv::Rect> &locations, int R,
+                                    int step) {
     int centerX = cvRound(currentLocation.x + currentLocation.width / 2.0);
     int centerY = cvRound(currentLocation.y + currentLocation.height / 2.0);
 
@@ -237,10 +273,8 @@ void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation,
     int halfHeight = cvRound(currentLocation.height / 2.0);
     cv::Rect imageBox(0, 0, this->n, this->m);
 
-
     for (int x = -R; x <= R; x = x + step) {
         for (int y = -R; y <= R; y = y + step) {
-
 
             // make sure everything is within the radius
             if (sqrt(pow(x, 2) + pow(y, 2)) > R) {
@@ -251,16 +285,16 @@ void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation,
             int bb_x = centerX + x - halfWidth;
             int bb_y = centerY + y - halfHeight;
 
-
             cv::Point topLeft(bb_x, bb_y);
-            cv::Point bottomRight(bb_x + currentLocation.width, bb_y + currentLocation.height);
+            cv::Point bottomRight(bb_x + currentLocation.width,
+                                  bb_y + currentLocation.height);
 
             if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
 
-                cv::Rect rect(bb_x, bb_y, currentLocation.width, currentLocation.height);
+                cv::Rect rect(bb_x, bb_y, currentLocation.width,
+                              currentLocation.height);
                 locations.push_back(rect);
             }
-
         }
     }
 
@@ -272,20 +306,19 @@ void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation,
 
         for (int scale_h = -2; scale_h <= 2; scale_h++) {
 
-
             if (scale_w == 0 && scale_h == 0) {
                 continue;
             }
 
             int halfWidth_scale = cvRound(halfWidth * pow(downsample, scale_w));
-            int halfHeight_scale = cvRound(halfHeight * pow(downsample, scale_h));
+            int halfHeight_scale =
+                cvRound(halfHeight * pow(downsample, scale_h));
 
             int width_scale = halfWidth_scale * 2;
             int height_scale = halfHeight_scale * 2;
 
             for (int x = -scaleR; x <= scaleR; x = x + step) {
                 for (int y = -scaleR; y <= scaleR; y = y + step) {
-
 
                     // make sure everything is within the radius
                     if (sqrt(pow(x, 2) + pow(y, 2)) > scaleR) {
@@ -296,22 +329,21 @@ void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation,
                     int bb_x = centerX + x - halfWidth_scale;
                     int bb_y = centerY + y - halfHeight_scale;
 
-
                     cv::Point topLeft(bb_x, bb_y);
-                    cv::Point bottomRight(bb_x + width_scale, bb_y + height_scale);
+                    cv::Point bottomRight(bb_x + width_scale,
+                                          bb_y + height_scale);
 
-                    if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
+                    if (imageBox.contains(topLeft) &&
+                        imageBox.contains(bottomRight)) {
 
                         cv::Rect rect(bb_x, bb_y, width_scale, height_scale);
                         locations.push_back(rect);
                     }
-
                 }
             }
         }
     }
 }
-
 
 /**
  *  Samples linspace between in the interval (a,b] with n number of elements
@@ -327,21 +359,20 @@ std::vector<double> LocationSampler::linspace(double a, double b, double n) {
     std::vector<double> array;
     double step = (b - a) / (n - 1);
 
-
     while (a <= b) {
 
         array.push_back(Haar::round_my(a));
-        a += step;           // could recode to better handle rounding errors
+        a += step; // could recode to better handle rounding errors
     }
 
-    //array.push_back(cvRound(b));
+    // array.push_back(cvRound(b));
     return array;
 }
 
-
-inline cv::Rect LocationSampler::fromCenterToBoundingBox(const double &x, const double &y, const double &length,
+inline cv::Rect LocationSampler::fromCenterToBoundingBox(const double &x,
+                                                         const double &y,
+                                                         const double &length,
                                                          const double &height) {
-
 
     // make sure that All bounding boxes are within the range
     int newX = x - length / (2.0);
@@ -353,7 +384,6 @@ inline cv::Rect LocationSampler::fromCenterToBoundingBox(const double &x, const 
     if (newX + length > this->n - 1) {
         newX = this->n - 1 - length;
     }
-
 
     if (newY + height > this->m - 1) {
         newY = this->m - 1 - height;
@@ -372,7 +402,6 @@ inline cv::Rect LocationSampler::fromCenterToBoundingBox(const double &x, const 
         }
     }
 
-
     cv::Rect result(newX, newY, length_r, height_r);
 
     return result;
@@ -383,26 +412,29 @@ std::vector<size_t> LocationSampler::sort_indexes(const std::vector<T> &v) {
     using namespace std;
     // initialize original index locations
     vector<size_t> idx(v.size());
-    for (size_t i = 0; i != idx.size(); ++i) idx[i] = i;
+    for (size_t i = 0; i != idx.size(); ++i)
+        idx[i] = i;
 
     // sort indexes based on comparing values in v
     sort(idx.begin(), idx.end(),
-       [&v](size_t i1, size_t i2) {return v[i1] < v[i2];});
+         [&v](size_t i1, size_t i2) { return v[i1] < v[i2]; });
 
     return idx;
 }
 
-void LocationSampler::rearrangeByDimensionSimilarity(const cv::Rect &rect, std::vector<int> &radiuses,
-                                              std::vector<int> &widths, std::vector<int> &heights) {
+void LocationSampler::rearrangeByDimensionSimilarity(
+    const cv::Rect &rect, std::vector<int> &radiuses, std::vector<int> &widths,
+    std::vector<int> &heights) {
 
     std::vector<double> ratios;
     int h = rect.height;
     int w = rect.width;
     for (int i = 0; i < radiuses.size(); ++i) {
-        double current_ration = sqrt(pow(widths[i]-h,2) + pow(heights[i]-h,2));
+        double current_ration =
+            sqrt(pow(widths[i] - h, 2) + pow(heights[i] - h, 2));
         ratios.push_back(current_ration);
     }
-    std::vector<size_t > indices = sort_indexes(ratios);
+    std::vector<size_t> indices = sort_indexes(ratios);
 
     std::vector<int> radiuses_sorted;
     std::vector<int> widths_sorted;
@@ -413,33 +445,24 @@ void LocationSampler::rearrangeByDimensionSimilarity(const cv::Rect &rect, std::
         widths_sorted.push_back(widths[indices[j]]);
         heights_sorted.push_back(heights[indices[j]]);
     }
-    radiuses =radiuses_sorted;
+    radiuses = radiuses_sorted;
     widths = widths_sorted;
-    heights =heights_sorted;
-
+    heights = heights_sorted;
 }
 
 std::vector<arma::mat> LocationSampler::generateBoxesTensor(
-    const int R,
-    const int scale_R,
-    const int min_size_half,
-    const int min_scales,
-    const int max_scales,
-    const double downsample,
-    const double shrink_one_side_scale,
-    const int rows,
-    const int cols,
-    const cv::Rect& rect,
-    std::vector<int>* radiuses,
-    std::vector<int>* widths,
-    std::vector<int>* heights){
+    const int R, const int scale_R, const int min_size_half,
+    const int min_scales, const int max_scales, const double downsample,
+    const double shrink_one_side_scale, const int rows, const int cols,
+    const cv::Rect &rect, std::vector<int> *radiuses, std::vector<int> *widths,
+    std::vector<int> *heights) {
 
     std::vector<arma::mat> objness_canvas;
     using namespace cv;
 
     // current height and width
 
-    arma::mat current( rows, cols, arma::fill::zeros);
+    arma::mat current(rows, cols, arma::fill::zeros);
     objness_canvas.push_back(current);
     radiuses->push_back(R);
     heights->push_back(rect.height);
@@ -450,42 +473,40 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
         if (s == 0) {
             continue;
         }
-        int halfWidth_scale = cvRound((rect.width/2.0) *
-                                      pow(downsample, s));
-        int halfHeight_scale = cvRound((rect.height/2.0) *
-                                       pow(downsample, s));
+        int halfWidth_scale = cvRound((rect.width / 2.0) * pow(downsample, s));
+        int halfHeight_scale =
+            cvRound((rect.height / 2.0) * pow(downsample, s));
 
         if (halfWidth_scale <= min_size_half ||
-            halfHeight_scale <= min_size_half ) {
+            halfHeight_scale <= min_size_half) {
             continue;
         }
-
 
         arma::mat c(rows, cols, arma::fill::zeros);
 
         objness_canvas.push_back(c);
         radiuses->push_back(scale_R);
-        heights->push_back(halfHeight_scale*2);
+        heights->push_back(halfHeight_scale * 2);
         widths->push_back(halfWidth_scale * 2);
-
     }
 
-    int halfWidth = rect.width/2;
-    int halfHeight = rect.height/2;
+    int halfWidth = rect.width / 2;
+    int halfHeight = rect.height / 2;
 
-    for (int scale_h = -shrink_one_side_scale+1;
+    for (int scale_h = -shrink_one_side_scale + 1;
          scale_h <= shrink_one_side_scale; scale_h++) {
         int scale_w = scale_h;
 
-        for (int scale_w = -shrink_one_side_scale+1;
+        for (int scale_w = -shrink_one_side_scale + 1;
              scale_w <= shrink_one_side_scale; scale_w++) {
-            //continue;
+            // continue;
             if ((scale_w == 0 && scale_h == 0)) {
                 continue;
             }
 
             int halfWidth_scale = cvRound(halfWidth * pow(downsample, scale_w));
-            int halfHeight_scale = cvRound(halfHeight * pow(downsample, scale_h));
+            int halfHeight_scale =
+                cvRound(halfHeight * pow(downsample, scale_h));
 
             if (halfWidth_scale <= min_size_half ||
                 halfHeight_scale <= min_size_half) {
@@ -495,33 +516,23 @@ std::vector<arma::mat> LocationSampler::generateBoxesTensor(
             arma::mat c(rows, cols, arma::fill::zeros);
             objness_canvas.push_back(c);
             radiuses->push_back(R);
-            heights->push_back(halfHeight_scale*2);
+            heights->push_back(halfHeight_scale * 2);
             widths->push_back(halfWidth_scale * 2);
         }
     }
-
 
     return objness_canvas;
 }
 
 std::vector<arma::mat> LocationSampler::generateBoxesTensor(
-    const cv::Rect& rect,
-    std::vector<int>* radiuses,
-    std::vector<int>* widths,
-    std::vector<int>* heights){
+    const cv::Rect &rect, std::vector<int> *radiuses, std::vector<int> *widths,
+    std::vector<int> *heights) {
 
-    return this->generateBoxesTensor(this->radius,this->radius,
-                                     this->min_size_half,this->min_scales,
-                                     this->max_scales,this->downsample,
-                                     this->shrink_one_side_scale,
-                                     this->n, this->m,
-                                     rect,
-                                     radiuses,
-                                     widths,
-                                     heights);
+    return this->generateBoxesTensor(
+        this->radius, this->radius, this->min_size_half, this->min_scales,
+        this->max_scales, this->downsample, this->shrink_one_side_scale,
+        this->n, this->m, rect, radiuses, widths, heights);
 }
-
-
 
 std::ostream &operator<<(std::ostream &strm, const LocationSampler &s) {
 

@@ -6,5 +6,6 @@
 #include "Struck.h"
 #include "FilterBadBoxesStruck.h"
 #include "ObjDetectorStruck.h"
+#include "MBestStruck.h"
 
 #endif /* SRC_TRACKER_ALLTRACKERS_H_ */

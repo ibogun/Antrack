@@ -1,4 +1,3 @@
-//
 //  main.cpp
 //  Robust Struck
 //
@@ -97,143 +96,154 @@ DEFINE_int32(tracker_type, 1,
              "Type of the tracker (RobStruck - 0, ObjDet - 1, FilterBad - 2)");
 DEFINE_double(topK, 50, "Top K objectness boxes in FilterBadStruck tracker.");
 DEFINE_string(proto_file,
-              "/Users/Ivan/Code/Tracking/Antrack/data/imagenet_memory.prototxt",
+              "/Users/Ivan/Code/Tracking/DeepAntrack/data/imagenet_memory.prototxt",
               "Proto file for the feature extraction using deep ConvNet");
 DEFINE_string(
     conv_deep_weights,
-    "/Users/Ivan/Code/Tracking/Antrack/data/bvlc_reference_caffenet.caffemodel",
+    "/Users/Ivan/Code/Tracking/DeepAntrack/data/bvlc_reference_caffenet.caffemodel",
     "File with the weights for the deep ConvNet");
 
 int main(int argc, char *argv[]) {
-  google::InitGoogleLogging(argv[0]);
-  gflags::ParseCommandLineFlags(&argc, &argv, true);
+    google::InitGoogleLogging(argv[0]);
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  Dataset *dataset = new DatasetWu2015;
-  dataset->setRootFolder(wu2015RootFolder);
+    Dataset *dataset = new DatasetWu2015;
+    dataset->setRootFolder(wu2015RootFolder);
 
-  // std::vector<std::pair<std::string, std::vector<std::string>>> votPrepared=
-  //    dataset->prepareDataset(vot2015RootFolder);
-  std::vector<std::pair<std::string, std::vector<std::string>>> videos =
-      dataset->prepareDataset(wu2015RootFolder);
+    // std::vector<std::pair<std::string, std::vector<std::string>>>
+    // votPrepared=
+    //    dataset->prepareDataset(vot2015RootFolder);
+    std::vector<std::pair<std::string, std::vector<std::string>>> videos =
+        dataset->prepareDataset(wu2015RootFolder);
 
-  std::string feature = "deep";
-  std::string kernel = "int";
+    std::string feature = "raw";
+    std::string kernel = "linear";
 
-  bool pretraining = false;
-  bool filter = true;
-  bool straddling = false;
-  bool edgeness = false;
-  bool spatialPrior = false;
-  std::string note = " Object Struck tracker";
+    bool pretraining = false;
+    bool filter = true;
+    bool straddling = false;
+    bool edgeness = false;
+    bool spatialPrior = false;
+    std::string note = " Object Struck tracker";
 
-  // tracker.setLambda(FLAGS_lambda);
-  // tracker.setMinStraddeling(FLAGS_straddling_threshold);
-  int frames = 10;
+    // tracker.setLambda(FLAGS_lambda);
+    // tracker.setMinStraddeling(FLAGS_straddling_threshold);
+    int frames = 10;
 
-  std::string vidName = "Basketball";
+    std::string vidName = "Basketball";
 
-  if (FLAGS_video_name != "") {
-    vidName = FLAGS_video_name;
-  }
-
-  int vidIndex = dataset->vidToIndex.at(vidName);
-  if (FLAGS_video_index != -1)
-    vidIndex = FLAGS_video_index;
-
-  // tracker.display=0;
-
-  std::vector<std::pair<std::string, std::vector<std::string>>>
-      video_gt_images = dataset->prepareDataset(wu2015RootFolder);
-
-  std::string save_base = wu2015SaveFolder;
-  std::string dirName = save_base + "/lambda_" + std::to_string(FLAGS_lambda_s);
-  // AllExperimentsRunner::createDirectory(dirName);
-
-  // for (vidIndex = 0; vidIndex <51 ; ++vidIndex) {
-
-  int tracker_type = FLAGS_tracker_type;
-
-  int useFilter = filter;
-  bool useStraddling = straddling;
-  bool useEdgeDensity = edgeness;
-  bool scalePrior = spatialPrior;
-
-  // ObjDetectorStruck tracker(pretraining, filter, edgeness,
-  //                             straddling,
-  //                             spatialPrior, kernel, feature, note);
-
-  std::unordered_map<std::string, double> map;
-  map.insert(std::make_pair("lambda_straddling", FLAGS_lambda_s));
-  map.insert(std::make_pair("lambda_edgeness", FLAGS_lambda_e));
-  map.insert(std::make_pair("inner", FLAGS_inner));
-  map.insert(
-      std::make_pair("straddling_threshold", FLAGS_straddeling_threshold));
-  map.insert(std::make_pair("topK", FLAGS_topK));
-
-
-  std::unordered_map<std::string, std::string> featureParamsMap;
-
-  featureParamsMap.insert(std::make_pair("proto", FLAGS_proto_file));
-  featureParamsMap.insert(std::make_pair("weights", FLAGS_conv_deep_weights));
-
-  for (int vidIndex = 54; vidIndex < video_gt_images.size(); vidIndex++) {
-    std::cout << "Vid Index: " << vidIndex  << "\n";
-    pair<string, vector<string>> gt_images = video_gt_images[vidIndex];
-
-    vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
-    Struck *tracker =
-        new ObjDetectorStruck(pretraining, useFilter, useEdgeDensity,
-                              useStraddling, scalePrior, kernel, feature, note);
-    tracker->setParams(map);
-    tracker->setFeatureParams(featureParamsMap);
-    tracker->display = FLAGS_display;
-
-    double b = 10;
-
-    int startingFrame = FLAGS_frame_from;
-    int endingFrame = MIN(FLAGS_frame_to, groundTruth.size());
-
-    cv::Mat image = cv::imread(gt_images.second[startingFrame]);
-
-    std::cout << " Rect: " << groundTruth[startingFrame] << std::endl;
-    std::cout << gt_images.second[startingFrame] << std::endl;
-    cv::Rect rect = groundTruth[startingFrame];
-
-    std::string saveTrackingImage = "/Users/Ivan/Documents/Papers/My_papers/"
-                                    "CVPR_2016_Object-aware_tracking/images/"
-                                    "tracking/";
-    std::string prefix = "tracking_";
-    if (rect.x + rect.width >= image.cols) {
-      rect.width = image.cols - rect.x - 1;
+    if (FLAGS_video_name != "") {
+        vidName = FLAGS_video_name;
     }
 
-    if (rect.y + rect.height >= image.rows) {
-      rect.height = image.rows - rect.y - 1;
+    int vidIndex = dataset->vidToIndex.at(vidName);
+    if (FLAGS_video_index != -1)
+        vidIndex = FLAGS_video_index;
+
+    // tracker.display=0;
+
+    std::vector<std::pair<std::string, std::vector<std::string>>>
+        video_gt_images = dataset->prepareDataset(wu2015RootFolder);
+
+    std::string save_base = wu2015SaveFolder;
+    std::string dirName =
+        save_base + "/lambda_" + std::to_string(FLAGS_lambda_s);
+    // AllExperimentsRunner::createDirectory(dirName);
+
+    // for (vidIndex = 0; vidIndex <51 ; ++vidIndex) {
+
+    int tracker_type = FLAGS_tracker_type;
+
+    int useFilter = filter;
+    bool useStraddling = straddling;
+    bool useEdgeDensity = edgeness;
+    bool scalePrior = spatialPrior;
+
+    // ObjDetectorStruck tracker(pretraining, filter, edgeness,
+    //                             straddling,
+    //                             spatialPrior, kernel, feature, note);
+
+    std::unordered_map<std::string, double> map;
+    map.insert(std::make_pair("lambda_straddling", FLAGS_lambda_s));
+    map.insert(std::make_pair("lambda_edgeness", FLAGS_lambda_e));
+    map.insert(std::make_pair("inner", FLAGS_inner));
+    map.insert(
+        std::make_pair("straddling_threshold", FLAGS_straddeling_threshold));
+    map.insert(std::make_pair("topK", FLAGS_topK));
+
+    std::unordered_map<std::string, std::string> featureParamsMap;
+
+    featureParamsMap.insert(std::make_pair("dis_features", "haar"));
+    featureParamsMap.insert(std::make_pair("dis_kernel", "linear"));
+    featureParamsMap.insert(std::make_pair("top_features", "hogANDhist"));
+    featureParamsMap.insert(std::make_pair("top_kernel", "int"));
+
+    featureParamsMap.insert(std::make_pair("proto", FLAGS_proto_file));
+    featureParamsMap.insert(std::make_pair("weights", FLAGS_conv_deep_weights));
+
+    for (int vidIndex = 54; vidIndex < video_gt_images.size(); vidIndex++) {
+        std::cout << "Vid Index: " << vidIndex << "\n";
+        pair<string, vector<string>> gt_images = video_gt_images[vidIndex];
+
+        vector<cv::Rect> groundTruth =
+            dataset->readGroundTruth(gt_images.first);
+        Struck *tracker =
+            new MBestStruck(pretraining, useFilter, useEdgeDensity,
+                            useStraddling, scalePrior, kernel, feature, note);
+        tracker->setParams(map);
+        tracker->setFeatureParams(featureParamsMap);
+        tracker->display = FLAGS_display;
+
+        double b = 10;
+
+        int startingFrame = FLAGS_frame_from;
+        int endingFrame = MIN(FLAGS_frame_to, groundTruth.size());
+
+        cv::Mat image = cv::imread(gt_images.second[startingFrame]);
+
+        std::cout << " Rect: " << groundTruth[startingFrame] << std::endl;
+        std::cout << gt_images.second[startingFrame] << std::endl;
+        cv::Rect rect = groundTruth[startingFrame];
+
+        std::string saveTrackingImage =
+            "/Users/Ivan/Documents/Papers/My_papers/"
+            "CVPR_2016_Object-aware_tracking/images/"
+            "tracking/";
+        std::string prefix = "tracking_";
+        if (rect.x + rect.width >= image.cols) {
+            rect.width = image.cols - rect.x - 1;
+        }
+
+        if (rect.y + rect.height >= image.rows) {
+            rect.height = image.rows - rect.y - 1;
+        }
+
+        std::cout << rect << std::endl;
+        std::cout << image.rows << " " << image.cols << std::endl;
+
+        tracker->initialize(image, rect);
+
+        for (int i = startingFrame; i < endingFrame; i++) {
+            tracker->track(gt_images.second[i]);
+            std::cout << "Frame #" << i - startingFrame << " out of "
+                      << endingFrame - startingFrame
+                      << tracker->getBoundingBoxes()[i - startingFrame]
+                      << std::endl;
+            cv::Mat tracking_image = tracker->getObjectnessCanvas();
+
+            // std::string savefilename= saveTrackingImage+prefix +
+            // std::to_string(1000+i) + ".png";
+            // std::cout<< "saving to file: " << savefilename << std::endl;
+            // cv::imwrite(savefilename, tracking_image);
+        }
+
+        delete tracker;
     }
+    // std::string tracker_save_file = dirName + "/" +
+    // dataset->videos[vidIndex];
+    // tracker->saveResults(tracker_save_file);
 
-    std::cout << rect << std::endl;
-    std::cout << image.rows << " " << image.cols << std::endl;
-
-    tracker->initialize(image, rect);
-
-    for (int i = startingFrame; i < endingFrame; i++) {
-      tracker->track(gt_images.second[i]);
-      std::cout << "Frame #" << i - startingFrame << " out of "
-                << endingFrame - startingFrame
-                << tracker->getBoundingBoxes()[i - startingFrame] << std::endl;
-      cv::Mat tracking_image = tracker->getObjectnessCanvas();
-      // std::string savefilename= saveTrackingImage+prefix +
-      // std::to_string(1000+i) + ".png";
-      // std::cout<< "saving to file: " << savefilename << std::endl;
-      // cv::imwrite(savefilename, tracking_image);
-    }
-
-    delete tracker;
-  }
-  // std::string tracker_save_file = dirName + "/" + dataset->videos[vidIndex];
-  // tracker->saveResults(tracker_save_file);
-
-  delete dataset;
-  //delete tracker;
-  return 0;
+    delete dataset;
+    // delete tracker;
+    return 0;
 }

@@ -190,9 +190,9 @@ class Struck {
         this->initialize(image, b);
     }
 
-    void initialize(cv::Mat& image, cv::Rect& location);
+    virtual void initialize(cv::Mat& image, cv::Rect& location);
 
-    void initialize(cv::Mat& image, cv::Rect& location,
+    virtual void initialize(cv::Mat& image, cv::Rect& location,
                     int updateEveryNFrames,double b, int P, int R, int Q);
 
     void allocateCanvas(cv::Mat&);

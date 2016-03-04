@@ -9,19 +9,20 @@
 #include "Struck.h"
 #include <math.h>
 
-
 void Struck::initialize(cv::Mat &image, cv::Rect &location,
                         int updateEveryNFrames, double b, int P, int R, int Q) {
     srand(this->seed);
     // set dimensions of the sampler
 
-    this->updateEveryNframes=updateEveryNFrames;
+    this->updateEveryNframes = updateEveryNFrames;
     // NOW
     int m = image.rows;
     int n = image.cols;
 
-    this->samplerForSearch->setDimensions(n, m, location.height, location.width);
-    this->samplerForUpdate->setDimensions(n, m, location.height, location.width);
+    this->samplerForSearch->setDimensions(n, m, location.height,
+                                          location.width);
+    this->samplerForUpdate->setDimensions(n, m, location.height,
+                                          location.width);
 
     this->boundingBoxes.push_back(location);
     lastLocation = location;
@@ -54,10 +55,11 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location,
         int Q_cov = Q;
 
         // FIXME: used to be this way
-//        filter = KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(
-//                x_k, n, m, R_cov, Q_cov, P, robustConstant_b);
+        //        filter =
+        //        KalmanFilterGenerator::generateConstantVelocityWithScaleFilter(
+        //                x_k, n, m, R_cov, Q_cov, P, robustConstant_b);
         filter = KalmanFilterGenerator::generateConstantVelocityFilter(
-                x_k, n, m, R_cov, Q_cov, P, robustConstant_b);
+            x_k, n, m, R_cov, Q_cov, P, robustConstant_b);
 
         filter.setBothB(robustConstant_b);
         lastRectFilterAndDetectorAgreedOn = lastLocation;
@@ -102,7 +104,6 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location,
         straddling_params.push_back(imageRows);
 
         this->straddling_params = straddling_params;
-
     }
 
     // add images, in case we want to show support vectors
@@ -133,33 +134,32 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location,
     if (pretraining) {
         this->preTraining(image, location);
     }
-
 }
 
 void Struck::initialize(cv::Mat &image, cv::Rect &location) {
 
-    double b=10;
-    int P=10;
-    int Q=13;
-    int R=13;
+    double b = 10;
+    int P = 10;
+    int Q = 13;
+    int R = 13;
 
-    int updateEveryNFrames=3;
+    int updateEveryNFrames = 3;
 
-    this->initialize(image,location,updateEveryNFrames,b,P,Q,R);
+    this->initialize(image, location, updateEveryNFrames, b, P, Q, R);
 }
 
 /*
- 
- 
+
+
  Helper functions to help with sort etc...
- 
+
  */
 bool comparator(const std::pair<double, int> &l,
                 const std::pair<double, int> &r) {
     return l.first > r.first;
 }
 
-arma::mat Struck::calculateDiscriminativeFunction(cv::Mat& image){
+arma::mat Struck::calculateDiscriminativeFunction(cv::Mat &image) {
     std::vector<cv::Rect> locationsOnaGrid;
 
     arma::mat discr(image.rows, image.cols, arma::fill::zeros);
@@ -171,7 +171,7 @@ arma::mat Struck::calculateDiscriminativeFunction(cv::Mat& image){
     int c_y = lastLocation.y + half_height;
     int R = 60;
 
-    std::vector<std::pair<int,int>> indices_mapping;
+    std::vector<std::pair<int, int>> indices_mapping;
 
     int counter = 0;
     for (int x = MAX(half_width, c_x - R);
@@ -184,13 +184,12 @@ arma::mat Struck::calculateDiscriminativeFunction(cv::Mat& image){
                         lastLocation.height);
             locationsOnaGrid.push_back(bb);
 
-            std::pair <int, int> ind;
+            std::pair<int, int> ind;
             ind = std::make_pair(x, y);
             indices_mapping.push_back(ind);
             counter++;
         }
     }
-
 
     cv::Mat processedImage = this->feature->prepareImage(&image);
 
@@ -200,7 +199,7 @@ arma::mat Struck::calculateDiscriminativeFunction(cv::Mat& image){
     arma::rowvec predictions = this->olarank->predictAll(x);
 
     for (int i = 0; i < predictions.size(); i++) {
-        std::pair<int,int> v = indices_mapping[i];
+        std::pair<int, int> v = indices_mapping[i];
         discr(v.first, v.second) = predictions[i];
     }
     return discr;
@@ -235,8 +234,10 @@ cv::Rect Struck::track(cv::Mat &image) {
 
             min_x = MIN(min_x, locationsOnaGrid[i].x);
             min_y = MIN(min_y, locationsOnaGrid[i].y);
-            max_x = MAX(max_x, locationsOnaGrid[i].x + locationsOnaGrid[i].width);
-            max_y = MAX(max_y, locationsOnaGrid[i].y + locationsOnaGrid[i].height);
+            max_x = MAX(max_x, locationsOnaGrid[i].x +
+    locationsOnaGrid[i].width);
+            max_y = MAX(max_y, locationsOnaGrid[i].y +
+    locationsOnaGrid[i].height);
         }
 
         int delta = 50;
@@ -256,7 +257,8 @@ cv::Rect Struck::track(cv::Mat &image) {
             int w = image.cols + smallImage.cols + separation;
             int h = MAX(2 * image.rows, 2 * smallImage.rows);
 
-            this->objectnessCanvas = cv::Mat(h, w, image.type(), CV_RGB(0, 0, 0));
+            this->objectnessCanvas = cv::Mat(h, w, image.type(), CV_RGB(0, 0,
+    0));
         }
 
 
@@ -276,9 +278,11 @@ cv::Rect Struck::track(cv::Mat &image) {
 
 
         if (useEdgeDensity) {
-            arma::rowvec edge_measure = this->edgeDensity.findEdgeObjectness(bboxesWhichFit, min_x, min_y);
+            arma::rowvec edge_measure =
+    this->edgeDensity.findEdgeObjectness(bboxesWhichFit, min_x, min_y);
             // arma::rowvec
-            // edge_objectness=weightWithEdgeDensity(smallImage,locationsOnaGrid,this->edge_params,min_x,min_y);
+            //
+    edge_objectness=weightWithEdgeDensity(smallImage,locationsOnaGrid,this->edge_params,min_x,min_y);
 
             std::vector<std::pair<double, int>> list;
             for (int i = 0; i < edge_measure.size(); i++) {
@@ -292,7 +296,8 @@ cv::Rect Struck::track(cv::Mat &image) {
             // choose max topNBoxesKeep from the array and add them to the
             // locationsOnaGrid
             for (int i = 0; i < MIN(topNBoxesKeep, list.size()); i++) {
-                // std::cout<<"Edges: "<<list[i].first<<" "<<list[i].second<<std::endl;
+                // std::cout<<"Edges: "<<list[i].first<<"
+    "<<list[i].second<<std::endl;
                 locationsOnaGrid.push_back(bboxesWhichFit[list[i].second]);
             }
 
@@ -309,7 +314,8 @@ cv::Rect Struck::track(cv::Mat &image) {
 
                 cv::Rect r = bboxesWhichFit[maxBoxEdges];
 
-                cv::Rect bestEdgesRect(r.x - min_x, r.y - min_y, r.width, r.height);
+                cv::Rect bestEdgesRect(r.x - min_x, r.y - min_y, r.width,
+    r.height);
 
                 // convert gray to rgb
                 cv::cvtColor(edges, edges, cv::COLOR_GRAY2RGB);
@@ -320,10 +326,12 @@ cv::Rect Struck::track(cv::Mat &image) {
                 // find dimensions
                 int separation = 10;
 
-                cv::Rect r3(smallImage.rows, image.cols + separation, smallImage.rows,
+                cv::Rect r3(smallImage.rows, image.cols + separation,
+    smallImage.rows,
                             smallImage.cols);
 
-                this->copyFromRectangleToImage(this->objectnessCanvas, edges, r3, 2,
+                this->copyFromRectangleToImage(this->objectnessCanvas, edges,
+    r3, 2,
                                                cv::Vec3b(144, 144, 144));
                 // add objectness into the this->objectness canvas
             }
@@ -332,7 +340,8 @@ cv::Rect Struck::track(cv::Mat &image) {
 
         if (useStraddling) {
             arma::rowvec straddling_objectness =
-                this->straddle.findStraddlng_fast(labels, bboxesWhichFit, min_x, min_y);
+                this->straddle.findStraddlng_fast(labels, bboxesWhichFit, min_x,
+    min_y);
 
             // std::cout<<straddling_objectness<<std::endl;
             std::vector<std::pair<double, int>> list;
@@ -353,7 +362,8 @@ cv::Rect Struck::track(cv::Mat &image) {
 
 
             for (int i = 0; i < MIN(topNBoxesKeep, list.size()); i++) {
-                //r std::cout<<"Straddling: "<<list[i].first<<" "<<list[i].second<<std::endl;
+                //r std::cout<<"Straddling: "<<list[i].first<<"
+    "<<list[i].second<<std::endl;
                 locationsOnaGrid.push_back(bboxesWhichFit[list[i].second]);
             }
 
@@ -365,22 +375,28 @@ cv::Rect Struck::track(cv::Mat &image) {
 
                     this->straddle.addToHistory(straddling_objectness[maxBoxStraddling]);
 
-                    this->objPlot->addPoint(straddling_objectness[maxBoxStraddling], 1);
+                    this->objPlot->addPoint(straddling_objectness[maxBoxStraddling],
+    1);
 
                     cv::Rect r = bboxesWhichFit[maxBoxStraddling];
-                    cv::Rect bestStraddlingRect(r.x - min_x, r.y - min_y, r.width, r.height);
+                    cv::Rect bestStraddlingRect(r.x - min_x, r.y - min_y,
+    r.width, r.height);
 
                     // convert gray to rgb
-                    cv::cvtColor(straddle.canvas, straddle.canvas, cv::COLOR_GRAY2RGB);
+                    cv::cvtColor(straddle.canvas, straddle.canvas,
+    cv::COLOR_GRAY2RGB);
 
-                    cv::rectangle(straddle.canvas, bestStraddlingRect, cv::Scalar(100, 255, 0),
+                    cv::rectangle(straddle.canvas, bestStraddlingRect,
+    cv::Scalar(100, 255, 0),
                                   2);
 
                     // find dimensions
 
                     int separation = 10;
-                    cv::Rect r2(0, image.cols + separation, smallImage.rows, smallImage.cols);
-                    this->copyFromRectangleToImage(this->objectnessCanvas, straddle.canvas, r2,
+                    cv::Rect r2(0, image.cols + separation, smallImage.rows,
+    smallImage.cols);
+                    this->copyFromRectangleToImage(this->objectnessCanvas,
+    straddle.canvas, r2,
                                                    2, cv::Vec3b(144, 144, 144));
                 }
 
@@ -398,7 +414,7 @@ cv::Rect Struck::track(cv::Mat &image) {
 
     */
     arma::mat x =
-            this->feature->calculateFeature(processedImage, locationsOnaGrid);
+        this->feature->calculateFeature(processedImage, locationsOnaGrid);
 
     arma::rowvec predictions = this->olarank->predictAll(x);
 
@@ -415,21 +431,22 @@ cv::Rect Struck::track(cv::Mat &image) {
 
         arma::colvec z_k(4, arma::fill::zeros);
         z_k << bestLocationDetector.x << bestLocationDetector.y
-        << bestLocationDetector.width << bestLocationDetector.height << endr;
+            << bestLocationDetector.width << bestLocationDetector.height
+            << endr;
         z_k(2) += z_k(0);
         z_k(3) += z_k(1);
 
         // make a prediction using filter
         arma::colvec x_k = filter.predict(z_k);
 
-        bestLocationFilter = filter.getBoundingBox(this->lastLocation.width,
-                                                   this->lastLocation.height, x_k);
+        bestLocationFilter = filter.getBoundingBox(
+            this->lastLocation.width, this->lastLocation.height, x_k);
 
         this->lastLocationFilter = bestLocationFilter;
 
         double overlap =
-                (bestLocationFilter & bestLocationDetector).area() /
-                (double((bestLocationDetector | bestLocationFilter).area()));
+            (bestLocationFilter & bestLocationDetector).area() /
+            (double((bestLocationDetector | bestLocationFilter).area()));
 
         if (overlap > 0.5) {
             updateTracker = true;
@@ -440,7 +457,7 @@ cv::Rect Struck::track(cv::Mat &image) {
 
             updateTracker = false;
 
-            filter.setB(filter.getGivenB()/2.0);
+            filter.setB(filter.getGivenB() / 2.0);
         }
         filter.predictAndCorrect(z_k);
     }
@@ -457,7 +474,8 @@ cv::Rect Struck::track(cv::Mat &image) {
      Tracker Update
      **/
 
-    if (updateTracker && this->boundingBoxes.size() % this->updateEveryNframes==0) {
+    if (updateTracker &&
+        this->boundingBoxes.size() % this->updateEveryNframes == 0) {
 
         // sample for updating the tracker
         std::vector<cv::Rect> locationsOnPolarPlane;
@@ -468,7 +486,7 @@ cv::Rect Struck::track(cv::Mat &image) {
 
         // calculate features
         arma::mat x_update =
-                feature->calculateFeature(processedImage, locationsOnPolarPlane);
+            feature->calculateFeature(processedImage, locationsOnPolarPlane);
         arma::mat y_update = this->feature->reshapeYs(locationsOnPolarPlane);
         olarank->process(x_update, y_update, 0, framesTracked);
     }
@@ -482,13 +500,13 @@ cv::Rect Struck::track(cv::Mat &image) {
         cv::rectangle(plotImg, lastLocation, color, 2);
 
         if (useFilter) {
-            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100), 0);
+            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100),
+                          0);
         }
 
         cv::imshow("Tracking window", plotImg);
         cv::waitKey(1);
         this->objectnessCanvas = plotImg;
-
 
     } else if (display == 2) {
         this->frames.insert({framesTracked, image});
@@ -511,19 +529,20 @@ cv::Rect Struck::track(cv::Mat &image) {
         if (useFilter) {
 
             cv::Rect bestLocationFilter = this->lastLocationFilter;
-            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100), 0);
+            cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100),
+                          0);
         }
-
 
         if (this->useEdgeDensity || this->useStraddling) {
 
-            cv::rectangle(plotImg, lastLocationObjectness, cv::Scalar(0, 204, 102),
-                          0);
+            cv::rectangle(plotImg, lastLocationObjectness,
+                          cv::Scalar(0, 204, 102), 0);
 
             cv::Mat objPlot = this->objPlot->getCanvas();
             cv::resize(objPlot, objPlot, cv::Size(image.cols, image.rows));
 
-            cv::Rect bottomLeftRect(image.rows + 1, 0, objPlot.rows, objPlot.cols);
+            cv::Rect bottomLeftRect(image.rows + 1, 0, objPlot.rows,
+                                    objPlot.cols);
             cv::rectangle(plotImg, this->gtBox, cv::Scalar(0, 0, 255), 0);
             this->copyFromRectangleToImage(plotImg, objPlot, bottomLeftRect, 0,
                                            cv::Vec3b(0, 0, 0));
@@ -537,10 +556,8 @@ cv::Rect Struck::track(cv::Mat &image) {
 
             this->objectnessCanvas = plotImg;
 
-
             cv::imshow("Tracking window", plotImg);
             cv::waitKey(1);
-
         }
     }
 
@@ -559,7 +576,7 @@ void Struck::updateDebugImage(cv::Mat *canvas, cv::Mat &img,
                               cv::Rect &bestLocation, cv::Scalar colorOfBox) {
 
     int WIDTH_fitted =
-            this->samplerForUpdate->objectWidth; // this dimension does not change
+        this->samplerForUpdate->objectWidth; // this dimension does not change
 
     int HEIGHT_fitted = this->samplerForUpdate->objectHeight;
     using namespace std;
@@ -594,7 +611,8 @@ void Struck::updateDebugImage(cv::Mat *canvas, cv::Mat &img,
                 // cv::waitKey();
                 // resize image
 
-                cv::Mat img_sp_resized(WIDTH_fitted, HEIGHT_fitted, img_sp.type());
+                cv::Mat img_sp_resized(WIDTH_fitted, HEIGHT_fitted,
+                                       img_sp.type());
 
                 cv::resize(img_sp, img_sp_resized,
                            cv::Size(WIDTH_fitted, HEIGHT_fitted));
@@ -617,7 +635,7 @@ void Struck::updateDebugImage(cv::Mat *canvas, cv::Mat &img,
     for (int i = 0; i < beta.size(); i++) {
 
         std::cout << "Current sv (idx,value) : " << i << " " << beta[i].first
-        << std::endl;
+                  << std::endl;
         if (I >= imgsPerRow) {
             I = 0;
             J++;
@@ -646,8 +664,8 @@ void Struck::updateDebugImage(cv::Mat *canvas, cv::Mat &img,
     cv::Mat plotImg = img.clone();
 
     if (useFilter) {
-        cv::rectangle(plotImg, this->lastLocationFilter, cv::Scalar(255, 193, 0),
-                      2);
+        cv::rectangle(plotImg, this->lastLocationFilter,
+                      cv::Scalar(255, 193, 0), 2);
     }
     cv::rectangle(plotImg, bestLocation, colorOfBox, 2);
 
@@ -722,7 +740,6 @@ arma::rowvec Struck::weightWithEdgeDensity(cv::Mat &smallImage,
 
     edgeDensity.computeIntegrals(edges);
 
-
     //    arma::rowvec edge_measure(rects.size(),arma::fill::zeros);
     //
     //    // iterate here for a different inner threshold values
@@ -739,7 +756,7 @@ arma::rowvec Struck::weightWithEdgeDensity(cv::Mat &smallImage,
     //    edge_measure=edge_measure/counter;
 
     arma::rowvec edge_measure =
-            edgeDensity.findEdgeObjectness(rects, min_x, min_y);
+        edgeDensity.findEdgeObjectness(rects, min_x, min_y);
 
     // arma::rowvec edge_measure=edgeDensity.findEdgeObjectness(edges, rects,
     // min_x, min_y);
@@ -805,7 +822,7 @@ arma::rowvec Struck::weightWithStraddling(cv::Mat &smallImage,
     this->straddle.computeIntegralImages(labels);
 
     arma::rowvec obj_measure_fast =
-            this->straddle.findStraddlng_fast(labels, rects, min_x, min_y);
+        this->straddle.findStraddlng_fast(labels, rects, min_x, min_y);
 
     if (objDisplay == 3) {
 
@@ -818,20 +835,22 @@ arma::rowvec Struck::weightWithStraddling(cv::Mat &smallImage,
         this->objPlot->addPoint(obj_measure_fast[maxBoxStraddling], 1);
 
         cv::Rect r = rects[maxBoxStraddling];
-        cv::Rect bestStraddlingRect(r.x - min_x, r.y - min_y, r.width, r.height);
+        cv::Rect bestStraddlingRect(r.x - min_x, r.y - min_y, r.width,
+                                    r.height);
 
         // convert gray to rgb
         cv::cvtColor(straddle.canvas, straddle.canvas, cv::COLOR_GRAY2RGB);
 
-        cv::rectangle(straddle.canvas, bestStraddlingRect, cv::Scalar(100, 255, 0),
-                      2);
+        cv::rectangle(straddle.canvas, bestStraddlingRect,
+                      cv::Scalar(100, 255, 0), 2);
 
         // find dimensions
 
         int separation = 10;
-        cv::Rect r2(0, imageCols + separation, smallImage.rows, smallImage.cols);
-        this->copyFromRectangleToImage(this->objectnessCanvas, straddle.canvas, r2,
-                                       2, cv::Vec3b(144, 144, 144));
+        cv::Rect r2(0, imageCols + separation, smallImage.rows,
+                    smallImage.cols);
+        this->copyFromRectangleToImage(this->objectnessCanvas, straddle.canvas,
+                                       r2, 2, cv::Vec3b(144, 144, 144));
     }
 
     return obj_measure_fast;
@@ -850,7 +869,7 @@ void Struck::applyTrackerOnVideo(Dataset *dataset, std::string rootFolder,
     using namespace std;
 
     vector<pair<string, vector<string>>> video_gt_images =
-            dataset->prepareDataset(rootFolder);
+        dataset->prepareDataset(rootFolder);
 
     if (videoNumber < 0 || videoNumber >= video_gt_images.size()) {
 
@@ -875,7 +894,7 @@ void Struck::applyTrackerOnVideo(Dataset *dataset, std::string rootFolder,
     std::time_t t2 = std::time(0);
 
     std::cout << "Frames per second: "
-    << gt_images.second.size() / (1.0 * (t2 - t1)) << std::endl;
+              << gt_images.second.size() / (1.0 * (t2 - t1)) << std::endl;
 }
 
 void Struck::applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
@@ -884,7 +903,7 @@ void Struck::applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
     using namespace std;
 
     vector<pair<string, vector<string>>> video_gt_images =
-            dataset->prepareDataset(rootFolder);
+        dataset->prepareDataset(rootFolder);
 
     std::time_t t1 = std::time(0);
 
@@ -896,7 +915,8 @@ void Struck::applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
          videoNumber++) {
         pair<string, vector<string>> gt_images = video_gt_images[videoNumber];
 
-        vector<cv::Rect> groundTruth = dataset->readGroundTruth(gt_images.first);
+        vector<cv::Rect> groundTruth =
+            dataset->readGroundTruth(gt_images.first);
 
         cv::Mat image = cv::imread(gt_images.second[0]);
 
@@ -914,7 +934,7 @@ void Struck::applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
 
         if (saveResults) {
             std::string saveFileName =
-                    saveFolder + "/" + dataset->videos[videoNumber] + ".dat";
+                saveFolder + "/" + dataset->videos[videoNumber] + ".dat";
 
             this->saveResults(saveFileName);
         }
@@ -923,7 +943,7 @@ void Struck::applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
     }
     std::time_t t2 = std::time(0);
     std::cout << "Frames per second: " << frameNumber / (1.0 * (t2 - t1))
-    << std::endl;
+              << std::endl;
     // std::cout<<"No threads: "<<(t2-t1)<<std::endl;
 
     std::ofstream out(saveFolder + "/" + "tracker_info.txt");
@@ -932,12 +952,12 @@ void Struck::applyTrackerOnDataset(Dataset *dataset, std::string rootFolder,
 }
 
 EvaluationRun Struck::applyTrackerOnVideoWithinRange(
-        Dataset *dataset, std::string rootFolder, std::string saveFolder,
-        int videoNumber, int frameFrom, int frameTo, bool saveResults) {
+    Dataset *dataset, std::string rootFolder, std::string saveFolder,
+    int videoNumber, int frameFrom, int frameTo, bool saveResults) {
     using namespace std;
 
     vector<pair<string, vector<string>>> video_gt_images =
-            dataset->prepareDataset(rootFolder);
+        dataset->prepareDataset(rootFolder);
 
     pair<string, vector<string>> gt_images = video_gt_images[videoNumber];
 
@@ -964,26 +984,24 @@ EvaluationRun Struck::applyTrackerOnVideoWithinRange(
     std::time_t t1 = std::time(0);
     for (int i = 1; i < gt_images.second.size(); i++) {
 
-
         cv::Mat image = cv::imread(gt_images.second[i]);
 
         this->setGroundTruthBox(groundTruth[i]);
 
         cout << "Frame # " << i << "/" << gt_images.second.size() << endl;
         this->track(image);
-
     }
 
     std::time_t t2 = std::time(0);
 
     if (this->display > 0) {
         std::cout << "FPS : " << gt_images.second.size() / ((t2 - t1) * 1.0)
-        << std::endl;
+                  << std::endl;
     }
 
     if (saveResults) {
-        std::string filename =
-                std::string(saveFolder) + "/" + dataset->videos[videoNumber] + ".dat";
+        std::string filename = std::string(saveFolder) + "/" +
+                               dataset->videos[videoNumber] + ".dat";
         this->saveResults(filename);
     }
 
@@ -1012,20 +1030,20 @@ void Struck::copyFromRectangleToImage(cv::Mat &canvas, cv::Mat &image,
                     (j <= step - 1 || (rect.height - j <= step))) {
                     if (image.channels() == 1) {
                         uchar b(255);
-                        canvas.at < uchar > (rect.x + i, rect.y + j) = b;
+                        canvas.at<uchar>(rect.x + i, rect.y + j) = b;
                     } else {
                         // cv::Vec3b b(100,100,100);
-                        canvas.at < cv::Vec3b > (rect.x + i, rect.y + j) = color;
+                        canvas.at<cv::Vec3b>(rect.x + i, rect.y + j) = color;
                     }
                 } else {
 
                     if (image.channels() == 1) {
-                        canvas.at < uchar > (rect.x + i, rect.y + j) =
-                                image.at < uchar > (i - step, j - step);
+                        canvas.at<uchar>(rect.x + i, rect.y + j) =
+                            image.at<uchar>(i - step, j - step);
                     } else {
                         // cout<<image.channels()<<endl;
-                        canvas.at < cv::Vec3b > (rect.x + i, rect.y + j) =
-                                image.at < cv::Vec3b > (i - step, j - step);
+                        canvas.at<cv::Vec3b>(rect.x + i, rect.y + j) =
+                            image.at<cv::Vec3b>(i - step, j - step);
                     }
                 }
             }
@@ -1043,9 +1061,9 @@ void Struck::allocateCanvas(cv::Mat &img1) {
     const int HEIGHT_fitted = this->lastLocation.height;
 
     cv::Mat *newCanvas =
-            new cv::Mat(MAX(imgsPerRow * HEIGHT_fitted, img1.rows),
-                        imgsPerColumn * WIDTH_fitted + 50 + img1.cols, img1.type(),
-                        CV_RGB(0, 0, 0));
+        new cv::Mat(MAX(imgsPerRow * HEIGHT_fitted, img1.rows),
+                    imgsPerColumn * WIDTH_fitted + 50 + img1.cols, img1.type(),
+                    CV_RGB(0, 0, 0));
 
     canvas = *newCanvas;
 }
@@ -1056,7 +1074,7 @@ void Struck::videoCapture() {
     using namespace std;
 
     VideoCapture stream(
-            0); // 0 is the id of video device.0 if you have only one camera.
+        0); // 0 is the id of video device.0 if you have only one camera.
 
     if (!stream.isOpened()) { // check if video device has been initialised
         cout << "cannot open camera";
@@ -1120,20 +1138,23 @@ std::ostream &operator<<(std::ostream &strm, const Struck &s) {
     string line = "--------------------------------------------------------\n";
 
     strm << "Structured tracker. \n"
-    << "========================================================\n";
+         << "========================================================\n";
 
     if (s.useFilter) {
-        strm << line << "Robust Kalman filter parameters: \n" << line << s.filter;
+        strm << line << "Robust Kalman filter parameters: \n" << line
+             << s.filter;
     }
 
     strm << line << "Learning parameters: \n" + line << *s.olarank;
 
     strm << line << "Sampling parameters: \n" + line << "For search: \n"
-    << *s.samplerForSearch << line << "For update \n" << *s.samplerForUpdate;
+         << *s.samplerForSearch << line << "For update \n"
+         << *s.samplerForUpdate;
 
-    strm << line << "Feature representation: \n" << line << s.feature->getInfo();
+    strm << line << "Feature representation: \n" << line
+         << s.feature->getInfo();
 
-    strm<<line<<s.note<<"\n";
+    strm << line << s.note << "\n";
 
     strm << "========================================================\n";
     return strm;
@@ -1169,8 +1190,8 @@ void Struck::preTraining(cv::Mat &image, const cv::Rect &location) {
             alpha = (HEIGHT * 1.0) / maxDimension;
         }
 
-        WIDTH_fitted = (int) (WIDTH / alpha);
-        HEIGHT_fitted = (int) (HEIGHT / alpha);
+        WIDTH_fitted = (int)(WIDTH / alpha);
+        HEIGHT_fitted = (int)(HEIGHT / alpha);
     }
 
     // affine transformations: translation
@@ -1184,7 +1205,8 @@ void Struck::preTraining(cv::Mat &image, const cv::Rect &location) {
 
     cv::Rect groundTruth(location);
 
-    // so that the first frame wouldn't be mistaken with additional frames sampled
+    // so that the first frame wouldn't be mistaken with additional frames
+    // sampled
     // during pre-training
     int frameIndex = -1;
 
@@ -1218,8 +1240,8 @@ void Struck::preTraining(cv::Mat &image, const cv::Rect &location) {
         groundTruth.width = location.width * alpha;
         groundTruth.height = location.height * alpha;
 
-        groundTruth.x = (int) (centerX - groundTruth.width / 2);
-        groundTruth.y = (int) (centerY - groundTruth.height / 2);
+        groundTruth.x = (int)(centerX - groundTruth.width / 2);
+        groundTruth.y = (int)(centerY - groundTruth.height / 2);
 
         // cout<<groundTruth<<endl;
 
@@ -1250,20 +1272,19 @@ void Struck::preTraining(cv::Mat &image, const cv::Rect &location) {
         for (int dy = -maxTranslation; dy <= maxTranslation;
              dy = dy + translationStep) {
 
-            //continue;
+            // continue;
 
             if (dx == 0 && dy == 0) {
                 continue;
             }
 
-
             // get the bounding box
 
-            double center_dx=centerX+dx;
-            double center_dy=centerY+dy;
+            double center_dx = centerX + dx;
+            double center_dy = centerY + dy;
 
-            groundTruth.x = std::round(center_dx-(location.width/2.0));
-            groundTruth.y = std::round(center_dy-(location.height/2.0));
+            groundTruth.x = std::round(center_dx - (location.width / 2.0));
+            groundTruth.y = std::round(center_dy - (location.height / 2.0));
             groundTruth.width = location.width;
             groundTruth.height = location.height;
 
@@ -1304,11 +1325,12 @@ void Struck::preTraining(cv::Mat &image, const cv::Rect &location) {
         cv::Rect gt_rect = groundTruthRects[i];
         locationsOnPolarPlane.push_back(gt_rect);
 
-        this->samplerForUpdate->sampleEquiDistant(gt_rect, locationsOnPolarPlane);
+        this->samplerForUpdate->sampleEquiDistant(gt_rect,
+                                                  locationsOnPolarPlane);
 
         // calculate features
         arma::mat x_update =
-                feature->calculateFeature(processedImage, locationsOnPolarPlane);
+            feature->calculateFeature(processedImage, locationsOnPolarPlane);
         arma::mat y_update = this->feature->reshapeYs(locationsOnPolarPlane);
         olarank->process(x_update, y_update, 0, frameTracked);
 
@@ -1323,19 +1345,21 @@ void Struck::preTraining(cv::Mat &image, const cv::Rect &location) {
     }
 }
 
-Struck Struck::getTracker() { return getTracker(true, true, true, true, true, "linear", "raw"); }
-
-Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
-                          bool useStraddling, bool scalePrior,
-                          std::string kernelSTR, std::string featureSTR) {
-    return getTracker(pretraining, useFilter, useEdgeDensity,
-                      useStraddling, scalePrior, kernelSTR, featureSTR, "");
+Struck Struck::getTracker() {
+    return getTracker(true, true, true, true, true, "linear", "raw");
 }
 
 Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
                           bool useStraddling, bool scalePrior,
-                          std::string kernelSTR,
-                          std::string featureSTR, std::string note_) {
+                          std::string kernelSTR, std::string featureSTR) {
+    return getTracker(pretraining, useFilter, useEdgeDensity, useStraddling,
+                      scalePrior, kernelSTR, featureSTR, "");
+}
+
+Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
+                          bool useStraddling, bool scalePrior,
+                          std::string kernelSTR, std::string featureSTR,
+                          std::string note_) {
 
     // Parameters
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1352,7 +1376,6 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
 
     // RawFeatures* features=new RawFeatures(16);
 
-
     Feature *features;
     Kernel *kernel;
 
@@ -1360,36 +1383,28 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
         features = new HoG();
     } else if (featureSTR == "hist") {
         features = new HistogramFeatures(4, 16);
-    } else if (featureSTR == "haar"){
+    } else if (featureSTR == "haar") {
         features = new Haar(2);
-    } else if (featureSTR == "hogANDhist"){
+    } else if (featureSTR == "hogANDhist") {
 
-
-
-        Feature* f1;
-        Feature* f2;
-        f1=new HistogramFeatures(4,16);
+        Feature *f1;
+        Feature *f2;
+        f1 = new HistogramFeatures(4, 16);
 
         cv::Size winSize(32, 32);
         cv::Size blockSize(16, 16);
         cv::Size cellSize(4, 4); // was 8
         cv::Size blockStride(16, 16);
-        int nBins = 8;          // was 5
+        int nBins = 8; // was 5
 
-        f2= new HoG(winSize,blockSize,cellSize,blockSize,nBins);
+        f2 = new HoG(winSize, blockSize, cellSize, blockSize, nBins);
 
-        std::vector<Feature*> mf;
+        std::vector<Feature *> mf;
         mf.push_back(f1);
         mf.push_back(f2);
 
-
-
-
         features = new MultiFeature(mf);
     }
-
-
-
 
     else {
         features = new RawFeatures(16);
@@ -1399,11 +1414,11 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
         kernel = new IntersectionKernel_fast;
     } else if (kernelSTR == "gauss") {
         kernel = new RBFKernel(0.2);
-    }else if (kernelSTR == "approxGauss") {
+    } else if (kernelSTR == "approxGauss") {
 
-        RBFKernel* rbf=new RBFKernel(0.2);
-        int pts=25;
-        kernel = new ApproximateKernel(pts,rbf);
+        RBFKernel *rbf = new RBFKernel(0.2);
+        int pts = 25;
+        kernel = new ApproximateKernel(pts, rbf);
     } else {
         kernel = new LinearKernel;
     }
@@ -1447,13 +1462,12 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
 
     bool useObjectness = (useEdgeDensity | useStraddling);
 
-
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     LocationSampler *samplerForUpdate =
-            new LocationSampler(r_update, nRadial, nAngular);
+        new LocationSampler(r_update, nRadial, nAngular);
     LocationSampler *samplerForSearch =
-            new LocationSampler(r_search, nRadial_search, nAngular_search);
+        new LocationSampler(r_search, nRadial_search, nAngular_search);
 
     Struck tracker(olarank, features, samplerForSearch, samplerForUpdate,
                    useObjectness, scalePrior, useFilter, pretraining, display);
@@ -1475,8 +1489,8 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
     int P = 3;
 
     KalmanFilter_my filter =
-            KalmanFilterGenerator::generateConstantVelocityFilter(
-                    x_k, 0, 0, R_cov, Q_cov, P, robustConstant_b);
+        KalmanFilterGenerator::generateConstantVelocityFilter(
+            x_k, 0, 0, R_cov, Q_cov, P, robustConstant_b);
 
     tracker.setFilter(filter);
 
@@ -1486,8 +1500,7 @@ Struck Struck::getTracker(bool pretraining, bool useFilter, bool useEdgeDensity,
 }
 
 Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
-               bool useStraddling, bool scalePrior,
-               std::string kernelSTR,
+               bool useStraddling, bool scalePrior, std::string kernelSTR,
                std::string featureSTR, std::string note_) {
 
     // Parameters
@@ -1500,8 +1513,8 @@ Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
     int nAngular = 16;
     int B = 100;
 
-    int nRadial_search = 12;
-    int nAngular_search = 30;
+    int nRadial_search = 8;   // was 12
+    int nAngular_search = 18; // was 30
 
     Feature *features;
     Kernel *kernel;
@@ -1510,43 +1523,41 @@ Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
         features = new HoG();
     } else if (featureSTR == "hist") {
         features = new HistogramFeatures(4, 16);
-    } else if (featureSTR == "haar"){
+    } else if (featureSTR == "haar") {
         features = new Haar(2);
 #ifdef USE_DEEP_FEATURES
     } else if (featureSTR == "deep") {
-      features = new DeepFeatures();
+        features = new DeepFeatures();
 #endif
     } else if (featureSTR == "hogANDhist") {
-      Feature *f1;
-        Feature* f2;
-        f1=new HistogramFeatures(4,16);
+        Feature *f1;
+        Feature *f2;
+        f1 = new HistogramFeatures(4, 16);
 
         cv::Size winSize(32, 32);
         cv::Size blockSize(16, 16);
         cv::Size cellSize(4, 4); // was 8
         cv::Size blockStride(16, 16);
-        int nBins = 8;          // was 5
+        int nBins = 8; // was 5
 
-        f2= new HoG(winSize,blockSize,cellSize,blockSize,nBins);
+        f2 = new HoG(winSize, blockSize, cellSize, blockSize, nBins);
 
-        std::vector<Feature*> mf;
+        std::vector<Feature *> mf;
         mf.push_back(f1);
         mf.push_back(f2);
 
         features = new MultiFeature(mf);
-    }
-    else {
+    } else {
         features = new RawFeatures(16);
     }
     if (kernelSTR == "int") {
         kernel = new IntersectionKernel_fast;
     } else if (kernelSTR == "gauss") {
         kernel = new RBFKernel(0.2);
-    }else if (kernelSTR == "approxGauss") {
-
-        RBFKernel* rbf=new RBFKernel(0.2);
-        int pts=25;
-        kernel = new ApproximateKernel(pts,rbf);
+    } else if (kernelSTR == "approxGauss") {
+        RBFKernel *rbf = new RBFKernel(0.2);
+        int pts = 25;
+        kernel = new ApproximateKernel(pts, rbf);
     } else {
         kernel = new LinearKernel;
     }
@@ -1563,13 +1574,12 @@ Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
 
     bool useObjectness = (useEdgeDensity | useStraddling);
 
-
     // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     LocationSampler *samplerForUpdate =
-            new LocationSampler(r_update, nRadial, nAngular);
+        new LocationSampler(r_update, nRadial, nAngular);
     LocationSampler *samplerForSearch =
-            new LocationSampler(r_search, nRadial_search, nAngular_search);
+        new LocationSampler(r_search, nRadial_search, nAngular_search);
 
     this->olarank = olarank;
     this->feature = features;
@@ -1582,8 +1592,9 @@ Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
     this->display = display;
     this->objPlot = new Plot(100);
 
-    //Struck tracker(olarank, features, samplerForSearch, samplerForUpdate,
-    //               useObjectness, scalePrior, useFilter, pretraining, display);
+    // Struck tracker(olarank, features, samplerForSearch, samplerForUpdate,
+    //               useObjectness, scalePrior, useFilter, pretraining,
+    //               display);
 
     this->useStraddling = useStraddling;
     this->useEdgeDensity = useEdgeDensity;
@@ -1602,15 +1613,13 @@ Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
     int P = 10;
 
     KalmanFilter_my filter =
-            KalmanFilterGenerator::generateConstantVelocityFilter(
-                    x_k, 0, 0, R_cov, Q_cov, P, robustConstant_b);
+        KalmanFilterGenerator::generateConstantVelocityFilter(
+            x_k, 0, 0, R_cov, Q_cov, P, robustConstant_b);
 
     this->setFilter(filter);
 
     this->setNote(note_);
-
 }
-
 
 void Struck::saveResults(string filename) {
 
@@ -1619,7 +1628,7 @@ void Struck::saveResults(string filename) {
         return;
     } else {
 
-        arma::mat boxes((int) this->boundingBoxes.size(), 4, arma::fill::zeros);
+        arma::mat boxes((int)this->boundingBoxes.size(), 4, arma::fill::zeros);
 
         cv::Rect b;
         for (int i = 0; i < this->boundingBoxes.size(); ++i) {
@@ -1636,8 +1645,8 @@ void Struck::saveResults(string filename) {
 
         for (int i = 0; i < boundingBoxes.size(); i++) {
             myfile << boundingBoxes[i].x << "," << boundingBoxes[i].y << ","
-            << boundingBoxes[i].width << "," << boundingBoxes[i].height
-            << "\n";
+                   << boundingBoxes[i].width << "," << boundingBoxes[i].height
+                   << "\n";
         }
         myfile.close();
         // boxes.save(filename,arma::csv_ascii);
