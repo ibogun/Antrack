@@ -10,16 +10,18 @@
 #include "Struck.h"
 
 class ObjDetectorStruck: public Struck {
-    double lambda_straddeling = 0;
-    double lambda_edgeness = 0;
-    double straddeling_threshold = 0.5;
-    double inner = 0.9;
+
 
  protected:
     friend std::ostream &operator<<(std::ostream &strm,
                                     const ObjDetectorStruck &s);
 
  public:
+
+    double lambda_straddeling = 0;
+    double lambda_edgeness = 0;
+    double straddeling_threshold = 1.5;
+    double inner = 0.9;
 
     using Struck::Struck;  // inherit all constructors from Struck
 

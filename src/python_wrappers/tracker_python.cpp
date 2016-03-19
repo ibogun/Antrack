@@ -1,19 +1,19 @@
-#include <opencv2/opencv.hpp>
 #include <iostream>
+#include <opencv2/opencv.hpp>
 #include <string>
 
 #include "armadillo"
 #include <vector>
 
-#include <glog/logging.h>
-#include "../../src/Tracker/OLaRank_old.h"
 #include "../../src/Tracker/LocationSampler.h"
+#include "../../src/Tracker/OLaRank_old.h"
+#include <glog/logging.h>
 
 #include "../../src/Filter/KalmanFilterGenerator.h"
 
-#include "../../src/Tracker/AllTrackers.h"
-#include "../../src/Kernels/AllKernels.h"
 #include "../../src/Features/AllFeatures.h"
+#include "../../src/Kernels/AllKernels.h"
+#include "../../src/Tracker/AllTrackers.h"
 #include <boost/python.hpp>
 
 class Antrack {
@@ -188,6 +188,7 @@ class Antrack {
 class RobStruck {
   public:
     Struck *tracker;
+    std::unordered_map<std::string, std::string> featureParamsMap;
 
     boost::python::list track(std::string filename) {
         boost::python::list output;
@@ -206,6 +207,15 @@ class RobStruck {
     }
 
     ~RobStruck() { delete tracker; }
+
+    void deepFeatureParams(std::string folder) {
+
+        std::string proto = folder + "/imagenet_memory.prototxt";
+        std::string weights = folder + "/bvlc_reference_caffenet.caffemodel";
+
+        this->featureParamsMap.insert(std::make_pair("proto", proto));
+        this->featureParamsMap.insert(std::make_pair("weights", weights));
+    }
 
     void createTracker(std::string kernel, std::string feature, int filter) {
 
@@ -227,6 +237,12 @@ class RobStruck {
         this->tracker =
             new Struck(pretraining, useFilter, useEdgeDensity, useStraddling,
                        scalePrior, kernel, feature, note);
+
+        this->tracker->setFeatureParams(featureParamsMap);
+    }
+
+    void setLocationSamplerParameters(int nRadial, int nAngular) {
+        this->tracker->setLocationSamplerParameters(nRadial, nAngular);
     }
 
     void setDisplay(int display) {
@@ -311,6 +327,7 @@ class ObjStruck {
 class MStruck {
   public:
     MBestStruck *tracker;
+    std::unordered_map<std::string, std::string> featureParamsMap;
 
     boost::python::list track(std::string filename) {
         boost::python::list output;
@@ -337,20 +354,19 @@ class MStruck {
                        std::string dis_features, std::string dis_kernel,
                        std::string top_features, std::string top_kernel) {
         bool pretraining = false;
-        bool useEdgeDensity = false;
-        bool useStraddling = false;
+        bool useEdgeDensity = true;
+        bool useStraddling = true;
         bool scalePrior = false;
 
         std::string note = "MBest tracker";
 
-        bool useFilter = false;
-
+        bool useFilter = true;
 
         this->tracker =
             new MBestStruck(pretraining, useFilter, useEdgeDensity,
                             useStraddling, scalePrior, kernel, feature, note);
 
-        std::unordered_map<std::string, std::string> featureParamsMap;
+        this->tracker->setUpdateNFrames(3);
 
         featureParamsMap.insert(std::make_pair("dis_features", dis_features));
         featureParamsMap.insert(std::make_pair("dis_kernel", dis_kernel));
@@ -359,12 +375,30 @@ class MStruck {
         this->tracker->setFeatureParams(featureParamsMap);
     }
 
+    void deepFeatureParams(std::string folder) {
+
+        std::string proto = folder + "/imagenet_memory.prototxt";
+        std::string weights = folder + "/bvlc_reference_caffenet.caffemodel";
+
+        this->featureParamsMap.insert(std::make_pair("proto", proto));
+        this->featureParamsMap.insert(std::make_pair("weights", weights));
+    }
+
+
+    void setObjectnessParams(double staddling, double edge) {
+        this->tracker->ObjDetectorStruck::setLambda(staddling, edge);
+    }
+
     void setDisplay(int display) {
         CHECK_NOTNULL(tracker);
         this->tracker->display = display;
     }
 
     void killDisplay() { cv::destroyAllWindows(); }
+    void setM(int M_) { this->tracker->setM(M_); }
+    void setLambda(double lambda_) { this->tracker->setLambda(lambda_); }
+    void setTopBudget(int B_) { this->tracker->setTopBudget(B_); }
+    void setBottomBudget(int B_) { this->tracker->setBottomBudget(B_); }
 };
 
 using namespace boost::python;
@@ -386,6 +420,9 @@ BOOST_PYTHON_MODULE(antrack)
         .def("createTracker", &RobStruck::createTracker)
         .def("track", &RobStruck::track)
         .def("setDisplay", &RobStruck::setDisplay)
+        .def("setLocationSamplerParameters",
+             &RobStruck::setLocationSamplerParameters)
+        .def("deepFeatureParams", &RobStruck::deepFeatureParams)
         .def("killDisplay", &RobStruck::killDisplay);
 
     class_<ObjStruck>("ObjStruck")
@@ -397,9 +434,15 @@ BOOST_PYTHON_MODULE(antrack)
 
     class_<MStruck>("MStruck")
         .def("initialize", &MStruck::initialize)
+        .def("deepFeatureParams", &MStruck::deepFeatureParams)
         .def("createTracker", &MStruck::createTracker)
         .def("track", &MStruck::track)
+        .def("setM", &MStruck::setM)
+        .def("setLambda", &MStruck::setLambda)
+        .def("setTopBudget", &MStruck::setTopBudget)
+        .def("setBottomBudget", &MStruck::setBottomBudget)
         .def("setDisplay", &MStruck::setDisplay)
+        .def ("setObjectnessParams", &MStruck::setObjectnessParams)
         .def("killDisplay", &MStruck::killDisplay);
 }
 // find how to write functions which return some values in c++/python boost

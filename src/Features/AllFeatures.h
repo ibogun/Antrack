@@ -11,5 +11,10 @@
 #include "HoGandRawFeatures.h"
 #include "MultiFeature.h"
 
+#ifdef USE_DEEP_FEATURES
+#include "DeepFeatures.h"
+#include "DeepPCA.h"
+#endif
+
 
 #endif /* SRC_FEATURES_ALLFEATURES_H_ */

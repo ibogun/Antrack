@@ -52,6 +52,12 @@ arma::mat DeepFeatures::calculateFeature(cv::Mat& processedImage, std::vector<cv
                 }
         }
 
+        double x_max = x.max();
+
+        if (x_max!= 0) {
+                x = x / x_max;
+        }
+
         return x;
 }
 

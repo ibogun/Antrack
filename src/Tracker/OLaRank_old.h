@@ -61,7 +61,7 @@ class OLaRank_old {
 
 private:
 
-    params parameters;
+
 
     // number of classes
 
@@ -78,8 +78,9 @@ private:
 
 
     friend std::ostream& operator<<(std::ostream&, const OLaRank_old&);
-
 public:
+
+    params parameters;
     // size of the pattern
 
     int B;

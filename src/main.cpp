@@ -5,23 +5,23 @@
 //  Copyright (c) 2014 Ivan Bogun. All rights reserved.
 //
 
+#include <algorithm>
 #include <ctime>
 #include <fstream>
 #include <iostream>
-#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <opencv2/opencv.hpp>
 #include <pthread.h>
 #include <thread>
-#include <opencv2/opencv.hpp>
 
-#include <glog/logging.h>
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 
-#include "Tracker/AllTrackers.h"
 #include "Datasets/AllDatasets.h"
+#include "Tracker/AllTrackers.h"
 
 #include "Superpixels/SuperPixels.h"
 
@@ -84,45 +84,49 @@
 
 DEFINE_int32(budget, 100, "Budget");
 DEFINE_int32(display, 1, "Display settings.");
-DEFINE_double(lambda_s, 0.3, "Straddling lambda in ObjDetectorTracker().");
-DEFINE_double(lambda_e, 0.3, "Edge density lambda in ObjDetectorTracker().");
+DEFINE_double(lambda_s, 0.4, "Straddling lambda in ObjDetectorTracker().");
+DEFINE_double(lambda_e, 0.4, "Edge density lambda in ObjDetectorTracker().");
 DEFINE_double(inner, 0.9, "Inner bounding box for objectness.");
 DEFINE_double(straddeling_threshold, 1.5, "Straddeling threshold.");
-DEFINE_int32(video_index, -1, "Video to use for tracking.");
-DEFINE_string(video_name, "", "Video name to use.");
+DEFINE_int32(video_index, 0, "Video to use for tracking.");
+DEFINE_string(video_name, "", "Video fname to use.");
 DEFINE_int32(frame_from, 0, "Frame from");
 DEFINE_int32(frame_to, 5000, "Frame to");
 DEFINE_int32(tracker_type, 1,
              "Type of the tracker (RobStruck - 0, ObjDet - 1, FilterBad - 2)");
+
+DEFINE_string(feature, "hogANDhist", "Features to use");
+DEFINE_string(top_feature, "hogANDhist" , "Top features to use");
+DEFINE_string(top_kernel, "int", "Top kernel to use");
 DEFINE_double(topK, 50, "Top K objectness boxes in FilterBadStruck tracker.");
-DEFINE_string(proto_file,
-              "/Users/Ivan/Code/Tracking/DeepAntrack/data/imagenet_memory.prototxt",
-              "Proto file for the feature extraction using deep ConvNet");
 DEFINE_string(
-    conv_deep_weights,
-    "/Users/Ivan/Code/Tracking/DeepAntrack/data/bvlc_reference_caffenet.caffemodel",
-    "File with the weights for the deep ConvNet");
+    proto_file,
+    "/Users/Ivan/Code/Tracking/DeepAntrack/data/imagenet_memory.prototxt",
+    "Proto file for the feature extraction using deep ConvNet");
+DEFINE_string(conv_deep_weights, "/Users/Ivan/Code/Tracking/DeepAntrack/data/"
+                                 "bvlc_reference_caffenet.caffemodel",
+              "File with the weights for the deep ConvNet");
 
 int main(int argc, char *argv[]) {
     google::InitGoogleLogging(argv[0]);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    Dataset *dataset = new DatasetWu2015;
-    dataset->setRootFolder(wu2015RootFolder);
+    Dataset *dataset = new DatasetWu2013;
+    dataset->setRootFolder(wu2013RootFolder);
 
     // std::vector<std::pair<std::string, std::vector<std::string>>>
     // votPrepared=
     //    dataset->prepareDataset(vot2015RootFolder);
     std::vector<std::pair<std::string, std::vector<std::string>>> videos =
-        dataset->prepareDataset(wu2015RootFolder);
+        dataset->prepareDataset(wu2013RootFolder);
 
-    std::string feature = "raw";
-    std::string kernel = "linear";
+    std::string feature = FLAGS_feature;
+    std::string kernel = "int";
 
     bool pretraining = false;
     bool filter = true;
-    bool straddling = false;
-    bool edgeness = false;
+    bool straddling = true;
+    bool edgeness = true;
     bool spatialPrior = false;
     std::string note = " Object Struck tracker";
 
@@ -136,16 +140,16 @@ int main(int argc, char *argv[]) {
         vidName = FLAGS_video_name;
     }
 
-    int vidIndex = dataset->vidToIndex.at(vidName);
+    int vidIndex = 0;
     if (FLAGS_video_index != -1)
         vidIndex = FLAGS_video_index;
 
     // tracker.display=0;
 
     std::vector<std::pair<std::string, std::vector<std::string>>>
-        video_gt_images = dataset->prepareDataset(wu2015RootFolder);
+        video_gt_images = dataset->prepareDataset(wu2013RootFolder);
 
-    std::string save_base = wu2015SaveFolder;
+    std::string save_base = wu2013SaveFolder;
     std::string dirName =
         save_base + "/lambda_" + std::to_string(FLAGS_lambda_s);
     // AllExperimentsRunner::createDirectory(dirName);
@@ -173,15 +177,17 @@ int main(int argc, char *argv[]) {
 
     std::unordered_map<std::string, std::string> featureParamsMap;
 
-    featureParamsMap.insert(std::make_pair("dis_features", "haar"));
+    featureParamsMap.insert(std::make_pair("dis_features", "hog"));
     featureParamsMap.insert(std::make_pair("dis_kernel", "linear"));
-    featureParamsMap.insert(std::make_pair("top_features", "hogANDhist"));
-    featureParamsMap.insert(std::make_pair("top_kernel", "int"));
+
+    featureParamsMap.insert(std::make_pair("top_features", FLAGS_top_feature));
+    featureParamsMap.insert(std::make_pair("top_kernel", FLAGS_top_kernel));
 
     featureParamsMap.insert(std::make_pair("proto", FLAGS_proto_file));
     featureParamsMap.insert(std::make_pair("weights", FLAGS_conv_deep_weights));
 
-    for (int vidIndex = 54; vidIndex < video_gt_images.size(); vidIndex++) {
+    for (int vidIndex = FLAGS_video_index; vidIndex < video_gt_images.size();
+         vidIndex++) {
         std::cout << "Vid Index: " << vidIndex << "\n";
         pair<string, vector<string>> gt_images = video_gt_images[vidIndex];
 

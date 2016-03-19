@@ -7,8 +7,8 @@
 //////////////////////////////////////////////////////////////////////
 
 #ifdef USE_DEEP_FEATURES
-#ifndef DEEPFEATURES_H
-#define DEEPFEATURES_H 1
+#ifndef DEEPPCA_H
+#define DEEPPCA_H 1
 
 #include "Feature.h"
 #include "boost/algorithm/string.hpp"
@@ -23,15 +23,38 @@
 #include "caffe/vision_layers.hpp"
 
 
-class DeepFeatures:public Feature {
+class DeepPCA:public Feature {
 private:
 
         const int imageSizeWidth = 256;
         const int imageSizeHeight = 256;
 
+        bool isBasisSet = false;
+
+        int featureSize = 2048;
+
+        cv::PCA* pca;
+
+
+        const int fullFeatureSize = 4096;
+        int correctedFeatureSize;
+
+        arma::mat arma_mean;
+        arma::mat arma_std;
+
+        arma::rowvec max_elms;
+        arma::rowvec min_elms;
+
+        std::vector<int> zeroIdx;
         boost::shared_ptr<caffe::Net<float> > caffe_net;
 public:
-        DeepFeatures() {};
+        DeepPCA() {};
+
+        void saveMeanVariance(const cv::Mat& data);
+        void normalize(cv::Mat& toNormalize);
+        void computeMeanVariance(const cv::Mat& data, cv::Mat& mean, cv::Mat& std);
+
+        ~DeepPCA() { delete pca;};
 
 
         void setParams (const std::unordered_map<std::string, std::string> & map );
@@ -52,8 +75,7 @@ public:
         std::string getInfo();
 
         int calculateFeatureDimension() {
-                return 4096;
-                //return 1000;
+                return this->featureSize;
         }
 
 

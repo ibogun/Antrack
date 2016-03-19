@@ -32,12 +32,16 @@ void Struck::initialize(cv::Mat &image, cv::Rect &location,
 
     // add ground truth
     locations.push_back(location);
+
     this->samplerForUpdate->sampleEquiDistant(location, locations);
+
 
     cv::Mat processedImage = this->feature->prepareImage(&image);
     arma::mat x = this->feature->calculateFeature(processedImage, locations);
     arma::mat y = this->feature->reshapeYs(locations);
     this->olarank->initialize(x, y, 0, framesTracked);
+
+
 
     // create filter, if chosen
     updateTracker = true;
@@ -465,6 +469,7 @@ cv::Rect Struck::track(cv::Mat &image) {
     /**
      Final decision on the best bounding box
      **/
+
 
     // add predicted location  to the results
     this->boundingBoxes.push_back(bestLocationDetector);
@@ -1513,8 +1518,8 @@ Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
     int nAngular = 16;
     int B = 100;
 
-    int nRadial_search = 8;   // was 12
-    int nAngular_search = 18; // was 30
+    int nRadial_search = 12;   // was 12
+    int nAngular_search = 30; // was 30
 
     Feature *features;
     Kernel *kernel;
@@ -1528,6 +1533,8 @@ Struck::Struck(bool pretraining, bool useFilter, bool useEdgeDensity,
 #ifdef USE_DEEP_FEATURES
     } else if (featureSTR == "deep") {
         features = new DeepFeatures();
+    } else if (featureSTR =="deepPCA") {
+        features = new DeepPCA();
 #endif
     } else if (featureSTR == "hogANDhist") {
         Feature *f1;

@@ -14,9 +14,10 @@
 #include "../Features/AllFeatures.h"
 #include "../Kernels/CacheKernel.h"
 #include "Struck.h"
+#include "ObjDetectorStruck.h"
 #include "OLaRank_old.h"
 
-class MBestStruck: public Struck {
+class MBestStruck: public ObjDetectorStruck {
 
 public:
         OLaRank_old* top_olarank;
@@ -25,17 +26,25 @@ public:
 
         Feature* top_feature;
 
-        using Struck::Struck;
+        using ObjDetectorStruck::ObjDetectorStruck;
 
         int M = 128;
 
-        double dis_lambda = 2;
-
-        void setParams(const std::unordered_map<std::string, double>& map){};
+        double dis_lambda = 0.2;
         void setFeatureParams(const std::unordered_map<std::string, std::string> & map);
 
+        void setM(int M_){ this->M = M_;};
+        void setLambda( double dis_lambda_) {this->dis_lambda = dis_lambda_;};
+        void setTopBudget(int B_) {this->top_olarank->B = B_;};
+        void setBottomBudget(int B_) {this->olarank->B =B_;};
         cv::Rect track(cv::Mat& image);
         void initialize(cv::Mat& image, cv::Rect& location);
+
+        void updateDebugImage(cv::Mat* canvas,cv::Mat& img,
+                              cv::Rect &bestLocation,cv::Scalar colorOfBox);
+        void updateDebugImage(cv::Mat* canvas, const cv::Mat& img,
+                              const std::vector<cv::Rect>& rects, const std::vector<double>& ranking,
+                              const cv::Rect& bestLocation);
 
         ~MBestStruck() {
                 delete top_olarank;

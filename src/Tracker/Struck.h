@@ -26,14 +26,7 @@
 #include "../Kernels/LinearKernel.h"
 #include "../Kernels/MultiKernel.h"
 
-#include "../Features/RawFeatures.h"
-#include "../Features/Haar.h"
-#include "../Features/Histogram.h"
-#include "../Features/HoG.h"
-#include "../Features/HoG_PCA.h"
-#include "../Features/DeepFeatures.h"
-#include "../Features/HoGandRawFeatures.h"
-#include "../Features/MultiFeature.h"
+#include "../Features/AllFeatures.h"
 
 
 #include "../Datasets/Dataset.h"
@@ -129,6 +122,11 @@ class Struck {
         this->olarank->B = B;
     }
 
+    void setLocationSamplerParameters(int nRadial, int nAngular) {
+        this->samplerForSearch->nRadial = nRadial;
+        this->samplerForSearch->nAngular = nAngular;
+    }
+
     void setObjectnessCanvas(cv::Mat c) {
         this->objectnessCanvas = c;
     }
@@ -186,7 +184,7 @@ class Struck {
     void initialize(std::string image_name, int x, int y, int width,
                     int height) {
         cv::Rect b(x, y, width, height);
-        cv::Mat image = cv::imread(image_name, 0);
+        cv::Mat image = cv::imread(image_name);
         this->initialize(image, b);
     }
 

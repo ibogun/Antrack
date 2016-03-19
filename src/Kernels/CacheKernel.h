@@ -35,6 +35,7 @@ struct KeyEqual {
 class CachedKernel {
 
     Kernel *kernel;
+    arma::mat cached_kernel;
 
     std::unordered_map<cache::Key, double, cache::KeyHash, cache::KeyEqual> kern;
 
@@ -43,6 +44,10 @@ CachedKernel(Kernel *kernel_) : kernel(kernel_){};
 
     double calculate( arma::mat &x1, int r1,  arma::mat &x2,
                            int r2);
+
+    double calculateFast(arma::mat& x1, int r1, arma::mat& x2, int r2);
+
+    void initialize(int n);
 
     ~CachedKernel() { delete kernel; }
 };
