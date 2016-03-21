@@ -28,7 +28,7 @@ public:
 
         using ObjDetectorStruck::ObjDetectorStruck;
 
-        int M = 128;
+        int M = 64;
 
         double dis_lambda = 0.2;
         void setFeatureParams(const std::unordered_map<std::string, std::string> & map);

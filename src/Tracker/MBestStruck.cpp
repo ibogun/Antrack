@@ -207,7 +207,7 @@ void MBestStruck::initialize(cv::Mat &image, cv::Rect &location) {
     } else if (display == 3) {
 
         // initalize here...
-        //this->objPlot->initialize();
+        // this->objPlot->initialize();
     }
 
     framesTracked++;
@@ -314,7 +314,8 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
             (rectInSmallImage.x >= 0) && (rectInSmallImage.y >= 0);
 
         if (rect_fits_small_image) {
-            predictions_straddling[i] =  this->straddle.computeStraddling(rectInSmallImage);
+            predictions_straddling[i] =
+                this->straddle.computeStraddling(rectInSmallImage);
             if (predictions_straddling[i] != predictions_straddling[i]) {
                 isStraddlingSane = false;
             }
@@ -412,14 +413,58 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
         LOG(INFO) << "applied edgeness";
     }
 
-    arma::uvec indices = arma::sort_index(predictions, "descend");
+    cv::Mat dis_processedImage = this->dis_features->prepareImage(&image);
+    arma::mat dis_x = this->dis_features->calculateFeature(dis_processedImage,
+                                                           locationsOnaGrid);
+
+    std::vector<bool> isTopRect; // indices of the locations which are going to
+                                 // the top_olarank
 
     std::vector<cv::Rect> topRects;
+    std::vector<int> indicesOfTopVectors;
 
-    for (int i = 0; i < this->M; i++) {
-        topRects.push_back(locationsOnaGrid[indices[i]]);
-        LOG_IF(INFO, i < 5) << "Idx: " << i << " " << predictions[indices[i]];
+    for (int i = 0; i < locationsOnaGrid.size(); i++) {
+        isTopRect.push_back(false);
     }
+
+    LOG(INFO) << " In total there are " << locationsOnaGrid.size() << " rows";
+    while (topRects.size() < this->M) {
+        // find minimum over the predictions
+        arma::rowvec pred_diverse(locationsOnaGrid.size(), arma::fill::zeros);
+
+        for (int i = 0; i < locationsOnaGrid.size(); i++) {
+            if (isTopRect[i]) {
+                pred_diverse[i] = arma::datum::inf;
+            } else {
+                pred_diverse[i] = -predictions[i];
+                for (int j = 0; j < topRects.size(); j++) {
+                    pred_diverse[i] +=
+                        this->dis_lambda *
+                        (this->dis_kernel->calculate(dis_x, i, dis_x,
+                                                     indicesOfTopVectors[j]));
+                }
+            }
+        }
+
+        uword m_best;
+        pred_diverse.min(m_best);
+        topRects.push_back(locationsOnaGrid[m_best]);
+        indicesOfTopVectors.push_back(m_best);
+
+        isTopRect[m_best] = true;
+        LOG(INFO) << predictions[m_best] << " " << pred_diverse[m_best]
+                  << locationsOnaGrid[m_best] << " id: " << m_best;
+        pred_diverse[m_best] = arma::datum::inf;
+    }
+    // arma::uvec indices = arma::sort_index(predictions, "descend");
+
+    // std::vector<cv::Rect> topRects;
+
+    // for (int i = 0; i < this->M; i++) {
+    //     topRects.push_back(locationsOnaGrid[indices[i]]);
+    //     LOG_IF(INFO, i < 5) << "Idx: " << i << " " <<
+    //     predictions[indices[i]];
+    // }
 
     //  MBestBusiness here
     // calculate features
@@ -428,8 +473,6 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
         top_feature->calculateFeature(top_processedImage, topRects);
 
     arma::rowvec top_predictions = this->top_olarank->predictAll(top_x);
-
-
 
     arma::rowvec top_predictions_straddling(top_predictions.size(),
                                             arma::fill::zeros);
@@ -469,17 +512,17 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
         }
     }
 
-    // if (useStraddling && updateTracker && isStraddlingSane) {
-    //     top_predictions = top_predictions +
-    //                       this->lambda_straddeling * top_predictions_straddling;
-    //     LOG(INFO) << "top applied straddling";
-    // }
+    if (useStraddling && updateTracker && isStraddlingSane) {
+        top_predictions = top_predictions +
+                          this->lambda_straddeling * top_predictions_straddling;
+        LOG(INFO) << "top applied straddling";
+    }
 
-    // if (useEdgeness && updateTracker && isEdgenessSane) {
-    //     top_predictions = top_predictions +
-    //                       this->lambda_edgeness * (top_predictions_edgeness);
-    //     LOG(INFO) << "top applied edgeness";
-    // }
+    if (useEdgeness && updateTracker && isEdgenessSane) {
+        top_predictions = top_predictions +
+                          this->lambda_edgeness * (top_predictions_edgeness);
+        LOG(INFO) << "top applied edgeness";
+    }
 
     LOG(INFO) << "Prediction scores: " << top_predictions;
     uword groundTruth;
@@ -575,12 +618,28 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
     if (display == 1) {
         cv::Scalar color(255, 0, 0);
         cv::Mat plotImg = image.clone();
-        cv::rectangle(plotImg, lastLocation, color, 2);
+
+        cv::Mat topDetection(plotImg, lastLocation);
+
+        cv::Rect locateDetectionRectangle(0, plotImg.cols - lastLocation.width,
+                                          lastLocation.height,
+                                          lastLocation.width);
+
+        LOG(INFO) << "DEBUG: " << locateDetectionRectangle;
+        this->copyFromRectangleToImage(plotImg, topDetection,
+                                       locateDetectionRectangle, 0,
+                                       cv::Vec3b(0, 0, 0));
+
+        for (int i = 0; i < topRects.size(); i++) {
+            cv::Scalar color(0, 0, 204);
+            cv::rectangle(plotImg, topRects[i], color, 1);
+        }
 
         if (useFilter) {
             cv::rectangle(plotImg, bestLocationFilter, cv::Scalar(0, 255, 100),
                           0);
         }
+        cv::rectangle(plotImg, lastLocation, color, 2);
 
         cv::imshow("Tracking window", plotImg);
         cv::waitKey(1);

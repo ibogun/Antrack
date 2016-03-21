@@ -96,7 +96,7 @@ DEFINE_int32(tracker_type, 1,
              "Type of the tracker (RobStruck - 0, ObjDet - 1, FilterBad - 2)");
 
 DEFINE_string(feature, "hogANDhist", "Features to use");
-DEFINE_string(top_feature, "hogANDhist" , "Top features to use");
+DEFINE_string(top_feature, "hogANDhist", "Top features to use");
 DEFINE_string(top_kernel, "int", "Top kernel to use");
 DEFINE_double(topK, 50, "Top K objectness boxes in FilterBadStruck tracker.");
 DEFINE_string(
@@ -106,6 +106,9 @@ DEFINE_string(
 DEFINE_string(conv_deep_weights, "/Users/Ivan/Code/Tracking/DeepAntrack/data/"
                                  "bvlc_reference_caffenet.caffemodel",
               "File with the weights for the deep ConvNet");
+
+DEFINE_double(lambda_diff, 0.2, "Lambda used in multiple hypothesis.");
+DEFINE_int32(MBest, 64, "MBest M.");
 
 int main(int argc, char *argv[]) {
     google::InitGoogleLogging(argv[0]);
@@ -193,10 +196,12 @@ int main(int argc, char *argv[]) {
 
         vector<cv::Rect> groundTruth =
             dataset->readGroundTruth(gt_images.first);
-        Struck *tracker =
+        MBestStruck *tracker =
             new MBestStruck(pretraining, useFilter, useEdgeDensity,
                             useStraddling, scalePrior, kernel, feature, note);
         tracker->setParams(map);
+        tracker->setLambda(FLAGS_lambda_diff);
+        tracker->setM(FLAGS_MBest);
         tracker->setFeatureParams(featureParamsMap);
         tracker->display = FLAGS_display;
 
@@ -230,7 +235,9 @@ int main(int argc, char *argv[]) {
         tracker->initialize(image, rect);
 
         for (int i = startingFrame; i < endingFrame; i++) {
-            tracker->track(gt_images.second[i]);
+
+            cv::Mat im = cv::imread(gt_images.second[i]);
+            tracker->track(im);
             std::cout << "Frame #" << i - startingFrame << " out of "
                       << endingFrame - startingFrame
                       << tracker->getBoundingBoxes()[i - startingFrame]
