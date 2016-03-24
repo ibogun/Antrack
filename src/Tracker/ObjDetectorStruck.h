@@ -21,7 +21,7 @@ class ObjDetectorStruck: public Struck {
     double lambda_straddeling = 0;
     double lambda_edgeness = 0;
     double straddeling_threshold = 1.5;
-    double inner = 0.9;
+    double inner = 0.925;
 
     using Struck::Struck;  // inherit all constructors from Struck
 

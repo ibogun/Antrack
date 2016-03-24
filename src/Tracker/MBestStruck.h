@@ -30,7 +30,7 @@ public:
 
         int M = 64;
 
-        double dis_lambda = 0.2;
+        double dis_lambda = 0.075;
         void setFeatureParams(const std::unordered_map<std::string, std::string> & map);
 
         void setM(int M_){ this->M = M_;};

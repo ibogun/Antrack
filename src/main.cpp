@@ -37,7 +37,8 @@
 #define NUM_THREADS 16
 
 #define wu2013RootFolder "/Users/Ivan/Files/Data/wu2013/"
-#define wu2015RootFolder "/Users/Ivan/Files/Data/wu2015/"
+#define wu2015RootFolder                                                       \
+    "/Users/Ivan/Code/Tracking/Antrack/python/visual-tracking-benchmark/data/"
 #define alovRootFolder "/Users/Ivan/Files/Data/Tracking_alov300/"
 #define vot2014RootFolder "/Users/Ivan/Files/Data/vot2014/"
 #define vot2015RootFolder "/Users/Ivan/Files/Data/vot2015/"
@@ -88,7 +89,7 @@ DEFINE_double(lambda_s, 0.4, "Straddling lambda in ObjDetectorTracker().");
 DEFINE_double(lambda_e, 0.4, "Edge density lambda in ObjDetectorTracker().");
 DEFINE_double(inner, 0.9, "Inner bounding box for objectness.");
 DEFINE_double(straddeling_threshold, 1.5, "Straddeling threshold.");
-DEFINE_int32(video_index, 0, "Video to use for tracking.");
+DEFINE_int32(video_index, -1, "Video to use for tracking.");
 DEFINE_string(video_name, "", "Video fname to use.");
 DEFINE_int32(frame_from, 0, "Frame from");
 DEFINE_int32(frame_to, 5000, "Frame to");
@@ -96,8 +97,8 @@ DEFINE_int32(tracker_type, 1,
              "Type of the tracker (RobStruck - 0, ObjDet - 1, FilterBad - 2)");
 
 DEFINE_string(feature, "hogANDhist", "Features to use");
-DEFINE_string(top_feature, "hogANDhist", "Top features to use");
-DEFINE_string(top_kernel, "int", "Top kernel to use");
+DEFINE_string(top_feature, "deep", "Top features to use");
+DEFINE_string(top_kernel, "linear", "Top kernel to use");
 DEFINE_double(topK, 50, "Top K objectness boxes in FilterBadStruck tracker.");
 DEFINE_string(
     proto_file,
@@ -114,14 +115,14 @@ int main(int argc, char *argv[]) {
     google::InitGoogleLogging(argv[0]);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    Dataset *dataset = new DatasetWu2013;
-    dataset->setRootFolder(wu2013RootFolder);
+    Dataset *dataset = new DatasetWu2015;
+    dataset->setRootFolder(wu2015RootFolder);
 
     // std::vector<std::pair<std::string, std::vector<std::string>>>
     // votPrepared=
     //    dataset->prepareDataset(vot2015RootFolder);
     std::vector<std::pair<std::string, std::vector<std::string>>> videos =
-        dataset->prepareDataset(wu2013RootFolder);
+        dataset->prepareDataset(wu2015RootFolder);
 
     std::string feature = FLAGS_feature;
     std::string kernel = "int";
@@ -133,31 +134,36 @@ int main(int argc, char *argv[]) {
     bool spatialPrior = false;
     std::string note = " Object Struck tracker";
 
-    // tracker.setLambda(FLAGS_lambda);
-    // tracker.setMinStraddeling(FLAGS_straddling_threshold);
     int frames = 10;
 
-    std::string vidName = "Basketball";
+    std::string vidName = FLAGS_video_name;
 
     if (FLAGS_video_name != "") {
         vidName = FLAGS_video_name;
     }
 
-    int vidIndex = 0;
+    int vidIndex;
+
+    std::unordered_map<std::string, int>::const_iterator got =
+        dataset->vidToIndex.find(vidName);
+
+    if (got == dataset->vidToIndex.end())
+        vidIndex = -1;
+    else
+        vidIndex = got->second;
+
+    LOG(INFO) << "Found vid_number: " << vidIndex;
     if (FLAGS_video_index != -1)
         vidIndex = FLAGS_video_index;
 
     // tracker.display=0;
 
     std::vector<std::pair<std::string, std::vector<std::string>>>
-        video_gt_images = dataset->prepareDataset(wu2013RootFolder);
+        video_gt_images = dataset->prepareDataset(wu2015RootFolder);
 
-    std::string save_base = wu2013SaveFolder;
+    std::string save_base = wu2015SaveFolder;
     std::string dirName =
         save_base + "/lambda_" + std::to_string(FLAGS_lambda_s);
-    // AllExperimentsRunner::createDirectory(dirName);
-
-    // for (vidIndex = 0; vidIndex <51 ; ++vidIndex) {
 
     int tracker_type = FLAGS_tracker_type;
 
@@ -165,10 +171,6 @@ int main(int argc, char *argv[]) {
     bool useStraddling = straddling;
     bool useEdgeDensity = edgeness;
     bool scalePrior = spatialPrior;
-
-    // ObjDetectorStruck tracker(pretraining, filter, edgeness,
-    //                             straddling,
-    //                             spatialPrior, kernel, feature, note);
 
     std::unordered_map<std::string, double> map;
     map.insert(std::make_pair("lambda_straddling", FLAGS_lambda_s));
@@ -189,15 +191,16 @@ int main(int argc, char *argv[]) {
     featureParamsMap.insert(std::make_pair("proto", FLAGS_proto_file));
     featureParamsMap.insert(std::make_pair("weights", FLAGS_conv_deep_weights));
 
-    for (int vidIndex = FLAGS_video_index; vidIndex < video_gt_images.size();
-         vidIndex++) {
+    LOG(INFO) << "all img: " << video_gt_images.size();
+
+    for (; vidIndex < video_gt_images.size(); vidIndex++) {
         std::cout << "Vid Index: " << vidIndex << "\n";
         pair<string, vector<string>> gt_images = video_gt_images[vidIndex];
 
         vector<cv::Rect> groundTruth =
             dataset->readGroundTruth(gt_images.first);
-        MBestStruck *tracker =
-            new MBestStruck(pretraining, useFilter, useEdgeDensity,
+        ScaleStruck *tracker =
+            new ScaleStruck(pretraining, useFilter, useEdgeDensity,
                             useStraddling, scalePrior, kernel, feature, note);
         tracker->setParams(map);
         tracker->setLambda(FLAGS_lambda_diff);

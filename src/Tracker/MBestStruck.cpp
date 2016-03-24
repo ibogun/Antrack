@@ -456,15 +456,6 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
                   << locationsOnaGrid[m_best] << " id: " << m_best;
         pred_diverse[m_best] = arma::datum::inf;
     }
-    // arma::uvec indices = arma::sort_index(predictions, "descend");
-
-    // std::vector<cv::Rect> topRects;
-
-    // for (int i = 0; i < this->M; i++) {
-    //     topRects.push_back(locationsOnaGrid[indices[i]]);
-    //     LOG_IF(INFO, i < 5) << "Idx: " << i << " " <<
-    //     predictions[indices[i]];
-    // }
 
     //  MBestBusiness here
     // calculate features
@@ -473,56 +464,6 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
         top_feature->calculateFeature(top_processedImage, topRects);
 
     arma::rowvec top_predictions = this->top_olarank->predictAll(top_x);
-
-    arma::rowvec top_predictions_straddling(top_predictions.size(),
-                                            arma::fill::zeros);
-    arma::rowvec top_predictions_edgeness(top_predictions.size(),
-                                          arma::fill::zeros);
-
-    badBoxCount = 0;
-    for (int i = 0; i < top_predictions.size(); ++i) {
-        if (i == 0) {
-            // if straddeling on the previous location of the object is
-            // too small - straddeling won't help.
-            double area_to_npixels =
-                (small_image.rows * small_image.cols /
-                 static_cast<double>(this->straddle.getNumberOfSuperpixel()));
-
-            if (area_to_npixels * this->straddeling_threshold <=
-                lastLocation.width * lastLocation.height) {
-                boxTooSmallForStraddeling = true;
-            }
-        }
-
-        cv::Rect rectInSmallImage(topRects[i].x - x_min, topRects[i].y - y_min,
-                                  topRects[i].width, topRects[i].height);
-
-        bool rect_fits_small_image =
-            (rectInSmallImage.x + rectInSmallImage.width < small_image.cols) &&
-            (rectInSmallImage.y + rectInSmallImage.height < small_image.rows) &&
-            (rectInSmallImage.x >= 0) && (rectInSmallImage.y >= 0);
-
-        if (rect_fits_small_image) {
-            top_predictions_straddling[i] =
-                this->straddle.computeStraddling(rectInSmallImage);
-            top_predictions_edgeness[i] =
-                edge.computeEdgeDensity(rectInSmallImage);
-        } else {
-            badBoxCount++;
-        }
-    }
-
-    if (useStraddling && updateTracker && isStraddlingSane) {
-        top_predictions = top_predictions +
-                          this->lambda_straddeling * top_predictions_straddling;
-        LOG(INFO) << "top applied straddling";
-    }
-
-    if (useEdgeness && updateTracker && isEdgenessSane) {
-        top_predictions = top_predictions +
-                          this->lambda_edgeness * (top_predictions_edgeness);
-        LOG(INFO) << "top applied edgeness";
-    }
 
     LOG(INFO) << "Prediction scores: " << top_predictions;
     uword groundTruth;
