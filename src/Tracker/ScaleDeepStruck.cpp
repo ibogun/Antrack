@@ -1,5 +1,14 @@
 #include "ScaleDeepStruck.h"
 
+
+bool isDimsBigEnough(cv::Rect& r) {
+
+    if (r.width < 16) return false;
+    if (r.height < 16) return false;
+
+    return true;
+}
+
 cv::Rect ScaleStruck::track(cv::Mat &image) {
     std::vector<cv::Rect> locationsOnaGrid;
     locationsOnaGrid.push_back(lastLocation);
@@ -432,7 +441,9 @@ void ScaleStruck::sampleScaleBoxes(cv::Rect &location,
 
         if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
             cv::Rect rect(bb_x, bb_y, wB, hB);
-            rects.push_back(rect);
+            if (isDimsBigEnough(rect)) {
+                rects.push_back(rect);
+            }
         }
     }
 }
@@ -475,7 +486,9 @@ void ScaleStruck::sampleTranslations(cv::Rect &location,
 
             if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
                 cv::Rect rect(bb_x, bb_y, wB, hB);
-                rects.push_back(rect);
+                if (isDimsBigEnough(rect)) {
+                    rects.push_back(rect);
+                }
             }
         }
     }
@@ -486,7 +499,7 @@ void ScaleStruck::sampleAspectRatio(cv::Rect &location,
                                     int step) {
 
     cv::Rect imageBox(0, 0, this->im_cols, this->im_rows);
-
+    LOG(INFO) << " SCALE STRUCK BOX: " << imageBox;
     int w = location.width;
     int h = location.height;
 
@@ -516,7 +529,9 @@ void ScaleStruck::sampleAspectRatio(cv::Rect &location,
 
             if (imageBox.contains(topLeft) && imageBox.contains(bottomRight)) {
                 cv::Rect rect(bb_x, bb_y, wB, hB);
-                rects.push_back(rect);
+                if (isDimsBigEnough(rect)) {
+                    rects.push_back(rect);
+                }
             }
         }
     }

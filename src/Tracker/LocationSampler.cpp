@@ -64,6 +64,7 @@ void LocationSampler::sampleEquiDistant(cv::Rect &currentLocation,
 
     cv::Rect imageBox(0, 0, this->n, this->m);
 
+    LOG(INFO) << " LOCATION SAMPLER BOX: " << imageBox;
     int halfWidth = cvRound(currentLocation.width / 2.0);
     int halfHeight = cvRound(currentLocation.height / 2.0);
 
@@ -118,7 +119,6 @@ void LocationSampler::sampleEquiDistantMultiScale(
     int bb_x, bb_y = 0;
 
     cv::Rect imageBox(0, 0, this->n, this->m);
-
     int halfWidth = cvRound(currentLocation.width / 2.0);
     int halfHeight = cvRound(currentLocation.height / 2.0);
 
@@ -272,6 +272,7 @@ void LocationSampler::sampleOnAGrid(cv::Rect &currentLocation,
     int halfWidth = cvRound(currentLocation.width / 2.0);
     int halfHeight = cvRound(currentLocation.height / 2.0);
     cv::Rect imageBox(0, 0, this->n, this->m);
+
 
     for (int x = -R; x <= R; x = x + step) {
         for (int y = -R; y <= R; y = y + step) {
