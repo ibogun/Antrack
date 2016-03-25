@@ -384,6 +384,81 @@ class MStruck {
         this->featureParamsMap.insert(std::make_pair("weights", weights));
     }
 
+    void setObjectnessParams(double staddling, double edge) {
+        this->tracker->ObjDetectorStruck::setLambda(staddling, edge);
+    }
+
+    void setDisplay(int display) {
+        CHECK_NOTNULL(tracker);
+        this->tracker->display = display;
+    }
+
+    void killDisplay() { cv::destroyAllWindows(); }
+    void setM(int M_) { this->tracker->setM(M_); }
+    void setLambda(double lambda_) { this->tracker->setLambda(lambda_); }
+    void setTopBudget(int B_) { this->tracker->setTopBudget(B_); }
+    void setBottomBudget(int B_) { this->tracker->setBottomBudget(B_); }
+};
+
+class ScaleDeepStruck {
+  public:
+    ScaleStruck *tracker;
+    std::unordered_map<std::string, std::string> featureParamsMap;
+
+    boost::python::list track(std::string filename) {
+        boost::python::list output;
+
+        cv::Mat image = cv::imread(filename);
+        cv::Rect r = this->tracker->track(image);
+
+        output.append(r.x);
+        output.append(r.y);
+        output.append(r.width);
+        output.append(r.height);
+        return output;
+    }
+
+    void initialize(std::string filename, int x, int y, int width, int height) {
+        cv::Rect r(x, y, width, height);
+        cv::Mat image = cv::imread(filename);
+        this->tracker->initialize(image, r);
+    }
+
+    ~ScaleDeepStruck() { delete tracker; }
+
+    void createTracker(std::string kernel, std::string feature, int filter,
+                       std::string dis_features, std::string dis_kernel,
+                       std::string top_features, std::string top_kernel) {
+        bool pretraining = false;
+        bool useEdgeDensity = true;
+        bool useStraddling = true;
+        bool scalePrior = false;
+
+        std::string note = "Scale Deep Struck tracker";
+
+        bool useFilter = true;
+
+        this->tracker =
+            new ScaleStruck(pretraining, useFilter, useEdgeDensity,
+                            useStraddling, scalePrior, kernel, feature, note);
+
+        this->tracker->setUpdateNFrames(3);
+
+        featureParamsMap.insert(std::make_pair("dis_features", dis_features));
+        featureParamsMap.insert(std::make_pair("dis_kernel", dis_kernel));
+        featureParamsMap.insert(std::make_pair("top_features", top_features));
+        featureParamsMap.insert(std::make_pair("top_kernel", top_kernel));
+        this->tracker->setFeatureParams(featureParamsMap);
+    }
+
+    void deepFeatureParams(std::string folder) {
+
+        std::string proto = folder + "/imagenet_memory.prototxt";
+        std::string weights = folder + "/bvlc_reference_caffenet.caffemodel";
+
+        this->featureParamsMap.insert(std::make_pair("proto", proto));
+        this->featureParamsMap.insert(std::make_pair("weights", weights));
+    }
 
     void setObjectnessParams(double staddling, double edge) {
         this->tracker->ObjDetectorStruck::setLambda(staddling, edge);
@@ -442,8 +517,18 @@ BOOST_PYTHON_MODULE(antrack)
         .def("setTopBudget", &MStruck::setTopBudget)
         .def("setBottomBudget", &MStruck::setBottomBudget)
         .def("setDisplay", &MStruck::setDisplay)
-        .def ("setObjectnessParams", &MStruck::setObjectnessParams)
+        .def("setObjectnessParams", &MStruck::setObjectnessParams)
         .def("killDisplay", &MStruck::killDisplay);
+
+    class_<ScaleDeepStruck>("ScaleDeepStruck")
+        .def("initialize", &ScaleDeepStruck::initialize)
+        .def("deepFeatureParams", &ScaleDeepStruck::deepFeatureParams)
+        .def("createTracker", &ScaleDeepStruck::createTracker)
+        .def("track", &ScaleDeepStruck::track)
+        .def("setTopBudget", &ScaleDeepStruck::setTopBudget)
+        .def("setBottomBudget", &ScaleDeepStruck::setBottomBudget)
+        .def("setDisplay", &ScaleDeepStruck::setDisplay)
+        .def("setObjectnessParams", &ScaleDeepStruck::setObjectnessParams);
 }
 // find how to write functions which return some values in c++/python boost
 // framework
