@@ -201,7 +201,7 @@ cv::Rect ScaleStruck::track(cv::Mat &image) {
 
     int scale = 8;
     int step = 2;
-    int translations =4;
+    int translations = 4;
     int aspect = 3;
 
     this->im_rows = image.rows;
@@ -505,11 +505,11 @@ void ScaleStruck::sampleAspectRatio(cv::Rect &location,
             if (j == 0)
                 continue;
 
-            int bb_x = location.x + i * step;
-            int bb_y = location.y + j * step;
+            int wB = w + (i * step);
+            int hB = h + (j * step);
 
-            int wB = location.x + location.width - bb_x + (i * step) / 2;
-            int hB = location.y + location.height - bb_y + (j * step) / 2;
+            int bb_x = c_x - wB / 2;
+            int bb_y = c_y - hB / 2;
 
             cv::Point topLeft(bb_x, bb_y);
             cv::Point bottomRight(bb_x + wB, bb_y + hB);

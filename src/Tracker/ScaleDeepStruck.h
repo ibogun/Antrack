@@ -2,6 +2,7 @@
 #define SRC_TRACKER_SCALESTRUCK_H_
 
 #include "MBestStruck.h"
+#include <glog/logging.h>
 
 
 class ScaleStruck: public MBestStruck {
