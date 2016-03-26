@@ -30,6 +30,9 @@ void MBestStruck::setFeatureParams(
     } else if (top_features_str == "deep") {
         features = new DeepFeatures();
         features->setParams(map);
+    } else if (top_features_str == "deepPCA") {
+        features = new DeepPCA();
+        features->setParams(map);
 #endif
     } else if (top_features_str == "hogANDhist") {
         Feature *f1;
@@ -98,6 +101,8 @@ void MBestStruck::setFeatureParams(
     Kernel *dis_kernel_c;
     if (dis_kernel_str == "int") {
         dis_kernel_c = new IntersectionKernel_fast;
+    } else if (dis_kernel_str == "gauss") {
+        dis_kernel_c = new RBFKernel(0.2);
     } else {
         dis_kernel_c = new LinearKernel;
     }
@@ -452,8 +457,9 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
         indicesOfTopVectors.push_back(m_best);
 
         isTopRect[m_best] = true;
-        LOG(INFO) << predictions[m_best] << " " << pred_diverse[m_best]
-                  << locationsOnaGrid[m_best] << " id: " << m_best;
+        LOG_IF(INFO, topRects.size() < 6)
+            << predictions[m_best] << " " << pred_diverse[m_best]
+            << locationsOnaGrid[m_best] << " id: " << m_best;
         pred_diverse[m_best] = arma::datum::inf;
     }
 
@@ -464,6 +470,10 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
         top_feature->calculateFeature(top_processedImage, topRects);
 
     arma::rowvec top_predictions = this->top_olarank->predictAll(top_x);
+
+    for (int i = 0; i < indicesOfTopVectors.size(); i++) {
+        top_predictions[i] += predictions[indicesOfTopVectors[i]];
+    }
 
     LOG(INFO) << "Prediction scores: " << top_predictions;
     uword groundTruth;
@@ -545,13 +555,11 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
         // calculate features
         arma::mat top_x_update = top_feature->calculateFeature(
             top_processedImage, locationsOnPolarPlane);
-
-        LOG(INFO) << "Min / Max " << top_x_update.max() << " / "
-                  << top_x_update.min();
         arma::mat top_y_update =
             this->top_feature->reshapeYs(locationsOnPolarPlane);
         top_olarank->process(top_x_update, top_y_update, 0, framesTracked);
     }
+
     /**
      End of tracker udpate
      **/

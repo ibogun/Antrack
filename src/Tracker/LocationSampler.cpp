@@ -64,7 +64,7 @@ void LocationSampler::sampleEquiDistant(cv::Rect &currentLocation,
 
     cv::Rect imageBox(0, 0, this->n, this->m);
 
-    LOG(INFO) << " LOCATION SAMPLER BOX: " << imageBox;
+
     int halfWidth = cvRound(currentLocation.width / 2.0);
     int halfHeight = cvRound(currentLocation.height / 2.0);
 

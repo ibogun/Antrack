@@ -85,7 +85,7 @@
 
 DEFINE_int32(budget, 100, "Budget");
 DEFINE_int32(display, 1, "Display settings.");
-DEFINE_double(lambda_s, 0.4, "Straddling lambda in ObjDetectorTracker().");
+DEFINE_double(lambda_s, 0.3, "Straddling lambda in ObjDetectorTracker().");
 DEFINE_double(lambda_e, 0.4, "Edge density lambda in ObjDetectorTracker().");
 DEFINE_double(inner, 0.9, "Inner bounding box for objectness.");
 DEFINE_double(straddeling_threshold, 1.5, "Straddeling threshold.");
@@ -95,6 +95,9 @@ DEFINE_int32(frame_from, 0, "Frame from");
 DEFINE_int32(frame_to, 5000, "Frame to");
 DEFINE_int32(tracker_type, 1,
              "Type of the tracker (RobStruck - 0, ObjDet - 1, FilterBad - 2)");
+
+DEFINE_string(dis_feature, "hog", "Dis Features to use");
+DEFINE_string(dis_kernel, "linear", "Dis Top features to use");
 
 DEFINE_string(feature, "hogANDhist", "Features to use");
 DEFINE_string(top_feature, "deep", "Top features to use");
@@ -108,7 +111,7 @@ DEFINE_string(conv_deep_weights, "/Users/Ivan/Code/Tracking/DeepAntrack/data/"
                                  "bvlc_reference_caffenet.caffemodel",
               "File with the weights for the deep ConvNet");
 
-DEFINE_double(lambda_diff, 0.2, "Lambda used in multiple hypothesis.");
+DEFINE_double(lambda_diff, 0.075, "Lambda used in multiple hypothesis.");
 DEFINE_int32(MBest, 64, "MBest M.");
 
 int main(int argc, char *argv[]) {
@@ -182,8 +185,8 @@ int main(int argc, char *argv[]) {
 
     std::unordered_map<std::string, std::string> featureParamsMap;
 
-    featureParamsMap.insert(std::make_pair("dis_features", "hog"));
-    featureParamsMap.insert(std::make_pair("dis_kernel", "linear"));
+    featureParamsMap.insert(std::make_pair("dis_features", FLAGS_dis_feature));
+    featureParamsMap.insert(std::make_pair("dis_kernel", FLAGS_dis_kernel));
 
     featureParamsMap.insert(std::make_pair("top_features", FLAGS_top_feature));
     featureParamsMap.insert(std::make_pair("top_kernel", FLAGS_top_kernel));
@@ -199,8 +202,8 @@ int main(int argc, char *argv[]) {
 
         vector<cv::Rect> groundTruth =
             dataset->readGroundTruth(gt_images.first);
-        ScaleStruck *tracker =
-            new ScaleStruck(pretraining, useFilter, useEdgeDensity,
+        MBestStruck *tracker =
+            new MBestStruck(pretraining, useFilter, useEdgeDensity,
                             useStraddling, scalePrior, kernel, feature, note);
         tracker->setParams(map);
         tracker->setLambda(FLAGS_lambda_diff);
