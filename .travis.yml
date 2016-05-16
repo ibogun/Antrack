@@ -30,6 +30,7 @@ script: make && ./bin/RunUnitTests
 branches:
   only:
     - master
+    - building-docker-with-travis
     
 notifications:
   email: true
