@@ -36,6 +36,7 @@ public:
                                        std::string,std::string);
         cv::Rect track(cv::Mat& image);
 
+
         cv::Rect track(std::string image_name) {
                 cv::Mat image = cv::imread(image_name);
                 return this->track(image);

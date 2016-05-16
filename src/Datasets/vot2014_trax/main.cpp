@@ -44,15 +44,15 @@ DEFINE_int32(b, 10, "Robust constant.");
 DEFINE_int32(P, 10, "P in Robust Kalman filter.");
 DEFINE_int32(Q, 13, "Q in Robust Kalman filter.");
 DEFINE_int32(R, 13, "R in Robust Kalman filter.");
-DEFINE_double(lambda_s, 0.0, "Straddling lambda in ObjDetectorTracker().");
-DEFINE_double(lambda_e, 0.5, "Edge density lambda in ObjDetectorTracker().");
+DEFINE_double(lambda_s, 0.3, "Straddling lambda in ObjDetectorTracker().");
+DEFINE_double(lambda_e, 0.4, "Edge density lambda in ObjDetectorTracker().");
 DEFINE_double(inner, 0.9, "Inner bounding box for objectness.");
 DEFINE_double(straddeling_threshold, 1.5, "Straddeling threshold.");
 
 DEFINE_string(top_feature, "deep", "Top features to use");
 DEFINE_string(top_kernel, "linear", "Top kernel to use");
 
-DEFINE_double(lambda_diff, 0.075, "Lambda used in multiple hypothesis.");
+DEFINE_double(lambda_diff, 0.05, "Lambda used in multiple hypothesis.");
 DEFINE_int32(MBest, 64, "MBest M.");
 
 DEFINE_string(
@@ -126,8 +126,9 @@ int main(int ac, char **av) {
 
         trax_handle *trax;
         trax_configuration config;
-        config.format_region = TRAX_REGION_POLYGON;
+        // config.format_region = TRAX_REGION_POLYGON;
         // TRAX_REGION_RECTANGLE;
+        config.format_region = TRAX_REGION_RECTANGLE;
         config.format_image = TRAX_IMAGE_PATH;
 
         trax = trax_server_setup_standard(config, NULL);
@@ -141,19 +142,21 @@ int main(int ac, char **av) {
             if (tr == TRAX_INITIALIZE) {
 
                 float x, y, width, height;
-                // trax_region_get_rectangle(reg, &x, &y, &width, &height);
+                trax_region_get_rectangle(reg, &x, &y, &width, &height);
 
                 std::vector<float> record;
-                for (int j = 0; j < 4; ++j) {
-                    float x, y;
+                // for (int j = 0; j < 4; ++j) {
+                //     float x, y;
 
-                    trax_region_get_polygon_point(reg, j, &x, &y);
+                //     trax_region_get_polygon_point(reg, j, &x, &y);
 
-                    record.push_back(x);
-                    record.push_back(y);
-                }
-
-                cv::Rect rect = DatasetVOT2015::constructRectangle(record);
+                //     record.push_back(x);
+                //     record.push_back(y);
+                // }
+                x = MAX(x, 0);
+                y = MAX(y, 0);
+                cv::Rect rect(x, y, width, height);
+                // cv::Rect rect = DatasetVOT2015::constructRectangle(record);
                 cv::Mat image = cv::imread(trax_image_get_path(img));
 
                 if (rect.x + rect.width >= image.cols) {

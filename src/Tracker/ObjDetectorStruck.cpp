@@ -13,6 +13,128 @@ bool isBBoxTooSmallForStraddeling(cv::Rect &rect, int area, int nSuperpixels,
     return (threshold * (area / ((double)nSuperpixels)) < box_area);
 }
 
+
+arma::mat ObjDetectorStruck::applyDetectorFunctionOnMatrix(cv::Mat& image, cv::Rect& rect){
+
+    std::vector<cv::Rect> locationsOnaGrid;
+
+    int cols = image.cols;
+    int rows = image.rows;
+    cv::Rect big_box(0, 0, cols, rows);
+
+    int half_width = rect.width / 2;
+    int half_height = rect.height / 2;
+
+    int w = rect.width;
+    int h = rect.height;
+
+    arma::mat detector(rows, cols, arma::fill::zeros);
+
+    std::vector<int> idx_i;
+    std::vector<int> idx_j;
+
+    LOG(INFO) << "prior to big'o";
+    for (int i = 0; i < cols; i++) {
+        for (int j = 0; j < rows; j++) {
+
+            cv::Rect r(i - half_width, j -half_height, w, h);
+            if (r.x >= 0 && r.y >= 0 && r.x + r.width < cols && r.y + r.height < rows) {
+                locationsOnaGrid.push_back(r);
+                idx_i.push_back(i);
+                idx_j.push_back(j);
+            }
+        }
+    }
+
+
+    cv::Mat processedImage = this->feature->prepareImage(&image);
+    LOG(INFO) << " Prior to feature extraction";
+    arma::mat x =
+        this->feature->calculateFeature(processedImage, locationsOnaGrid);
+
+    LOG(INFO) << " After feature extraction";
+    arma::rowvec predictions = this->olarank->predictAll(x);
+
+    arma::rowvec predictions_straddling(predictions.size(), arma::fill::zeros);
+    arma::rowvec predictions_edgeness(predictions.size(), arma::fill::zeros);
+    bool boxTooSmallForStraddeling = false;
+
+    bool useEdgeness = (this->lambda_edgeness > 0);
+    bool useStraddling = (this->lambda_straddeling > 0);
+
+    bool useObjectness = (useEdgeness || useStraddling);
+
+
+    // extract small image from 'image'
+    cv::Mat small_image(image, big_box);
+
+    if (useObjectness) {
+        Straddling *s = new Straddling(200, this->inner);
+        this->straddle = *s;
+        this->straddle.preprocessIntegral(small_image);
+        cv::Mat gray_image;
+        cv::cvtColor(small_image, gray_image, CV_RGB2GRAY);
+
+        cv::Scalar scalar = cv::mean(gray_image);
+        // EdgeDensity edge(0.1, 0.5, this->inner, this->display);
+        EdgeDensity edge(0.66 * scalar[0], 1.33 * scalar[0], this->inner,
+                         this->display);
+        cv::Mat edges = edge.getEdges(small_image);
+        edge.computeIntegrals(edges);
+
+        cv::Rect small_image_rect(0, 0, big_box.width, big_box.height);
+
+        for (int i = 0; i < predictions.size(); ++i) {
+            cv::Rect rectInSmallImage(
+                locationsOnaGrid[i].x, locationsOnaGrid[i].y,
+                locationsOnaGrid[i].width, locationsOnaGrid[i].height);
+
+            bool rect_fits_small_image =
+                (rectInSmallImage.x + rectInSmallImage.width <
+                 small_image.cols) &&
+                (rectInSmallImage.y + rectInSmallImage.height <
+                 small_image.rows) &&
+                (rectInSmallImage.x >= 0) && (rectInSmallImage.y >= 0);
+
+            if (rect_fits_small_image) {
+                predictions_straddling[i] =
+                    this->straddle.computeStraddling(rectInSmallImage);
+                predictions_edgeness[i] =
+                    edge.computeEdgeDensity(rectInSmallImage);
+            }
+        }
+        delete s;
+    }
+
+    predictions =
+        (predictions - arma::min(predictions)) / arma::max(predictions);
+
+    if (useStraddling && !boxTooSmallForStraddeling && updateTracker) {
+        // predictions_straddling = (predictions_straddling -
+        //                          arma::min(predictions_straddling))/
+        //    arma::max(predictions_straddling);
+        predictions =
+            predictions + this->lambda_straddeling * predictions_straddling;
+    }
+
+    if (useEdgeness && updateTracker) {
+        // predictions_edgeness = (predictions_edgeness -
+        //                          arma::min(predictions_edgeness))/
+        //                       arma::max(predictions_edgeness);
+        predictions =
+            predictions + this->lambda_edgeness * predictions_edgeness;
+    }
+
+    predictions =
+        (predictions - arma::min(predictions)) / arma::max(predictions);
+
+    for (int idx = 0; idx < predictions.size(); idx++) {
+        detector(idx_j[idx], idx_i[idx]) = predictions[idx];
+    }
+
+    return detector;
+}
+
 cv::Rect ObjDetectorStruck::track(cv::Mat &image) {
     std::vector<cv::Rect> locationsOnaGrid;
     locationsOnaGrid.push_back(lastLocation);

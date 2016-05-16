@@ -10,6 +10,8 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
     sudo apt-get -y install libarmadillo-dev
     sudo apt-get -y install libboost-all-dev
     sudo apt-get -y install libgoogle-glog-dev
+    sudo apt-get -y install cmake
+    sudo apt-get -y install unzip
     # install cmake 3.x
     sudo apt-get install build-essential
 

@@ -49,7 +49,7 @@ DEFINE_double(straddeling_threshold, 1.5, "Straddeling threshold.");
 DEFINE_string(top_feature, "deep", "Top features to use");
 DEFINE_string(top_kernel, "linear", "Top kernel to use");
 
-DEFINE_double(lambda_diff, 0.075, "Lambda used in multiple hypothesis.");
+DEFINE_double(lambda_diff, 0.05, "Lambda used in multiple hypothesis.");
 DEFINE_int32(MBest, 64, "MBest M.");
 
 DEFINE_string(

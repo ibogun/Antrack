@@ -272,6 +272,40 @@ class ObjStruck {
         this->tracker->initialize(filename, x, y, width, height);
     }
 
+    boost::python::list applyDetectorFunctionOnMatrix(std::string filename,
+                                                      int x, int y, int width,
+                                                      int height, int delta) {
+
+        LOG(INFO) <<" image: "<< filename;
+
+        cv::Mat image = cv::imread(filename);
+
+        int x_min = max(0, x - delta);
+        int y_min = max(0, y - delta);
+        int x_max = min(image.cols, x + width + delta);
+        int y_max = min(image.rows, y + height + delta);
+        cv::Rect rect(x, y, width, height);
+
+        cv::Rect big_box(x_min, y_min, x_max - x_min, y_max - y_min);
+        LOG(INFO) << big_box;
+        cv::Mat small_image(image, big_box);
+        LOG(INFO) << "Starting discr business";
+        arma::mat discr =
+            this->tracker->applyDetectorFunctionOnMatrix(small_image, rect);
+
+        boost::python::list output;
+
+        for (int i = 0; i < discr.n_rows; i++) {
+            boost::python::list row;
+            for (int j = 0; j < discr.n_cols; j++) {
+                row.append(discr(i, j));
+            }
+            output.append(row);
+        }
+
+        return output;
+    }
+
     ~ObjStruck() { delete tracker; }
 
     void createTracker(std::string kernel, std::string feature, int filter,
@@ -504,6 +538,8 @@ BOOST_PYTHON_MODULE(antrack)
         .def("initialize", &ObjStruck::initialize)
         .def("createTracker", &ObjStruck::createTracker)
         .def("track", &ObjStruck::track)
+        .def("applyDetectorFunctionOnMatrix",
+             &ObjStruck::applyDetectorFunctionOnMatrix)
         .def("setDisplay", &ObjStruck::setDisplay)
         .def("killDisplay", &ObjStruck::killDisplay);
 

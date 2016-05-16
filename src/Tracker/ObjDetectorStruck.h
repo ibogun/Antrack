@@ -38,6 +38,9 @@ class ObjDetectorStruck: public Struck {
         this->setMinStraddeling(straddle);
     }
 
+
+    arma::mat applyDetectorFunctionOnMatrix(cv::Mat& image, cv::Rect& rect);
+
     void setLambda(double lambda_straddling_, double lambda_edgeness_) {
         this->lambda_straddeling = lambda_straddling_;
         this->lambda_edgeness = lambda_edgeness_;

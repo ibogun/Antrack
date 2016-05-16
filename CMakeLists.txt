@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.4)
 
 option(test "Build all tests." OFF) # Makes boolean 'test' available.
 option(VOT2015 "Build VOT2015-friendly" OFF)
+option(VOT2016 "Build VOT2016-friendly" OFF)
 option(experiments "Build all experiments." OFF) # Makes boolean 'test' available.
 
 option(DeepFeatures "Use features extracted using deep convnet()" OFF)
@@ -84,6 +85,12 @@ FILE(GLOB TRAX_FILES
 	src/Datasets/vot2014_trax/*.h
 	src/Datasets/vot2014_trax/*.c
 	src/Datasets/vot2014_trax/main.cpp
+    )
+
+  FILE(GLOB VOT_2016
+    src/Datasets/vot2015_trax/vot.h
+    #src/Datasets/vot2015_trax/*.c
+    src/Datasets/vot2015_trax/main.cpp
 )
 
 FILE(GLOB SOURCE_FILES
@@ -227,17 +234,30 @@ else()
 endif()
 
 
-if (PAMI)
-    find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
-    include_directories( ${Boost_INCLUDE_DIRS} )
-    add_executable(struck_filter_experiments ${Superpixels} ${SOURCE_FILES} ${FILTER_PRETRAINING_MAIN})
-	target_link_libraries(struck_filter_experiments ${Boost_LIBRARIES} ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-endif()
 
-if (CVPR2016)
+if(VOT2016)
+    set(VOT2016_DESTINATION "../matlab/build/bin/")
     find_package( Boost COMPONENTS program_options filesystem system  REQUIRED )
-    include_directories( ${Boost_INCLUDE_DIRS} )
-    add_executable(cvpr2016 ${Superpixels} ${SOURCE_FILES} ${cvpr2016_main})
-    target_link_libraries(cvpr2016 ${Boost_LIBRARIES}
-      ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}  ${GLOG_LIBRARY} gflags)
+
+    FIND_FILE(TRAX_HEADER NAMES trax.h PATHS ./matlab/vot-toolkit-2016/native/)
+
+   # IF (EXISTS ${TRAX_HEADER})
+    GET_FILENAME_COMPONENT(TRAX_DIR ${TRAX_HEADER} DIRECTORY)
+    ADD_DEFINITIONS(-DTRAX) # Added to enable TraX protocol support
+    LINK_DIRECTORIES(${TRAX_DIR}) # Add library directory
+    INCLUDE_DIRECTORIES(${TRAX_DIR}) # Add includes directory
+  #ENDIF()
+
+    include_directories( ${Boost_INCLUDE_DIR} )
+    add_executable(struck_vot2015 ${Superpixels} ${SOURCE_FILES} ${VOT_2016})
+
+    if (DeepFeatures)
+    target_link_libraries(struck_vot2015 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  caffe trax)
+    else()
+       target_link_libraries(struck_vot2015 ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES}
+         ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}  trax ${GLOG_LIBRARY} gflags)
+    endif()
+    set_target_properties(struck_vot2015 PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY ${VOT2016_DESTINATION})
 endif()

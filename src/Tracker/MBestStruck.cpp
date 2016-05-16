@@ -592,7 +592,7 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
 
         cv::imshow("Tracking window", plotImg);
         cv::waitKey(1);
-
+        this->objectnessCanvas = plotImg;
     } else if (display == 2) {
         this->frames.insert({framesTracked, image});
 
