@@ -3,32 +3,21 @@ FROM ubuntu:14.04.4
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 # Install.
-RUN \
-  sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
-  apt-get update && \
-  apt-get -y upgrade && \
-  apt-get install -y git && \
-  rm -rf /var/lib/apt/lists/*
+RUN  apt-get update && apt-get install -yq libopencv-dev liblapack-dev libblas-dev libboost-dev libarmadillo-dev libboost-all-dev libgoogle-glog-dev cmake unzip build-essential wget git
 
-ADD https://raw.githubusercontent.com/ibogun/Antrack/master/install_dependencies.sh /tmp/install_dependencies.sh
-RUN chmod +x /tmp/install_dependencies.sh
-RUN /tmp/install_dependencies.sh
 
-# RUN \
-#    mkdir build && cd build && export PROJECT_HOME=$(pwd) && cd ${PROJECT_HOME} && \
-#    cmake -Dtest=on -DDeepFeatures=OFF .. && \
-#    make && ./bin/RunUnitTests
+# install gflags
+RUN wget --no-check-certificate https://github.com/schuhschuh/gflags/archive/master.zip && unzip master.zip
+WORKDIR gflags-master
+RUN mkdir build && cd build && export CXXFLAGS="-fPIC" && cmake .. && make VERBOSE=1 &&  make install && cd ../..
 
-# Add files.
-# # ADD root/.bashrc /root/.bashrc
-# # ADD root/.gitconfig /root/.gitconfig
-# # ADD root/.scripts /root/.scripts
+ADD ./src/ /Antrack/src/
+ADD CMakeLists.txt /Antrack/CMakeLists.txt
+ADD ./lib/ /Antrack/lib/
 
-# Set environment variables.
-# ENV HOME /root
-
-# Define working directory.
-# WORKDIR /root
+# RUN git clone https://github.com/ibogun/Antrack.git 
+# WORKDIR Antrack
+RUN cd /Antrack/ && mkdir build && cd build && cmake .. && make
 
 # Define default command.
 CMD ["bash"]
