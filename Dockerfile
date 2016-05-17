@@ -11,7 +11,6 @@ RUN \
   rm -rf /var/lib/apt/lists/*
 
 ADD https://raw.githubusercontent.com/ibogun/Antrack/master/install_dependencies.sh /tmp/install_dependencies.sh
-ADD install_dependencies.sh /
 RUN chmod +x /tmp/install_dependencies.sh
 RUN /tmp/install_dependencies.sh
 
