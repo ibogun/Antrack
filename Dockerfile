@@ -1,5 +1,6 @@
 # Pull base image.
 FROM ubuntu:14.04.4
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 # Install.
 RUN \
@@ -9,14 +10,15 @@ RUN \
   apt-get install -y git && \
   rm -rf /var/lib/apt/lists/*
 
+ADD https://raw.githubusercontent.com/ibogun/Antrack/master/install_dependencies.sh /tmp/install_dependencies.sh
 ADD install_dependencies.sh /
-RUN chmod +x install_dependencies.sh
-RUN /install_dependencies.sh
+RUN chmod +x /tmp/install_dependencies.sh
+RUN /tmp/install_dependencies.sh
 
-RUN \
-   mkdir build && cd build && export PROJECT_HOME=$(pwd) && cd ${PROJECT_HOME} && \
-   cmake -Dtest=on -DDeepFeatures=OFF .. && \
-   make && ./bin/RunUnitTests
+# RUN \
+#    mkdir build && cd build && export PROJECT_HOME=$(pwd) && cd ${PROJECT_HOME} && \
+#    cmake -Dtest=on -DDeepFeatures=OFF .. && \
+#    make && ./bin/RunUnitTests
 
 # Add files.
 # # ADD root/.bashrc /root/.bashrc
