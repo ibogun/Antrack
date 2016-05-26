@@ -4,11 +4,11 @@ Antrack is an open source implementation of the Structured Tracker and tracking 
 # Tracking examples
 
 ## RobStruck
-![RobStruck tracking example ](https://github.com/ibogun/raw/master/sample_data/GIFs/Rob.gif)
+![RobStruck tracking example](https://raw.githubusercontent.com/ibogun/Antrack/master/sample_data/GIFs/Rob.gif)
 ## ObjStruck
-
+![ObjStruck tracking example](https://raw.githubusercontent.com/ibogun/Antrack/master/sample_data/GIFs/Obj.gif)
 ## MBestStruck
-
+![MBestStruck tracking example](https://raw.githubusercontent.com/ibogun/Antrack/master/sample_data/GIFs/MBest.gif)
 # Installation
 Dependencies installation was tested on Ubuntu 14.04. Mac OS X 10.11 support is experimental.
 
@@ -40,51 +40,52 @@ To compile do:
 ## C++ interface
 Minimum working example is located in the `src/main_minimum_tracking_example.cpp`. To see how to setup trackers parameters see `src/main.cpp`
 
+```C++
+bool pretraining = false;       // do not pre-train on translations of the first frame
+bool useFilter  = true;         // Use Kalman filter with optimal parameters
+bool useEdgeDensity = true;     // Use Edge density
+bool useStraddling = true;      // Use straddling
+bool scalePrior = false;
+std::string kernel = "int";     // intersection kernel
+std::string feature = "hogANDhist";
+std::string note = "RobStruck tracker"; // basic tracker
 
-    bool pretraining = false;       // do not pre-train on translations of the first frame
-    bool useFilter  = true;         // Use Kalman filter with optimal parameters
-    bool useEdgeDensity = true;     // Use Edge density
-    bool useStraddling = true;      // Use straddling
-    bool scalePrior = false;
-    std::string kernel = "int";     // intersection kernel
-    std::string feature = "hogANDhist";
-    std::string note = "RobStruck tracker"; // basic tracker
+// RobStruck
+Struck* tracker = Struck(pretraining, useFilter,
+                    useEdgeDensity, useStraddling,
+                    scalePrior,
+                    kernel,
+                    feature, note);
 
-    // RobStruck
-    Struck* tracker = Struck(pretraining, useFilter,
-                        useEdgeDensity, useStraddling,
-                        scalePrior,
-                        kernel,
-                        feature, note);
+// ObjStruck
+//Struck* tracker = ObjDetectorStruck(pretraining, useFilter,
+//                        useEdgeDensity, useStraddling,
+//                        scalePrior,
+//                        kernel,
+//                        feature, note);
 
-    // ObjStruck
-    //Struck* tracker = ObjDetectorStruck(pretraining, useFilter,
-    //                        useEdgeDensity, useStraddling,
-    //                        scalePrior,
-    //                        kernel,
-    //                        feature, note);
-
-    // MBestStruck
-    //Struck* tracker = MBestStruck(pretraining, useFilter,
-    //                            useEdgeDensity, useStraddling,
-    //                            scalePrior,
-    //                            kernel,
-    //                            feature, note);
-
-
-    cv::Rect rect(198, 214, 34, 81);  // initial bounding box
-
-    std::string rootFolder ="../sample_data/";
+// MBestStruck
+//Struck* tracker = MBestStruck(pretraining, useFilter,
+//                            useEdgeDensity, useStraddling,
+//                            scalePrior,
+//                            kernel,
+//                            feature, note);
 
 
-    std::string fileName = rootFolder +"0001.jpg";
-    cv::Mat image = cv::imread(fileName);
-    tracker->initialize(image, rect);
+cv::Rect rect(198, 214, 34, 81);  // initial bounding box
 
-    for (int i = 2; i < 10; i++) {
-    std::string fileName = rootFolder +"000" +std::to_string(i) +".jpg";
-    cv::Rect result =tracker->track(fileName);
-    }        
+std::string rootFolder ="../sample_data/";
+
+
+std::string fileName = rootFolder +"0001.jpg";
+cv::Mat image = cv::imread(fileName);
+tracker->initialize(image, rect);
+
+for (int i = 2; i < 10; i++) {
+std::string fileName = rootFolder +"000" +std::to_string(i) +".jpg";
+cv::Rect result =tracker->track(fileName);
+}
+```       
 
 ## Python interface
 Coming soon.
