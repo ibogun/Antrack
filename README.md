@@ -1,8 +1,23 @@
 # Antrack [![Build Status](https://travis-ci.org/ibogun/Antrack.svg?branch=master)](https://travis-ci.org/ibogun/Antrack)
 Antrack is an open source implementation of the Structured Tracker and tracking evaluation suite. The original structured tracker was introduced by Hare et. al. 2011 and achieved state-of-the-art in the benchmark by Wu et. al 2012. This implementation extends the structured tracker by adding [Robust Kalman](http://my.fit.edu/~ibogun2010/Projects/Robust_tracking_by_detection/index.html) filter and [objectness priors](http://my.fit.edu/~ibogun2010/Projects/Object_aware_tracking/index.html). Each extension is independent of each other and improves tracking metrics on Wu et. al. 2012 dataset.
 
+# Tracking examples
+
+## RobStruck
+![RobStruck tracking example ](https://github.com/ibogun/raw/master/sample_data/GIFs/Rob.gif)
+## ObjStruck
+
+## MBestStruck
+
 # Installation
 Dependencies installation was tested on Ubuntu 14.04. Mac OS X 10.11 support is experimental.
+
+## Using Docker
+Install [Docker](https://www.docker.com/).
+
+    docker pull gnattuha/antrack
+    docker run -i -t gnattuha/antrack /bin/bash       
+
 ## Ubuntu 14.04
 Script ``install_dependencies.sh`` will install all dependencies automatically. To compile the code it is neccessary to have compiler which
  accepts ``c++11`` flag (gcc > 4.9). To install necessary compiler see [gist](https://gist.github.com/ibogun/ec0a4005c25df57a1b9d).
@@ -23,7 +38,53 @@ To compile do:
 
 # Using
 ## C++ interface
-Coming soon
+Minimum working example is located in the `src/main_minimum_tracking_example.cpp`. To see how to setup trackers parameters see `src/main.cpp`
+
+
+    bool pretraining = false;       // do not pre-train on translations of the first frame
+    bool useFilter  = true;         // Use Kalman filter with optimal parameters
+    bool useEdgeDensity = true;     // Use Edge density
+    bool useStraddling = true;      // Use straddling
+    bool scalePrior = false;
+    std::string kernel = "int";     // intersection kernel
+    std::string feature = "hogANDhist";
+    std::string note = "RobStruck tracker"; // basic tracker
+
+    // RobStruck
+    Struck* tracker = Struck(pretraining, useFilter,
+                        useEdgeDensity, useStraddling,
+                        scalePrior,
+                        kernel,
+                        feature, note);
+
+    // ObjStruck
+    //Struck* tracker = ObjDetectorStruck(pretraining, useFilter,
+    //                        useEdgeDensity, useStraddling,
+    //                        scalePrior,
+    //                        kernel,
+    //                        feature, note);
+
+    // MBestStruck
+    //Struck* tracker = MBestStruck(pretraining, useFilter,
+    //                            useEdgeDensity, useStraddling,
+    //                            scalePrior,
+    //                            kernel,
+    //                            feature, note);
+
+
+    cv::Rect rect(198, 214, 34, 81);  // initial bounding box
+
+    std::string rootFolder ="../sample_data/";
+
+
+    std::string fileName = rootFolder +"0001.jpg";
+    cv::Mat image = cv::imread(fileName);
+    tracker->initialize(image, rect);
+
+    for (int i = 2; i < 10; i++) {
+    std::string fileName = rootFolder +"000" +std::to_string(i) +".jpg";
+    cv::Rect result =tracker->track(fileName);
+    }        
 
 ## Python interface
 Coming soon.

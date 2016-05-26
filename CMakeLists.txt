@@ -6,6 +6,7 @@ option(VOT2016 "Build VOT2016-friendly" OFF)
 option(experiments "Build all experiments." OFF) # Makes boolean 'test' available.
 
 option(DeepFeatures "Use features extracted using deep convnet()" OFF)
+option(Minimum "Use main with minimum example on how to use the code.")
 option(python "Build python wrappers." OFF)
 
 option(PAMI "Build evaluation for PAMI paper." OFF)
@@ -28,8 +29,8 @@ ENDIF()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 find_package(OpenCV REQUIRED )
 find_package(Armadillo REQUIRED)
-find_package (Threads REQUIRED)
-find_package( Boost COMPONENTS program_options python filesystem system)
+find_package(Threads REQUIRED)
+find_package(Boost COMPONENTS program_options python filesystem system)
 find_package(gflags REQUIRED)
 find_library(GLOG_LIBRARY glog)
 
@@ -136,23 +137,6 @@ if (test)
     ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES}
     ${GLOG_LIBRARY} gflags)
   endif()
-
-  # Extra linking for the project.
-  #target_link_libraries(runUnitTests project1_lib)
-
-  # This is so you can do 'make test' to see all your tests run, instead of
-  # manually running the executable runUnitTests to see those specific tests.
-  #add_test(NAME that-test-I-made COMMAND RunUnitTests)
-
-  # You can also omit NAME and COMMAND. The second argument could be some other
-  # test executable.
-  #add_test(that-other-test-I-made RunUnitTests)
-endif()
-
-
-if (experiments)
-	add_executable(experiment_01_fast_intersection_kernels ${SOURCE_FILES} ${Experiment_01})
-	target_link_libraries(experiment_01_fast_intersection_kernels ${OpenCV_LIBS} ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 if(VOT2015)
@@ -172,9 +156,6 @@ if(VOT2015)
 	set_target_properties(struck_vot2014 PROPERTIES
 				RUNTIME_OUTPUT_DIRECTORY ${VOT2015_DESTINATION})
 endif()
-
-
-
 
 
 if(python)
@@ -222,6 +203,19 @@ add_executable(robust_struck_tracker_v1.0 ${Superpixels} ${SOURCE_FILES} ${PROJE
 include_directories(${OpenCV_INCLUDE_DIRS} )
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 include_directories (${Boost_INCLUDE_DIRS})
+
+if (Minimum)
+  find_package( Boost COMPONENTS filesystem system REQUIRED )
+  add_executable(main_Antrack ${Superpixels} ${SOURCE_FILES} src/main_minimum_tracking_example.cpp)
+
+  include_directories(${OpenCV_INCLUDE_DIRS} )
+  include_directories(${ARMADILLO_INCLUDE_DIRS})
+  include_directories (${Boost_INCLUDE_DIRS})
+
+  target_link_libraries(main_Antrack ${OpenCV_LIBS}
+    ${ARMADILLO_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES} ${GLOG_LIBRARY} gflags)
+endif()
 
 if (DeepFeatures)
   target_link_libraries(robust_struck_tracker_v1.0 ${OpenCV_LIBS}

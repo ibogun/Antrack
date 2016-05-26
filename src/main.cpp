@@ -103,6 +103,8 @@ DEFINE_string(feature, "hogANDhist", "Features to use");
 DEFINE_string(top_feature, "deep", "Top features to use");
 DEFINE_string(top_kernel, "linear", "Top kernel to use");
 DEFINE_double(topK, 50, "Top K objectness boxes in FilterBadStruck tracker.");
+
+// See https://gist.github.com/ibogun/092a2305bdb5de0010336ef370dfbea3
 DEFINE_string(
     proto_file,
     "/Users/Ivan/Code/Tracking/DeepAntrack/data/imagenet_memory.prototxt",
