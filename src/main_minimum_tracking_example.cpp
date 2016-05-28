@@ -120,11 +120,22 @@ int main(int argc, char *argv[]) {
     cv::Mat image = cv::imread(fileName);
     tracker->initialize(image, rect);
 
+
+    std::string saveTrackingImage = "./tracking/";
+    std::string prefix = "tracking_"+std::to_string(tracker_type)+"_"+std::to_string(FLAGS_display)+"_";
+
     for (int i = 2; i < 10; i++) {
       std::string fileName = rootFolder +"000" +std::to_string(i) +".jpg";
       tracker->track(fileName);
       std::cout << "Frame #" << i  << " out of "
                 << 10 << std::endl;
+
+      cv::Mat tracking_image = tracker->getObjectnessCanvas();
+
+      std::string savefilename =
+          saveTrackingImage + prefix + std::to_string(1000 + i) + ".png";
+      std::cout << "saving to file: " << savefilename << std::endl;
+      cv::imwrite(savefilename, tracking_image);
     }
   return 0;
 }

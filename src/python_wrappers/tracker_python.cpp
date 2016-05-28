@@ -387,6 +387,7 @@ class MStruck {
     void createTracker(std::string kernel, std::string feature, int filter,
                        std::string dis_features, std::string dis_kernel,
                        std::string top_features, std::string top_kernel) {
+
         bool pretraining = false;
         bool useEdgeDensity = true;
         bool useStraddling = true;
@@ -394,12 +395,17 @@ class MStruck {
 
         std::string note = "MBest tracker";
 
-        bool useFilter = true;
+        bool useFilter = false;
+
+        if (filter > 0) {
+            useFilter = true;
+        }
 
         this->tracker =
             new MBestStruck(pretraining, useFilter, useEdgeDensity,
                             useStraddling, scalePrior, kernel, feature, note);
 
+        //std::cout <<"Updating SSVM every n=" << n << " frames" << std::endl;
         this->tracker->setUpdateNFrames(3);
 
         featureParamsMap.insert(std::make_pair("dis_features", dis_features));

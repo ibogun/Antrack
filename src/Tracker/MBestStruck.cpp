@@ -233,6 +233,10 @@ cv::Rect MBestStruck::track(cv::Mat &image) {
     this->samplerForSearch->sampleEquiDistantMultiScale(lastLocation,
                                                         locationsOnaGrid);
 
+    if (!useFilter) {
+        std::cout << "NOT using filter" << "\n" << std::endl;;
+    }
+
     if (useFilter && !updateTracker) {
         this->samplerForSearch->sampleOnAGrid(lastRectFilterAndDetectorAgreedOn,
                                               locationsOnaGrid, this->R, 2);
