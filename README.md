@@ -51,21 +51,21 @@ std::string feature = "hogANDhist";
 std::string note = "RobStruck tracker"; // basic tracker
 
 // RobStruck
-Struck* tracker = Struck(pretraining, useFilter,
-                    useEdgeDensity, useStraddling,
-                    scalePrior,
-                    kernel,
-                    feature, note);
+Struck* tracker = new Struck(pretraining, useFilter,
+                       useEdgeDensity, useStraddling,
+                       scalePrior,
+                       kernel,
+                       feature, note);
 
 // ObjStruck
-//Struck* tracker = ObjDetectorStruck(pretraining, useFilter,
+//Struck* tracker = new ObjDetectorStruck(pretraining, useFilter,
 //                        useEdgeDensity, useStraddling,
 //                        scalePrior,
 //                        kernel,
 //                        feature, note);
 
 // MBestStruck
-//Struck* tracker = MBestStruck(pretraining, useFilter,
+//Struck* tracker = new MBestStruck(pretraining, useFilter,
 //                            useEdgeDensity, useStraddling,
 //                            scalePrior,
 //                            kernel,

@@ -30,6 +30,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 
+#include <string>
 #define VOT_RECTANGLE
 #include "vot.h"
 
@@ -76,6 +77,10 @@ int main(int ac, char **av) {
 
     bool filter = true;
 
+    if (FLAGS_filter < 1) {
+        filter = false;
+    }
+
     std::string feature = FLAGS_feature;
     std::string kernel = FLAGS_kernel;
 
@@ -113,6 +118,7 @@ int main(int ac, char **av) {
     tracker.setM(FLAGS_MBest);
     tracker.setFeatureParams(featureParamsMap);
 
+
     VOT vot;
 
     cv::Rect initialization;
@@ -132,8 +138,8 @@ int main(int ac, char **av) {
 
     tracker.initialize(image, initialization);
 
-    while (!vot.end()) {
 
+    while (!vot.end()) {
         string imagepath = vot.frame();
 
         if (imagepath.empty())

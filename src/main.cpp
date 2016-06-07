@@ -237,6 +237,7 @@ int main(int argc, char *argv[]) {
             rect.height = image.rows - rect.y - 1;
         }
 
+
         std::cout << rect << std::endl;
         std::cout << image.rows << " " << image.cols << std::endl;
 
