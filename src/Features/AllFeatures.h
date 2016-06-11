@@ -13,6 +13,7 @@
 
 #ifdef USE_DEEP_FEATURES
 #include "DeepFeatures.h"
+#include "DeepFeaturesInception.h"
 #include "DeepPCA.h"
 #endif
 

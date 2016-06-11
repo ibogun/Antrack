@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     map.insert(std::make_pair("topK", FLAGS_topK));
 
     std::unordered_map<std::string, std::string> featureParamsMap;
-    
+
     featureParamsMap.insert(std::make_pair("dis_features", FLAGS_dis_feature));
     featureParamsMap.insert(std::make_pair("dis_kernel", FLAGS_dis_kernel));
 
@@ -204,16 +204,15 @@ int main(int argc, char *argv[]) {
 
         vector<cv::Rect> groundTruth =
             dataset->readGroundTruth(gt_images.first);
-        Struck *tracker =
-            new Struck(pretraining, useFilter, useEdgeDensity,
+        MBestStruck *tracker =
+            new MBestStruck(pretraining, useFilter, useEdgeDensity,
                             useStraddling, scalePrior, kernel, feature, note);
-        // tracker->setParams(map);
-        // tracker->setLambda(FLAGS_lambda_diff);
-        // tracker->setM(FLAGS_MBest);
-        // tracker->setFeatureParams(featureParamsMap);
+        tracker->setParams(map);
+        tracker->setLambda(FLAGS_lambda_diff);
+        tracker->setM(FLAGS_MBest);
+        tracker->setFeatureParams(featureParamsMap);
         tracker->display = FLAGS_display;
-        
-        
+
         double b = 10;
 
         int startingFrame = FLAGS_frame_from;
@@ -225,8 +224,9 @@ int main(int argc, char *argv[]) {
         std::cout << gt_images.second[startingFrame] << std::endl;
         cv::Rect rect = groundTruth[startingFrame];
 
-        std::string saveTrackingImage = "/Users/Ivan/Documents/Papers/"
-                                        "My_papers/Thesis/thesis-paper/images/"
+        std::string saveTrackingImage =
+            "/Users/Ivan/Documents/Papers/"
+            "My_papers/Thesis/thesis-paper/images/"
             "chapter6/MBestStruckTracking/motorrolling/";
         std::string prefix = "tracking_";
         if (rect.x + rect.width >= image.cols) {
@@ -237,7 +237,6 @@ int main(int argc, char *argv[]) {
             rect.height = image.rows - rect.y - 1;
         }
 
-
         std::cout << rect << std::endl;
         std::cout << image.rows << " " << image.cols << std::endl;
 
@@ -246,23 +245,28 @@ int main(int argc, char *argv[]) {
         std::chrono::milliseconds int_ms(0);
 
         for (int i = startingFrame; i < endingFrame; i++) {
-
             cv::Mat im = cv::imread(gt_images.second[i]);
-            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point begin =
+                std::chrono::steady_clock::now();
             tracker->track(im);
-            std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point end =
+                std::chrono::steady_clock::now();
             std::cout << "Frame #" << i - startingFrame << " out of "
                       << endingFrame - startingFrame
                       << tracker->getBoundingBoxes()[i - startingFrame]
                       << std::endl;
-            int_ms += std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-            std::cout << "FPS: " << (double)((i - startingFrame)*1000)/(int_ms.count()) << std::endl;
-             // cv::Mat tracking_image = tracker->getObjectnessCanvas();
+            int_ms += std::chrono::duration_cast<std::chrono::milliseconds>(
+                end - begin);
+            std::cout << "FPS: "
+                      << (double)((i - startingFrame) * 1000) / (int_ms.count())
+                      << std::endl;
+            // cv::Mat tracking_image = tracker->getObjectnessCanvas();
 
-             // std::string savefilename =
-             //     saveTrackingImage + prefix + std::to_string(1000 + i) + ".png";
-             // std::cout << "saving to file: " << savefilename << std::endl;
-             // cv::imwrite(savefilename, tracking_image);
+            // std::string savefilename =
+            //     saveTrackingImage + prefix + std::to_string(1000 + i) +
+            //     ".png";
+            // std::cout << "saving to file: " << savefilename << std::endl;
+            // cv::imwrite(savefilename, tracking_image);
         }
 
         delete tracker;

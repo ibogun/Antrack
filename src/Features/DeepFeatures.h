@@ -24,13 +24,12 @@
 
 
 class DeepFeatures:public Feature {
-private:
 
+public:
         const int imageSizeWidth = 256;
         const int imageSizeHeight = 256;
 
         boost::shared_ptr<caffe::Net<float> > caffe_net;
-public:
         DeepFeatures() {};
 
 
