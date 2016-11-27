@@ -1,6 +1,0 @@
-[submodule "python/visual-tracking-benchmark"]
-	path = python/visual-tracking-benchmark
-	url = https://github.com/ibogun/visual-tracking-benchmark
-[submodule "matlab/vot-toolkit-github"]
-	path = matlab/vot-toolkit-github
-	url = https://github.com/votchallenge/vot-toolkit
