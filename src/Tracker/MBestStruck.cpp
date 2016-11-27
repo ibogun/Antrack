@@ -30,9 +30,6 @@ void MBestStruck::setFeatureParams(
     } else if (top_features_str == "deep") {
         features = new DeepFeatures();
         features->setParams(map);
-    } else if (top_features_str == "deepInception") {
-        features = new DeepFeaturesInception();
-        features->setParams(map);
     } else if (top_features_str == "deepPCA") {
         features = new DeepPCA();
         features->setParams(map);
